@@ -129,7 +129,14 @@ const TravelGroupSelector: React.FC<BaseFormProps> = ({
         })}
       </div>
 
-      {/* No counter display - REMOVED */}
+      {/* Selected count display */}
+      {selectedGroups.length > 0 && (
+        <div className="bg-[#ece8de] border-3 border-primary rounded-[10px] p-3 text-center mt-4">
+          <span className="text-primary font-bold font-raleway text-sm">
+            Selected: {selectedGroups.length} group{selectedGroups.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
 
       {/* Other Input Field */}
       {showOtherInput && (

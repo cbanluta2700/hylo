@@ -74,6 +74,8 @@ export interface ValidationResult {
 export interface BaseFormProps {
   formData: FormData;
   onFormChange: (data: Partial<FormData>) => void;
+  validationErrors?: Record<string, string>;
+  onValidation?: (field: string, isValid: boolean, errors?: string[]) => void;
 }
 
 // Export schema for validation

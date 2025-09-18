@@ -239,7 +239,15 @@ const ItineraryInclusions: React.FC<BaseFormProps> = ({
         })}
       </div>
 
-      {/* No counter display - REMOVED */}
+      {/* Selected count display */}
+      {selectedInclusions.length > 0 && (
+        <div className="bg-[#ece8de] border-3 border-primary rounded-[10px] p-3 text-center mt-4">
+          <span className="text-primary font-bold font-raleway text-sm">
+            Selected: {selectedInclusions.length} inclusion
+            {selectedInclusions.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
 
       {/* Preferences for selected inclusions */}
       {selectedInclusions.filter((id) => id !== 'other').length > 0 && (
