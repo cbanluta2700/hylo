@@ -1,6 +1,5 @@
 import React from 'react';
 import TravelExperience from './TravelExperience';
-import TripVibe from './TripVibe';
 import SampleDays from './SampleDays';
 import DinnerChoice from './DinnerChoice';
 import TripNickname from './TripNickname';
@@ -32,13 +31,12 @@ const TravelStyle: React.FC<TravelStyleProps> = ({ formData, onFormChange }) => 
         <TravelExperience {...baseProps} />
       </div>
 
-      {/* Trip Vibe */}
+      {/* Trip Vibe - Temporarily Disabled */}
       <div className="bg-form-box rounded-[36px] p-6 border-3 border-gray-200">
         <h3 className="text-xl font-bold text-primary uppercase tracking-wide mb-4 font-raleway">
           TRIP VIBE
         </h3>
-        <p className="text-primary mb-4 font-raleway text-sm">What vibe are you going for?</p>
-        <TripVibe {...baseProps} />
+        <p className="text-primary mb-4 font-raleway text-sm">Coming soon...</p>
       </div>
 
       {/* Sample Days */}
