@@ -1,12 +1,12 @@
 import React from 'react';
-import TravelExperience from './travel-style/TravelExperience';
-import TripVibe from './travel-style/TripVibe';
-import SampleDays from './travel-style/SampleDays';
-import DinnerChoice from './travel-style/DinnerChoice';
-import TripNickname from './travel-style/TripNickname';
+import TravelExperience from './TravelStyle/TravelExperience';
+import TripVibe from './TravelStyle/TripVibe';
+import SampleDays from './TravelStyle/SampleDays';
+import DinnerChoice from './TravelStyle/DinnerChoice';
+import TripNickname from './TravelStyle/TripNickname';
 
 interface TravelStyleGroupProps {
-  onFormChange?: (data: any) => void;
+  onFormChange: (data: any) => void;
   formData?: any;
 }
 
@@ -93,25 +93,18 @@ export const TravelStyleGroup: React.FC<TravelStyleGroupProps> = ({ onFormChange
       />
 
       <SampleDays
-        selectedDays={formData?.travelStyleAnswers?.sampleDays || []}
-        onSelectionChange={handleSampleDaysChange}
+        formData={formData}
+        onFormChange={onFormChange}
       />
 
       <DinnerChoice
-        selectedChoice={formData?.travelStyleAnswers?.dinnerChoices || []}
-        onSelectionChange={handleDinnerChoiceChange}
+        formData={formData}
+        onFormChange={onFormChange}
       />
 
       <TripNickname
-        tripNickname={formData?.travelStyleAnswers?.tripNickname || ''}
-        onNicknameChange={handleTripNicknameChange}
-        contactInfo={formData?.contactInfo || {}}
-        onContactChange={(contactInfo) => {
-          onFormChange?.({
-            ...formData,
-            contactInfo,
-          });
-        }}
+        formData={formData}
+        onFormChange={onFormChange}
       />
     </div>
   );
