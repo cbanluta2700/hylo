@@ -1,12 +1,5 @@
 // src/components/TripDetails/utils.ts
-import {
-  YEAR_THRESHOLD,
-  YEAR_BASE_1900,
-  YEAR_BASE_2000,
-  tripDetailsSchema,
-  FormData,
-  ValidationResult,
-} from './types';
+import { YEAR_THRESHOLD, YEAR_BASE_1900, YEAR_BASE_2000 } from './types';
 
 export const dateUtils = {
   parseMMDDYY: (dateStr: string): Date | null => {
@@ -77,81 +70,5 @@ export const dateUtils = {
 
     // Return date must be at least one day after departure date
     return returnD.getTime() > depart.getTime();
-  },
-};
-
-// Validation utilities
-export const validationUtils = {
-  /**
-   * Validates form data using Zod schema
-   */
-  validateFormData: (data: Partial<FormData>): ValidationResult => {
-    try {
-      tripDetailsSchema.parse(data);
-      return {
-        isValid: true,
-        errors: {},
-        fieldErrors: {},
-      };
-    } catch (error: any) {
-      const fieldErrors: Record<string, string> = {};
-      const errors: Record<string, string[]> = {};
-
-      if (error.errors) {
-        error.errors.forEach((err: any) => {
-          const path = err.path.join('.');
-          const message = err.message;
-
-          fieldErrors[path] = message;
-          if (!errors[path]) {
-            errors[path] = [];
-          }
-          errors[path].push(message);
-        });
-      }
-
-      return {
-        isValid: false,
-        errors,
-        fieldErrors,
-      };
-    }
-  },
-
-  /**
-   * Validates a specific field
-   */
-  validateField: (
-    fieldName: string,
-    value: any,
-    formData: Partial<FormData>
-  ): { isValid: boolean; errors: string[] } => {
-    try {
-      // Create a partial object with just this field for validation
-      const testData = { ...formData, [fieldName]: value };
-      tripDetailsSchema.parse(testData);
-      return { isValid: true, errors: [] };
-    } catch (error: any) {
-      const errors: string[] = [];
-      if (error.errors) {
-        error.errors.forEach((err: any) => {
-          if (err.path.includes(fieldName)) {
-            errors.push(err.message);
-          }
-        });
-      }
-      return { isValid: errors.length === 0, errors };
-    }
-  },
-
-  /**
-   * Real-time validation helper for form inputs
-   */
-  debounceValidation: (callback: () => void, delay = 300) => {
-    let timeoutId: NodeJS.Timeout;
-    return () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(callback, delay);
-    };
   },
 };

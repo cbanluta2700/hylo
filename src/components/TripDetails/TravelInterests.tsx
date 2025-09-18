@@ -128,14 +128,7 @@ const TravelInterests: React.FC<BaseFormProps> = ({
         })}
       </div>
 
-      {/* Selected count display */}
-      {selectedInterests.length > 0 && (
-        <div className="bg-[#ece8de] border-3 border-primary rounded-[10px] p-3 text-center mt-4">
-          <span className="text-primary font-bold font-raleway text-sm">
-            Selected: {selectedInterests.length} interest{selectedInterests.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-      )}
+      {/* No counter display - REMOVED */}
 
       {/* Other Input Field */}
       {showOtherInput && (

@@ -1,135 +1,109 @@
-# HYLO Travel AI Platform Constitution
+# Hylo Constitution
 
 ## Core Principles
 
 ### I. Edge-First Architecture
 
-All API endpoints run on Vercel Edge Runtime for global distribution; No client-side API keys - all secrets managed server-side; Edge functions handle LLM routing, health monitoring, and RAG operations; Progressive enhancement with graceful degradation
+Every LLM interaction must be routed through Vercel Edge Functions for security and performance. No API keys or sensitive operations in client-side code. All AI orchestration happens at the edge with proper authentication and rate limiting.
 
-### II. Multi-Agent AI Orchestration
+### II. Multi-LLM Resilience
 
-Multi-agent pipeline for itinerary generation (Data Gatherer → Information Gatherer → Planning Strategist → Content Compiler); Intelligent LLM provider routing based on complexity analysis; Fallback chains ensure resilience (Cerebras → Gemini → Groq); Real-time web search integration for current information
+Implement intelligent routing with automatic fallbacks across Cerebras (complex tasks), Google Gemini (balanced operations), and Groq (specialized/code tasks). Every LLM call must have at least two fallback options. API key rotation is mandatory to maximize free tier usage.
 
-### III. Test-First Development (NON-NEGOTIABLE)
+### III. Observable AI Operations
 
-TDD mandatory: Tests written → Review → Tests fail → Then implement; Minimum 80% code coverage requirement; Contract tests for all API endpoints; Integration tests for multi-agent workflows; Component tests with React Testing Library
+All LLM interactions must be traced through LangSmith for debugging and optimization. Every API call requires structured logging including: model used, tokens consumed, latency, complexity rating, and fallback chain executed. Cost tracking per operation is non-negotiable.
 
-### IV. Observable AI Operations
+### IV. Type-Safe Development
 
-Comprehensive tracing via LangSmith integration; Cost tracking per LLM operation with budget alerts; Performance metrics (latency, tokens, throughput); Structured logging at all service boundaries; Health monitoring dashboard for system visibility
+Strict TypeScript throughout the entire codebase. All API responses must have defined interfaces. Runtime validation with Zod for external data. No `any` types allowed except in exceptional, documented cases. LangChain.js types must be properly extended, not bypassed.
 
-### V. Type-Safe Development
+### V. Progressive Enhancement
 
-TypeScript strict mode throughout frontend and backend; Zod schemas for runtime validation matching compile-time types; Shared type definitions between client and server; API contracts validated at build time
+Core functionality must work even if some LLM providers fail. UI must gracefully handle loading, error, and degraded states. Implement streaming responses where possible for better UX. Cache aggressively but invalidate intelligently.
 
-### VI. Component-Based Architecture
+### VI. Cost-Conscious Design
 
-React 18+ with functional components and hooks; Form optimization with React Hook Form + Zod validation; Tailwind CSS for utility-first styling; Reusable UI components with clear separation of concerns
+Free tier limits must be respected through intelligent caching, request batching, and complexity-based routing. Track usage per provider and implement automatic throttling before limits. Optimize prompts for token efficiency without sacrificing quality.
 
-### VII. Cost-Conscious Design
+### VII. Security by Default
 
-Daily budget limits enforced ($10/day default); Token usage optimization in LLM operations; Provider selection based on cost/performance trade-offs; Caching strategies to reduce redundant API calls
+All environment variables must be properly scoped in Vercel. Implement rate limiting on all API routes. Input sanitization is mandatory for all user-provided content. CORS must be explicitly configured, never wildcarded.
 
-## Technical Standards
+## Development Standards
 
-### Frontend Stack
+### Testing Requirements
 
-- **Framework**: React 18+ with TypeScript 5.x
-- **Build Tool**: Vite for fast HMR and optimized builds
-- **Styling**: Tailwind CSS with custom design tokens
-- **Forms**: React Hook Form with Zod validation
-- **State**: Local state with useState/useReducer
-- **Icons**: Lucide React for consistent iconography
-- **Testing**: Vitest + React Testing Library
+- Unit tests for all utility functions and LLM routing logic
+- Integration tests for API routes with mocked LLM responses
+- E2E tests for critical user journeys
+- Minimum 80% code coverage for non-UI logic
+- All tests must pass before deployment
 
-### Backend Stack
+### Performance Targets
 
-- **Runtime**: Vercel Edge Functions (Edge Runtime)
-- **LLM Providers**: Cerebras, Google Gemini, Groq
-- **Observability**: LangSmith for tracing
-- **Validation**: Zod schemas for all endpoints
-- **Search**: Web search service integration
-- **RAG**: Vector storage with Qdrant (future)
+- Edge Function cold start: < 150ms
+- LLM response streaming start: < 2 seconds
+- Page load (LCP): < 2.5 seconds
+- Bundle size: < 200KB for initial load
+- API route timeout: 30 seconds max
 
-### API Design
+### Deployment Pipeline
 
-- RESTful endpoints under `/api` namespace
-- Streaming responses for real-time generation
-- Health endpoints for monitoring
-- Rate limiting and quota management
-- CORS configuration for edge functions
+- All commits to main auto-deploy to production
+- PR previews required for all changes
+- Environment variables managed through Vercel Dashboard
+- Rollback strategy must be documented
+- Zero-downtime deployments only
 
-### Development Workflow
+## Quality Gates
 
-#### Code Quality Gates
+### Code Review Checklist
 
-1. TypeScript compilation must succeed
-2. ESLint passes with no errors
-3. All tests pass (unit, integration, E2E)
-4. Zod schema validation coverage
-5. Bundle size within limits (<200KB warning)
+- TypeScript types properly defined
+- Error handling implemented
+- Loading states present
+- Fallback logic tested
+- Environment variables not exposed
+- LangChain tracing enabled
+- Cost implications documented
 
-## Infrastructure Requirements
+### Pre-Deployment Verification
 
-### Deployment Platform
+- All tests passing
+- Bundle size analyzed
+- Security scan completed
+- API rate limits configured
+- Monitoring alerts set up
+- Documentation updated
+- Changelog entry added
 
-- **Hosting**: Vercel with automatic deployments
-- **Edge Functions**: Global distribution
-- **Environment**: Development, Preview, Production
-- **DNS**: Verification and readiness checks
-- **Monitoring**: Real-time health dashboards
+### Production Monitoring
 
-### Performance Standards
-
-- API response time: <2s p95 for simple queries
-- Streaming latency: <500ms to first token
-- Frontend FCP: <1.5s on 3G networks
-- Bundle size: <200KB for initial load
-- Error rate: <1% for production
-
-### Security & Compliance
-
-- Environment variables for all secrets
-- Input sanitization on all endpoints
-- Rate limiting per IP/session
-- CORS properly configured
-- No PII in logs or traces
-
-## Project-Specific Conventions
-
-### File Organization
-
-```
-api/              # Edge functions
-src/
-  ├── components/ # React components
-  ├── services/   # Business logic
-  ├── api/        # API client code
-  ├── types/      # TypeScript types
-  ├── hooks/      # Custom React hooks
-  └── utils/      # Utilities
-tests/            # Test files
-.specify/         # Project management
-```
-
-### Naming Conventions
-
-- Components: PascalCase (e.g., TripDetailsForm)
-- Services: camelCase with 'Service' suffix
-- Types: PascalCase with descriptive names
-- API routes: kebab-case endpoints
-- Test files: _.test.ts or _.spec.ts
-
-### AI Agent Conventions
-
-- Each agent has single responsibility
-- Agents communicate via structured data
-- Token limits enforced per agent
-- Costs tracked per agent operation
-- Fallback strategies documented
+- LangSmith traces reviewed daily
+- API usage tracked per provider
+- Error rates < 1%
+- Response times within SLA
+- Cost tracking automated
+- User feedback loop active
 
 ## Governance
 
-Constitution supersedes all development practices; Amendments require team consensus and testing; All PRs must verify constitutional compliance via checks; Complexity violations must be justified in PR description; Use CLAUDE.md for AI-assisted development guidance
+The Hylo Constitution supersedes all development practices and architectural decisions. Any amendments require:
 
-**Version**: 2.0.0 | **Ratified**: 2025-01-20 | **Last Amended**: 2025-01-20
+1. Documentation of the proposed change
+2. Impact analysis on existing code
+3. Migration plan if breaking changes
+4. Team consensus on implementation
+
+All pull requests must verify constitutional compliance before merge. Violations must be justified with explicit exemption documentation. Use `/docs/DEVELOPMENT_GUIDE.md` for day-to-day development guidance.
+
+Technical decisions should prioritize in order:
+
+1. Security (no exposed keys)
+2. Reliability (fallback chains)
+3. Performance (edge optimization)
+4. Cost (free tier management)
+5. Developer Experience
+
+**Version**: 1.0.0 | **Ratified**: 2025-09-16 | **Last Amended**: 2025-09-16

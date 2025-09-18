@@ -49,7 +49,6 @@ Focus on rapid implementation with post-production quality checks.
 
 When implementing ANY feature, use this streamlined checklist:
 
-
 ## TODO: [Feature Name] - Rapid Implementation
 
 ### Implementation Sprint
@@ -77,28 +76,26 @@ When implementing ANY feature, use this streamlined checklist:
 typescript
 // Use these tools - no debates
 {
-  framework: "React 18+",
-  language: "TypeScript",
-  build: "Vite",
-  styling: "Tailwind CSS",
-  forms: "React Hook Form + Zod",
-  state: "useState/useReducer",
-  icons: "Lucide React"
+framework: "React 18+",
+language: "TypeScript",
+build: "Vite",
+styling: "Tailwind CSS",
+forms: "React Hook Form + Zod",
+state: "useState/useReducer",
+icons: "Lucide React"
 }
-
 
 ### Backend Stack
 
 typescript
 // Edge Runtime essentials
 {
-  runtime: "Vercel Edge Functions",
-  providers: ["Cerebras", "Gemini", "Groq"],
-  observability: "LangSmith",
-  validation: "Zod schemas",
-  search: "Web search service"
+runtime: "Vercel Edge Functions",
+providers: ["Cerebras", "Gemini", "Groq"],
+observability: "LangSmith",
+validation: "Zod schemas",
+search: "Web search service"
 }
-
 
 ## Code Pattern Library
 
@@ -109,75 +106,73 @@ typescript
 export const config = { runtime: 'edge' };
 
 export default async function handler(req: Request) {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
+const corsHeaders = {
+'Access-Control-Allow-Origin': '\*',
+'Access-Control-Allow-Methods': 'POST, OPTIONS',
+'Access-Control-Allow-Headers': 'Content-Type',
+};
 
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
-  }
+if (req.method === 'OPTIONS') {
+return new Response(null, { status: 200, headers: corsHeaders });
+}
 
-  try {
-    const input = await req.json();
-    // TODO: Add your logic here
+try {
+const input = await req.json();
+// TODO: Add your logic here
 
     const result = {}; // Your implementation
 
     return new Response(JSON.stringify(result), {
       headers: corsHeaders,
     });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: error.message,
-      }),
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
-    );
-  }
-}
 
+} catch (error) {
+return new Response(
+JSON.stringify({
+error: error.message,
+}),
+{
+status: 500,
+headers: corsHeaders,
+}
+);
+}
+}
 
 ### 2. Component Quick Template
 
 typescript
 // Copy-paste React component starter
 export function Component({ props }: Props) {
-  const [state, setState] = useState();
+const [state, setState] = useState();
 
-  // TODO: Implement component logic
+// TODO: Implement component logic
 
-  return <div className="p-4">{/* Component UI */}</div>;
+return <div className="p-4">{/_ Component UI _/}</div>;
 }
-
 
 ### 3. Form Component Template
 
 typescript
 // React Hook Form quick start
 export function FormComponent() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+const {
+register,
+handleSubmit,
+formState: { errors },
+} = useForm();
 
-  const onSubmit = (data) => {
-    // TODO: Handle form submission
-  };
+const onSubmit = (data) => {
+// TODO: Handle form submission
+};
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <input {...register('field')} />
-      <button type="submit">Submit</button>
-    </form>
-  );
+return (
+<form onSubmit={handleSubmit(onSubmit)}>
+<input {...register('field')} />
+<button type="submit">Submit</button>
+</form>
+);
 }
-
 
 ## MCP Context Integration
 
@@ -185,14 +180,12 @@ export function FormComponent() {
 
 When you need to save useful patterns:
 
-
 ## Save to MCP Context
 
 1. Create snippet document in context
 2. Tag with: #pattern #reusable #[component-type]
 3. Include working example
 4. Note any dependencies
-
 
 ### Example MCP Usage
 
@@ -203,7 +196,6 @@ typescript
 
 // Later retrieve with:
 // mcp:search "edge streaming"
-
 
 ## Current Enhancement Focus
 
@@ -233,22 +225,24 @@ Priority tasks for rapid implementation:
 ### Speed-Focused Workflow
 
 bash
+
 # Rapid development
-npm run dev:full      # Start coding immediately
+
+npm run dev:full # Start coding immediately
 
 # After implementation
-npm run build         # Check if it builds
-npm run preview       # Test the build
+
+npm run build # Check if it builds
+npm run preview # Test the build
 
 # Polish phase
-npm run lint:fix      # Auto-fix issues
-npm run type-check    # Fix type errors
 
+npm run lint:fix # Auto-fix issues
+npm run type-check # Fix type errors
 
 ## Implementation Priorities
 
 ### Speed First Checklist
-
 
 ## Rapid Dev Priority
 
@@ -257,11 +251,9 @@ npm run type-check    # Fix type errors
 3. [ ] Make it fast
 4. [ ] Make it pretty
 
-
 ## Common Quick Fixes
 
 ### Fast Solutions Library
-
 
 ## Quick Fix Patterns
 
@@ -285,11 +277,9 @@ npm run type-check    # Fix type errors
 - Use useState for simple state
 - Add useEffect for side effects
 
-
 ## AI Assistant Usage
 
 ### Rapid Request Format
-
 
 Need: [specific feature]
 
@@ -305,9 +295,7 @@ No need for:
 - Perfect types
 - Full validation
 
-
 ### Example Speed Request
-
 
 Create API endpoint for user preferences:
 
@@ -315,7 +303,6 @@ Create API endpoint for user preferences:
 - Save to database
 - Return success/error
 - Edge function format
-
 
 ## Code Snippet Library
 
@@ -326,85 +313,57 @@ Save these patterns for reuse:
 typescript
 // Reusable API caller
 async function apiCall(endpoint: string, data: any) {
-  const response = await fetch(`/api/${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return response.json();
+const response = await fetch(`/api/${endpoint}`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(data),
+});
+return response.json();
 }
-
 
 ### Error Boundary Pattern
 
 typescript
 // Quick error handling wrapper
 function withErrorHandling(fn: Function) {
-  return async (...args: any[]) => {
-    try {
-      return await fn(...args);
-    } catch (error) {
-      console.error(error);
-      return { error: error.message };
-    }
-  };
+return async (...args: any[]) => {
+try {
+return await fn(...args);
+} catch (error) {
+console.error(error);
+return { error: error.message };
 }
-
+};
+}
 
 ### State Management Pattern
 
 typescript
 // Simple state hook
 function useSimpleState(initial: any) {
-  const [state, setState] = useState(initial);
-  const update = (updates: any) => setState({ ...state, ...updates });
-  return [state, update];
+const [state, setState] = useState(initial);
+const update = (updates: any) => setState({ ...state, ...updates });
+return [state, update];
 }
-
 
 ## Project Structure (Simplified)
 
-
 src/
-├── components/    # React components
-├── services/      # Business logic
-├── api/          # API client code
-├── types/        # TypeScript types
-├── hooks/        # Custom hooks
-└── utils/        # Helpers
+├── components/ # React components
+├── services/ # Business logic
+├── api/ # API client code
+├── types/ # TypeScript types
+├── hooks/ # Custom hooks
+└── utils/ # Helpers
 
-api/              # Edge functions
-├── [endpoint]/   # API routes
-
-
-## Polish Phase Guidelines
-
-### After Implementation Works
-
-1. Add proper TypeScript types
-2. Implement Zod validation
-3. Add error boundaries
-4. Include observability
-5. Optimize performance
-6. Clean up console.logs
-7. Format with Prettier
-8. Fix ESLint warnings
-
-## Governance (Simplified)
-
-- Focus on working code first
-- Constitution compliance during polish
-- Use MCP to save good patterns
-- Speed over perfection initially
-- Quality through iteration
+api/ # Edge functions
+├── [endpoint]/ # API routes
 
 **Version**: 2.1.0 | **Focus**: Rapid Implementation | **Updated**: 2025-01-20
 
 ---
 
 _Remember: Ship working code fast, polish iteratively. Save good patterns to MCP context for reuse._
-
-
 
 This refined version:
 
@@ -429,5 +388,3 @@ The focus is now entirely on shipping working code quickly, with quality improve
 8. **Streamlines requirements** to essentials only
 
 The focus is now entirely on shipping working code quickly, with quality improvements happening after the feature is functional.
-
-
