@@ -1,10 +1,3 @@
-/**
- * Enhanced App.tsx - Multi-agent workflow integration
- * 
- * Integrates with the new streaming multi-agent workflow system
- * while maintaining backward compatibility with existing functionality
- */
-
 import { useState, useRef } from 'react';
 import { TravelFormData, AgentLog } from './services/groqService';
 import TripDetails from './components/TripDetails';
@@ -12,19 +5,11 @@ import { FormData } from './components/TripDetails/types';
 import ConditionalTravelStyle from './components/ConditionalTravelStyle';
 import { TravelStyleChoice } from './types/travel-style-choice';
 import ItineraryDisplay from './components/ItineraryDisplay';
-import EnhancedItineraryDisplay from './components/EnhancedItineraryDisplay';
 import BehindTheScenes from './components/BehindTheScenes';
 import AIErrorBoundary from './components/AIErrorBoundary';
 import HealthMonitor from './components/HealthMonitor';
-import useWorkflow from './hooks/useWorkflow';
-import { TravelFormData as WorkflowFormData } from './types/agents';
-import { convertAgentStatusArrayToLogs } from './utils/workflowConverters';
-
-// Feature flag for workflow system
-const USE_MULTI_AGENT_WORKFLOW = process.env['REACT_APP_USE_WORKFLOW'] === 'true' || false;
 
 function App() {
-  // Existing form state
   const [formData, setFormData] = useState<FormData>({
     location: '',
     departDate: '',
@@ -36,9 +21,10 @@ function App() {
     budget: 5000,
     currency: 'USD',
     flexibleBudget: false,
-    budgetMode: 'total',
+    budgetMode: 'total', // Add the missing budgetMode property
     travelStyleChoice: 'not-selected',
     travelStyleAnswers: {},
+    // Additional fields for new components
     selectedGroups: [],
     selectedInterests: [],
     selectedInclusions: [],
@@ -47,115 +33,46 @@ function App() {
     customInclusionsText: '',
     inclusionPreferences: {},
   });
-
-  // Travel style state
   const [selectedExperience, setSelectedExperience] = useState<string[]>([]);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [selectedSampleDays, setSelectedSampleDays] = useState<string[]>([]);
   const [dinnerChoices, setDinnerChoices] = useState<string[]>([]);
   const [tripNickname, setTripNickname] = useState<string>('');
   const [contactInfo, setContactInfo] = useState({});
+  
+  // Travel style choice state management
   const [travelStyleChoice, setTravelStyleChoice] = useState<TravelStyleChoice>(TravelStyleChoice.NOT_SELECTED);
+
+  // Custom text inputs for "other" options (remaining for travel style components)
   const [customVibesText, setCustomVibesText] = useState<string>('');
 
-  // Legacy itinerary state (for fallback)
   const [generatedItinerary, setGeneratedItinerary] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string>('');
   const [agentLogs, setAgentLogs] = useState<AgentLog[]>([]);
   const itineraryRef = useRef<HTMLDivElement>(null);
 
-  // New multi-agent workflow hook
-  const workflow = useWorkflow();
-
   // Handle travel style choice selection
   const handleTravelStyleChoice = (choice: TravelStyleChoice) => {
     setTravelStyleChoice(choice);
   };
 
-  // Transform form data to workflow format
-  const transformToWorkflowData = (): WorkflowFormData => {
-    return {
-      // Basic trip information
-      destination: formData.location,
-      departureDate: formData.departDate || '',
-      returnDate: formData.returnDate || '',
-      tripNickname: tripNickname || 'My Trip',
-      contactName: (contactInfo as any)?.name || 'Traveler',
-      
-      // Travelers
-      adults: formData.adults,
-      children: formData.children,
-      
-      // Budget - transform to match schema
-      budget: {
-        amount: formData.budget,
-        currency: formData.currency as 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD',
-        mode: formData.budgetMode as 'per-person' | 'total' | 'flexible'
-      },
-      
-      // Preferences - transform to match schema structure
-      preferences: {
-        travelStyle: 'culture' as const, // Default based on form
-        interests: [
-          ...(formData.selectedInterests || []),
-          ...(formData.selectedGroups || []),
-          ...(selectedExperience || []),
-          ...(selectedVibes || [])
-        ].filter(Boolean),
-        accommodationType: 'any' as const,
-        transportationMode: 'any' as const,
-        dietaryRestrictions: [],
-        accessibility: []
-      }
-    };
-  };
-
-  // Enhanced itinerary generation with multi-agent workflow
   const handleGenerateItinerary = async () => {
-    if (USE_MULTI_AGENT_WORKFLOW) {
-      // Use new multi-agent workflow system
-      try {
-        const workflowFormData = transformToWorkflowData();
-        await workflow.startWorkflow(workflowFormData, {
-          timeout: 180000, // 3 minutes
-        });
-      } catch (error) {
-        console.error('Multi-agent workflow error:', error);
-        // Fallback to legacy system
-        await handleLegacyGeneration();
-      }
-    } else {
-      // Use legacy system
-      await handleLegacyGeneration();
-    }
-
-    // Scroll to results after a short delay
-    setTimeout(() => {
-      itineraryRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }, 100);
-  };
-
-  // Legacy itinerary generation (debug/fallback)
-  const handleLegacyGeneration = async () => {
     setIsGenerating(true);
     setGenerationError('');
-    setGeneratedItinerary('');
-    setAgentLogs([]);
+    setGeneratedItinerary(''); // Clear previous itinerary
+    setAgentLogs([]); // Clear previous logs
 
     try {
-      // Organized form data display (debug mode)
+      // Instead of calling AI/LLM, display the gathered form data organized by form sections
       const organizedFormData = {
         "1. Destination & Dates": {
           "destination": formData.location,
           "departureDate": formData.departDate,
           "returnDate": formData.returnDate,
           "flexibleDates": formData.flexibleDates,
-          ...(formData.flexibleDates && (formData as any).plannedDays && {
-            "plannedDays": (formData as any).plannedDays
+          ...(formData.flexibleDates && formData.plannedDays && {
+            "plannedDays": formData.plannedDays
           })
         },
         "2. Travelers": {
@@ -188,20 +105,21 @@ function App() {
         },
         "7. Travel Style Questions": {
           "travelStyleChoice": travelStyleChoice,
-          "experience": selectedExperience,
-          "vibes": selectedVibes,
-          "vibesOther": customVibesText,
-          "sampleDays": selectedSampleDays,
-          "dinnerChoices": dinnerChoices
+          "experience": formData.travelStyleAnswers?.['experience'] || [],
+          "vibes": formData.travelStyleAnswers?.['vibes'] || [],
+          "vibesOther": formData.travelStyleAnswers?.['vibesOther'],
+          "sampleDays": formData.travelStyleAnswers?.['sampleDays'] || [],
+          "dinnerChoices": formData.travelStyleAnswers?.['dinnerChoices'] || []
         },
         "8. Contact & Trip Details": {
-          "tripNickname": tripNickname,
-          "contactInfo": contactInfo
+          "tripNickname": formData.travelStyleAnswers?.['tripNickname'] || tripNickname,
+          "contactName": (formData as any)?.contactInfo?.name || (contactInfo as any)?.name || '',
+          "contactEmail": (formData as any)?.contactInfo?.email || (contactInfo as any)?.email || ''
         }
       };
 
       const debugItinerary = `
-# 📋 Travel Form Data Review ${USE_MULTI_AGENT_WORKFLOW ? '(Multi-Agent System Available)' : '(Legacy Mode)'}
+# 📋 Complete Form Data Review
 
 ${Object.entries(organizedFormData).map(([sectionTitle, sectionData]) => `
 ## ${sectionTitle}
@@ -212,14 +130,7 @@ ${JSON.stringify(sectionData, null, 2)}
 
 ---
 
-**Note**: ${USE_MULTI_AGENT_WORKFLOW 
-  ? 'Multi-agent workflow system is available but this is debug mode showing form data.' 
-  : 'This is a debug view showing collected form data. Multi-agent system is not enabled.'}
-
-## System Status
-- **Multi-Agent Workflow**: ${USE_MULTI_AGENT_WORKFLOW ? '✅ Available' : '❌ Disabled'}
-- **Form Data Collection**: ✅ Complete
-- **Data Validation**: ✅ Passed
+**Note**: This is a debug view showing all collected form data organized by form sections. AI/LLM functionality has been temporarily disabled.
 
 ## Raw Complete Data Object
 \`\`\`json
@@ -235,16 +146,20 @@ ${JSON.stringify(organizedFormData, null, 2)}
         timestamp: new Date().toISOString(),
         input: 'Form data collection request',
         output: 'Successfully gathered all form fields',
-        decisions: [
-          'Form data collected', 
-          USE_MULTI_AGENT_WORKFLOW ? 'Multi-agent system available' : 'Legacy mode active'
-        ]
+        decisions: ['Form data collected', 'AI/LLM functionality disabled for debugging']
       }]);
 
+      // Smooth scroll to the itinerary after a short delay
+      setTimeout(() => {
+        itineraryRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
     } catch (error) {
       console.error('Error displaying form data:', error);
       setGenerationError(
-        'Sorry, we encountered an error processing your request. Please try again.'
+        'Sorry, we encountered an error displaying the form data. Please try again.'
       );
     } finally {
       setIsGenerating(false);
@@ -265,46 +180,24 @@ ${JSON.stringify(organizedFormData, null, 2)}
     contact: contactInfo,
   };
 
-  // Determine loading state
-  const isCurrentlyLoading = USE_MULTI_AGENT_WORKFLOW ? workflow.isExecuting : isGenerating;
-  
-  // Determine current itinerary
-  const currentItinerary = USE_MULTI_AGENT_WORKFLOW 
-    ? (workflow.itinerary || generatedItinerary)
-    : generatedItinerary;
-    
-  // Determine current error
-  const currentError = USE_MULTI_AGENT_WORKFLOW 
-    ? (workflow.error || generationError)
-    : generationError;
-
   return (
     <div className="min-h-screen bg-primary py-8 font-raleway">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-6">
-          {/* Trip Details Header */}
+          {/* Trip Details Header - Full Width No Rounded Corners */}
           <div className="bg-trip-details text-primary py-4 px-6 shadow-lg -mx-4 sm:-mx-6 lg:-mx-8 2xl:-mx-16">
             <div className="flex items-center justify-center space-x-3">
               <span className="text-3xl">🌏</span>
               <h1 className="text-2xl font-bold tracking-wide text-primary font-raleway">
                 TRIP DETAILS
               </h1>
-              {USE_MULTI_AGENT_WORKFLOW && (
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-semibold">
-                  AI-Powered
-                </span>
-              )}
             </div>
           </div>
 
-          {/* Trip Details Form */}
-          <TripDetails 
-            formData={formData} 
-            onFormChange={setFormData} 
-            showAdditionalForms={true} 
-          />
+          {/* Trip Details Form - Unified with all form components */}
+          <TripDetails formData={formData} onFormChange={setFormData} showAdditionalForms={true} />
 
-          {/* Travel Style Section */}
+          {/* ConditionalTravelStyle - Handles choice-based travel style display */}
           <ConditionalTravelStyle
             choice={travelStyleChoice}
             onChoiceChange={handleTravelStyleChoice}
@@ -324,49 +217,30 @@ ${JSON.stringify(organizedFormData, null, 2)}
             onTripNicknameChange={setTripNickname}
             contactInfo={contactInfo}
             onContactChange={setContactInfo}
-            disabled={isCurrentlyLoading}
+            disabled={isGenerating}
             onGenerateItinerary={handleGenerateItinerary}
-            isGenerating={isCurrentlyLoading}
+            isGenerating={isGenerating}
           />
 
-          {/* Itinerary Results Section */}
+          {/* Itinerary Results Section - Directly below the travel style */}
           <div ref={itineraryRef}>
-            {(isCurrentlyLoading || currentItinerary || currentError) && (
+            {(isGenerating || generatedItinerary || generationError) && (
               <AIErrorBoundary
                 enableRecovery={true}
                 maxRetries={2}
                 onError={(error, errorInfo) => {
                   console.error('AI Error Boundary caught error:', error, errorInfo);
-                  if (USE_MULTI_AGENT_WORKFLOW) {
-                    workflow.resetWorkflow();
-                  } else {
-                    setGenerationError(
-                      'Our AI service encountered an error. Please try again or refresh the page.'
-                    );
-                  }
+                  setGenerationError(
+                    'Our AI service encountered an error. Please try again or refresh the page.'
+                  );
                 }}
                 className="w-full"
               >
-                {USE_MULTI_AGENT_WORKFLOW ? (
-                  // Enhanced display with workflow features
-                  <EnhancedItineraryDisplay
-                    itinerary={currentItinerary}
-                    isLoading={false} // Legacy loading handled separately
-                    error={currentError}
-                    isWorkflowExecuting={workflow.isExecuting}
-                    workflowProgress={workflow.progress}
-                    workflowAgents={workflow.agents}
-                    onCancelWorkflow={workflow.cancelWorkflow}
-                    estimatedCompletion={null}
-                  />
-                ) : (
-                  // Legacy display
-                  <ItineraryDisplay
-                    itinerary={currentItinerary}
-                    isLoading={isCurrentlyLoading}
-                    error={currentError}
-                  />
-                )}
+                <ItineraryDisplay
+                  itinerary={generatedItinerary}
+                  isLoading={isGenerating}
+                  error={generationError}
+                />
               </AIErrorBoundary>
             )}
           </div>
@@ -376,28 +250,14 @@ ${JSON.stringify(organizedFormData, null, 2)}
       {/* Behind the Scenes Component */}
       <BehindTheScenes
         formData={completeFormData}
-        agentLogs={USE_MULTI_AGENT_WORKFLOW ? convertAgentStatusArrayToLogs(workflow.agents) : agentLogs}
-        isProcessing={isCurrentlyLoading}
+        agentLogs={agentLogs}
+        isProcessing={isGenerating}
       />
 
-      {/* System Health Monitor */}
-      {(process.env['NODE_ENV'] === 'development' || currentError) && (
+      {/* System Health Monitor - Only show during development or when there are issues */}
+      {(process.env['NODE_ENV'] === 'development' || generationError) && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-          <HealthMonitor 
-            showDetails={process.env['NODE_ENV'] === 'development'} 
-            className="mt-6" 
-          />
-          {process.env['NODE_ENV'] === 'development' && (
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm">
-              <h3 className="font-semibold mb-2">Development Info:</h3>
-              <ul className="space-y-1 text-xs">
-                <li>Multi-Agent Workflow: {USE_MULTI_AGENT_WORKFLOW ? '✅ Enabled' : '❌ Disabled'}</li>
-                <li>Workflow Status: {workflow.isExecuting ? 'Running' : workflow.isCompleted ? 'Completed' : 'Idle'}</li>
-                <li>Active Agents: {workflow.agents.filter(a => a.status === 'running').length}</li>
-                <li>Completed Agents: {workflow.agents.filter(a => a.status === 'completed').length}</li>
-              </ul>
-            </div>
-          )}
+          <HealthMonitor showDetails={process.env['NODE_ENV'] === 'development'} className="mt-6" />
         </div>
       )}
     </div>

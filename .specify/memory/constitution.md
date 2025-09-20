@@ -1,135 +1,80 @@
-# HYLO Travel AI Platform Constitution
+<!--
+Sync Impact Report:
+- Version change: none → 1.0.0 (Initial constitution creation)
+- Added principles: High-Quality Code, User-Centric Value, Seamless Integration, Context7 MCP Integration, Tech Stack Consistency, Platform Compatibility
+- Added sections: Development Workflow, Quality Gates
+- Templates requiring updates: ✅ all templates will be validated for alignment
+- Follow-up TODOs: none
+-->
+
+# Hylo Travel AI Platform Constitution
 
 ## Core Principles
 
-### I. Edge-First Architecture
+### I. High-Quality Code
+All code MUST meet rigorous quality standards through comprehensive testing, clear documentation, and adherence to established patterns. Every component must be self-contained, independently testable, and follow TypeScript best practices. Code reviews are mandatory for all changes, with emphasis on maintainability, performance, and security. Quality gates include type checking, linting, unit tests (>80% coverage), and integration tests for all user-facing features.
 
-All API endpoints run on Vercel Edge Runtime for global distribution; No client-side API keys - all secrets managed server-side; Edge functions handle LLM routing, health monitoring, and RAG operations; Progressive enhancement with graceful degradation
+**Rationale**: High-quality code reduces technical debt, improves maintainability, and ensures reliable user experiences in a complex multi-agent AI system.
 
-### II. Multi-Agent AI Orchestration
+### II. User-Centric Value
+Every feature MUST directly enhance user experience in travel planning. Development decisions prioritize user needs over technical convenience. All user interfaces must be responsive, accessible, and intuitive. Performance benchmarks require <3s initial load times and <1s interaction responses. User feedback loops are integrated into the development process through analytics and testing.
 
-Multi-agent pipeline for itinerary generation (Data Gatherer → Information Gatherer → Planning Strategist → Content Compiler); Intelligent LLM provider routing based on complexity analysis; Fallback chains ensure resilience (Cerebras → Gemini → Groq); Real-time web search integration for current information
+**Rationale**: User-centric development ensures the AI travel platform delivers tangible value and maintains competitive advantage through superior user experience.
 
-### III. Test-First Development (NON-NEGOTIABLE)
+### III. Seamless Integration
+All components MUST integrate seamlessly within the existing React + TypeScript + Vite architecture. APIs must follow established patterns using Vercel Edge Functions. State management must align with existing React Hook Form + Zod validation patterns. New features require integration tests demonstrating compatibility with the multi-agent AI workflow.
 
-TDD mandatory: Tests written → Review → Tests fail → Then implement; Minimum 80% code coverage requirement; Contract tests for all API endpoints; Integration tests for multi-agent workflows; Component tests with React Testing Library
+**Rationale**: Seamless integration prevents architecture drift, reduces debugging complexity, and maintains system reliability across the sophisticated AI orchestration.
 
-### IV. Observable AI Operations
+### IV. Context7 MCP Integration (NON-NEGOTIABLE)
+Context7 MCP Server MUST be the primary source for all code patterns, dependencies, and architectural decisions. Before implementing any new functionality, consult Context7 for pre-vetted, high-quality patterns. All AI model integrations (Cerebras, Google Gemini, Groq) must follow Context7 established practices. Custom implementations are only permitted when Context7 patterns are unavailable.
 
-Comprehensive tracing via LangSmith integration; Cost tracking per LLM operation with budget alerts; Performance metrics (latency, tokens, throughput); Structured logging at all service boundaries; Health monitoring dashboard for system visibility
+**Rationale**: Context7 provides battle-tested patterns that prevent reinventing solutions and ensures consistency across the AI-powered travel platform.
 
-### V. Type-Safe Development
+### V. Tech Stack Consistency
+All development MUST strictly adhere to dependencies and versions defined in `package.json`. No additional dependencies without explicit approval and version compatibility verification. The established stack (React 18.3.1, TypeScript 5.5.3, LangGraph StateGraph, Upstash Vector, etc.) is non-negotiable. Version updates require comprehensive regression testing across the multi-agent workflow.
 
-TypeScript strict mode throughout frontend and backend; Zod schemas for runtime validation matching compile-time types; Shared type definitions between client and server; API contracts validated at build time
+**Rationale**: Consistency prevents dependency conflicts, ensures CI/CD reliability, and maintains the complex AI orchestration system's stability.
 
-### VI. Component-Based Architecture
+### VI. Platform Compatibility
+Every output MUST be fully runnable and deployable on the lovable.dev platform following established conventions. All code must be compatible with Vercel Edge Runtime constraints. Environment variables must follow the established pattern in `vercel.json`. Deployment scripts must maintain compatibility with the platform's build and runtime requirements.
 
-React 18+ with functional components and hooks; Form optimization with React Hook Form + Zod validation; Tailwind CSS for utility-first styling; Reusable UI components with clear separation of concerns
+**Rationale**: Platform compatibility ensures reliable deployments and prevents environment-specific issues that could disrupt the travel planning service.
 
-### VII. Cost-Conscious Design
+## Development Workflow
 
-Daily budget limits enforced ($10/day default); Token usage optimization in LLM operations; Provider selection based on cost/performance trade-offs; Caching strategies to reduce redundant API calls
+All development MUST follow the established workflow patterns:
+- Feature development begins with Context7 MCP Server consultation for proven patterns
+- Component development follows React + TypeScript + Hook Form + Zod validation standards
+- AI agent integrations use LangGraph StateGraph with proper error handling and fallback mechanisms
+- Real-time data integration leverages Upstash Vector for caching and performance optimization
+- All APIs implement proper streaming progress tracking for multi-agent workflow transparency
 
-## Technical Standards
+## Quality Gates
 
-### Frontend Stack
-
-- **Framework**: React 18+ with TypeScript 5.x
-- **Build Tool**: Vite for fast HMR and optimized builds
-- **Styling**: Tailwind CSS with custom design tokens
-- **Forms**: React Hook Form with Zod validation
-- **State**: Local state with useState/useReducer
-- **Icons**: Lucide React for consistent iconography
-- **Testing**: Vitest + React Testing Library
-
-### Backend Stack
-
-- **Runtime**: Vercel Edge Functions (Edge Runtime)
-- **LLM Providers**: Cerebras, Google Gemini, Groq
-- **Observability**: LangSmith for tracing
-- **Validation**: Zod schemas for all endpoints
-- **Search**: Web search service integration
-- **RAG**: Vector storage with Qdrant (future)
-
-### API Design
-
-- RESTful endpoints under `/api` namespace
-- Streaming responses for real-time generation
-- Health endpoints for monitoring
-- Rate limiting and quota management
-- CORS configuration for edge functions
-
-### Development Workflow
-
-#### Code Quality Gates
-
-1. TypeScript compilation must succeed
-2. ESLint passes with no errors
-3. All tests pass (unit, integration, E2E)
-4. Zod schema validation coverage
-5. Bundle size within limits (<200KB warning)
-
-## Infrastructure Requirements
-
-### Deployment Platform
-
-- **Hosting**: Vercel with automatic deployments
-- **Edge Functions**: Global distribution
-- **Environment**: Development, Preview, Production
-- **DNS**: Verification and readiness checks
-- **Monitoring**: Real-time health dashboards
-
-### Performance Standards
-
-- API response time: <2s p95 for simple queries
-- Streaming latency: <500ms to first token
-- Frontend FCP: <1.5s on 3G networks
-- Bundle size: <200KB for initial load
-- Error rate: <1% for production
-
-### Security & Compliance
-
-- Environment variables for all secrets
-- Input sanitization on all endpoints
-- Rate limiting per IP/session
-- CORS properly configured
-- No PII in logs or traces
-
-## Project-Specific Conventions
-
-### File Organization
-
-```
-api/              # Edge functions
-src/
-  ├── components/ # React components
-  ├── services/   # Business logic
-  ├── api/        # API client code
-  ├── types/      # TypeScript types
-  ├── hooks/      # Custom React hooks
-  └── utils/      # Utilities
-tests/            # Test files
-.specify/         # Project management
-```
-
-### Naming Conventions
-
-- Components: PascalCase (e.g., TripDetailsForm)
-- Services: camelCase with 'Service' suffix
-- Types: PascalCase with descriptive names
-- API routes: kebab-case endpoints
-- Test files: _.test.ts or _.spec.ts
-
-### AI Agent Conventions
-
-- Each agent has single responsibility
-- Agents communicate via structured data
-- Token limits enforced per agent
-- Costs tracked per agent operation
-- Fallback strategies documented
+Before any code deployment, the following gates MUST pass:
+- TypeScript compilation with zero errors (`npm run type-check`)
+- ESLint validation with zero violations (`npm run lint`) 
+- Unit test coverage >80% (`npm run test:coverage`)
+- Integration tests for multi-agent workflows (`npm run test:integration`)
+- Performance benchmarks within established budgets (`npm run test:performance`)
+- Vercel deployment validation (`npm run validate:deployment`)
+- Context7 MCP Server pattern compliance verification
 
 ## Governance
 
-Constitution supersedes all development practices; Amendments require team consensus and testing; All PRs must verify constitutional compliance via checks; Complexity violations must be justified in PR description; Use CLAUDE.md for AI-assisted development guidance
+This Constitution supersedes all other development practices and guidelines. All pull requests and code reviews MUST verify compliance with these principles before approval. Any deviation requires explicit justification and architectural review.
 
-**Version**: 2.0.0 | **Ratified**: 2025-01-20 | **Last Amended**: 2025-01-20
+Amendment procedure:
+- Proposed changes require documentation of impact assessment
+- Major principle changes require stakeholder approval
+- All amendments must include migration plan for existing code
+- Version increments follow semantic versioning: MAJOR for principle removals/redefinitions, MINOR for additions/expansions, PATCH for clarifications
+
+Compliance review expectations:
+- Weekly architecture reviews ensure adherence to Context7 MCP patterns
+- Monthly tech stack audits verify dependency consistency
+- Quarterly platform compatibility assessments validate lovable.dev deployment requirements
+- All team members must reference this Constitution for runtime development guidance
+
+**Version**: 1.0.0 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-09-20

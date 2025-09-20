@@ -14,17 +14,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "declaration": false,
-    "types": ["@vercel/edge"],
-    
-    /* Path mapping for cleaner imports */
-    "baseUrl": ".",
-    "paths": {
-      "@/agents/*": ["agents/*"],
-      "@/workflow/*": ["workflow/*"],
-      "@/rag/*": ["rag/*"],
-      "@/types/*": ["../src/types/*"],
-      "@/utils/*": ["../src/utils/*"]
-    }
+    "types": ["@vercel/edge"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", ".vercel"]
