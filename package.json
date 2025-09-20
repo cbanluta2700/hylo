@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "npm@10.8.1",
   "scripts": {
     "dev": "vite",
     "dev:api": "node dev-server.mjs",
@@ -50,7 +51,7 @@
     "@upstash/qstash": "^2.8.3",
     "@upstash/redis": "^1.35.4",
     "@upstash/vector": "^1.2.2",
-    "dotenv": "^17.2.2",
+    "dotenv": "^16.4.5",
     "groq-sdk": "^0.30.0",
     "langsmith": "^0.3.69",
     "lucide-react": "^0.344.0",
@@ -59,6 +60,9 @@
     "react-hook-form": "^7.62.0",
     "uuid": "^13.0.0",
     "zod": "^3.25.76"
+  },
+  "overrides": {
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
