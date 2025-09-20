@@ -1,0 +1,330 @@
+name: Integration Tests
+
+# Trigger the workflow on push to main branch and pull requests
+on:
+  push:
+    branches: [ main, develop, 007-ai-workflow-integration ]
+  pull_request:
+    branches: [ main, develop ]
+    types: [ opened, synchronize, reopened ]
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+# Concurrency group to cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  # Job to run unit tests (quick validation)
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run type checking
+        run: npm run type-check
+        
+      - name: Run unit tests
+        run: npm run test:unit
+        env:
+          NODE_ENV: test
+
+  # Job to run integration tests (more comprehensive)
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: unit-tests
+    
+    strategy:
+      matrix:
+        test-suite: [e2e, api, performance]
+      fail-fast: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Setup test environment
+        run: |
+          cp .env.test .env.local
+          mkdir -p test-results coverage
+          
+      - name: Run integration tests - ${{ matrix.test-suite }}
+        run: npm run test:integration:${{ matrix.test-suite }}
+        timeout-minutes: 25
+        env:
+          NODE_ENV: test
+          CI: true
+          GITHUB_ACTIONS: true
+          # Mock API keys for testing (replace with real ones in production)
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY_TEST || 'mock_groq_key' }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY_TEST || 'mock_cerebras_key' }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY_TEST || 'mock_google_key' }}
+          UPSTASH_VECTOR_REST_TOKEN: ${{ secrets.UPSTASH_VECTOR_TEST_TOKEN || 'mock_upstash_vector' }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_TEST_TOKEN || 'mock_upstash_redis' }}
+          QSTASH_TOKEN: ${{ secrets.QSTASH_TEST_TOKEN || 'mock_qstash_token' }}
+          LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY_TEST || 'mock_langsmith_key' }}
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY_TEST || 'mock_jina_key' }}
+          
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.test-suite }}
+          path: |
+            test-results/
+            coverage/
+          retention-days: 7
+          
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v4
+        if: always() && matrix.test-suite == 'performance'
+        with:
+          name: performance-reports
+          path: test-results/performance.json
+          retention-days: 14
+
+  # Job to run load/stress tests (only on specific conditions)
+  load-tests:
+    name: Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: integration-tests
+    # Only run load tests on main branch or when specifically requested
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'load-test')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Setup test environment
+        run: |
+          cp .env.test .env.local
+          mkdir -p test-results
+          
+      - name: Run load tests
+        run: npm run test:load
+        timeout-minutes: 40
+        env:
+          NODE_ENV: test
+          CI: true
+          LOAD_TEST_CONCURRENCY: 20
+          LOAD_TEST_DURATION: 300000  # 5 minutes
+          
+      - name: Upload load test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-test-results
+          path: test-results/load-test-*.json
+          retention-days: 30
+
+  # Job to generate test coverage report
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: integration-tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          path: ./test-results
+          merge-multiple: true
+          
+      - name: Generate coverage report
+        run: npm run test:coverage
+        
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          flags: integration
+          name: integration-tests
+          fail_ci_if_error: false
+          
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: ./coverage/lcov.info
+
+  # Job to validate deployment readiness
+  deployment-validation:
+    name: Deployment Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [integration-tests, coverage]
+    # Only run on main branch or release branches
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build application
+        run: npm run build
+        
+      - name: Validate build artifacts
+        run: |
+          echo "Validating build artifacts..."
+          test -d dist || (echo "Build directory not found" && exit 1)
+          test -f dist/index.html || (echo "Main HTML file not found" && exit 1)
+          
+      - name: Run deployment readiness checks
+        run: npm run validate:deployment
+        env:
+          NODE_ENV: production
+          
+      - name: Security audit
+        run: npm audit --audit-level moderate
+        
+      - name: Performance budget check
+        run: npm run test:performance:budget
+        
+  # Job to publish test reports
+  publish-results:
+    name: Publish Test Results
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [integration-tests, coverage, deployment-validation]
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          
+      - name: Generate summary report
+        run: |
+          echo "# Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Integration Tests" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "./artifacts/test-results-e2e/integration-junit.xml" ]; then
+            echo "✅ E2E tests completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ E2E tests failed or did not run" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -f "./artifacts/test-results-api/integration-junit.xml" ]; then
+            echo "✅ API tests completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ API tests failed or did not run" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -f "./artifacts/test-results-performance/integration-junit.xml" ]; then
+            echo "✅ Performance tests completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Performance tests failed or did not run" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Coverage" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "./artifacts/test-results-*/coverage/coverage-summary.json" ]; then
+            echo "📊 Coverage report available" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No coverage data available" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Test Results
+          path: './artifacts/*/integration-junit.xml'
+          reporter: java-junit
+          fail-on-error: false
+          
+      - name: Create deployment gate
+        if: github.ref == 'refs/heads/main' && needs.deployment-validation.result == 'success'
+        run: |
+          echo "::notice::All integration tests passed. Deployment gate: ✅ PASSED"
+          echo "DEPLOYMENT_READY=true" >> $GITHUB_ENV
+          
+      - name: Notify on failure
+        if: failure() && github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Integration Test Failure on Main Branch',
+              body: `
+                Integration tests failed on main branch.
+                
+                **Workflow:** ${context.workflow}
+                **Run:** ${context.runNumber}
+                **Commit:** ${context.sha}
+                
+                Please investigate and fix the failing tests.
+                
+                [View failed workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId})
+              `,
+              labels: ['bug', 'ci/cd', 'high-priority']
+            });

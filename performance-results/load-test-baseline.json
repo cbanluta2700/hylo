@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-09-20T04:04:32.006Z",
+  "git_sha": "unknown",
+  "git_ref": "unknown",
+  "test_type": "load_test",
+  "configuration": {
+    "duration": "60-180 seconds per test",
+    "max_concurrency": 20,
+    "total_requests": 898
+  },
+  "metrics": {
+    "latency": {
+      "min": 2.124499999999898,
+      "max": 214.596000000005,
+      "mean": 58.39329966592406,
+      "median": 15.926700000010896,
+      "p90": 200.42099999998754,
+      "p95": 203.62889999999607,
+      "p99": 211.824099999998
+    },
+    "throughput": {
+      "total_requests": 898,
+      "success_count": 0,
+      "error_count": 898
+    },
+    "reliability": {
+      "success_rate": 0,
+      "error_rate": 100
+    }
+  },
+  "thresholds": {
+    "success_rate_min": 80,
+    "p95_max_ms": 30000,
+    "p99_max_ms": 60000
+  }
+}

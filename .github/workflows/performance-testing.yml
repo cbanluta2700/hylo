@@ -1,0 +1,514 @@
+name: 🚀 Performance Testing & Monitoring
+
+on:
+  workflow_call:
+    inputs:
+      baseline_branch:
+        description: 'Branch to compare performance against'
+        required: false
+        default: 'main'
+        type: string
+      duration:
+        description: 'Test duration in seconds'
+        required: false
+        default: 300
+        type: number
+      concurrent_users:
+        description: 'Number of concurrent users'
+        required: false
+        default: 50
+        type: number
+    outputs:
+      performance_status:
+        description: 'Performance test result status'
+        value: ${{ jobs.performance-test.outputs.status }}
+      regression_detected:
+        description: 'Whether performance regression was detected'
+        value: ${{ jobs.performance-test.outputs.regression_detected }}
+
+  workflow_dispatch:
+    inputs:
+      baseline_branch:
+        description: 'Branch to compare performance against'
+        required: false
+        default: 'main'
+        type: choice
+        options:
+          - main
+          - develop
+      duration:
+        description: 'Test duration in seconds'
+        required: false
+        default: 300
+        type: number
+      concurrent_users:
+        description: 'Number of concurrent users'
+        required: false
+        default: 50
+        type: number
+      skip_regression_check:
+        description: 'Skip performance regression analysis'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PERFORMANCE_CONFIG_PATH: '.github/performance-config.yml'
+  RESULTS_DIR: 'performance-results'
+  BASELINE_DIR: 'performance-baseline'
+
+jobs:
+  performance-test:
+    name: 🎯 Performance Test Execution
+    runs-on: ubuntu-latest
+    
+    outputs:
+      status: ${{ steps.test-status.outputs.status }}
+      regression_detected: ${{ steps.regression.outputs.detected }}
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for baseline comparison
+      
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          # Install additional performance testing tools
+          npm install --save-dev artillery clinic autocannon
+      
+      - name: 🏗️ Build application
+        run: |
+          echo "::group::Building for performance testing"
+          npm run build
+          echo "::endgroup::"
+      
+      - name: 🚀 Start application
+        run: |
+          echo "::group::Starting application for performance testing"
+          npm run preview &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+          
+          # Wait for application readiness with health check
+          timeout 60 bash -c '
+            while ! curl -f http://localhost:4173/health 2>/dev/null; do
+              echo "Waiting for application to be ready..."
+              sleep 2
+            done
+          '
+          
+          echo "::notice::Application is ready at http://localhost:4173"
+          echo "::endgroup::"
+      
+      - name: 🔥 Warm-up phase
+        run: |
+          echo "::group::Application warm-up"
+          # Warm-up with light traffic to stabilize performance
+          for i in {1..10}; do
+            curl -s http://localhost:4173/api/health/system > /dev/null &
+          done
+          wait
+          sleep 5
+          echo "::endgroup::"
+      
+      - name: 📈 Load testing with Artillery
+        run: |
+          echo "::group::Artillery load testing"
+          
+          # Create Artillery configuration
+          cat > artillery-config.yml << EOF
+          config:
+            target: 'http://localhost:4173'
+            phases:
+              - duration: 30
+                arrivalRate: 5
+                name: "Warm up phase"
+              - duration: ${{ inputs.duration || 300 }}
+                arrivalRate: ${{ inputs.concurrent_users || 50 }}
+                name: "Load testing phase"
+              - duration: 30
+                arrivalRate: 2
+                name: "Cool down phase"
+            processor: "./performance-processor.js"
+          
+          scenarios:
+            - name: "API Health Check"
+              weight: 10
+              flow:
+                - get:
+                    url: "/api/health/system"
+                    expect:
+                      - statusCode: 200
+                      - hasProperty: "status"
+            
+            - name: "Form Submission Flow"
+              weight: 40
+              flow:
+                - post:
+                    url: "/api/rag/submit-form"
+                    headers:
+                      Content-Type: "application/json"
+                    json:
+                      destination: "Paris, France"
+                      startDate: "2024-06-01"
+                      endDate: "2024-06-07"
+                      adults: 2
+                      children: 1
+                      budget: "moderate"
+                    expect:
+                      - statusCode: [200, 201]
+            
+            - name: "Provider Status Check"
+              weight: 20
+              flow:
+                - get:
+                    url: "/api/providers/status"
+                    expect:
+                      - statusCode: 200
+            
+            - name: "LLM Provider Health"
+              weight: 15
+              flow:
+                - get:
+                    url: "/api/llm/providers"
+                    expect:
+                      - statusCode: 200
+            
+            - name: "Itinerary Generation"
+              weight: 15
+              flow:
+                - post:
+                    url: "/api/rag/generate-itinerary"
+                    headers:
+                      Content-Type: "application/json"
+                    json:
+                      sessionId: "perf-test-{{ \$randomString() }}"
+                      formData:
+                        destination: "London, UK"
+                        startDate: "2024-07-15"
+                        endDate: "2024-07-20"
+                        adults: 2
+                    expect:
+                      - statusCode: [200, 201, 202]
+          EOF
+          
+          # Create performance processor
+          cat > performance-processor.js << 'EOF'
+          module.exports = {
+            setRandomString: function(context, events, done) {
+              context.vars.randomString = () => Math.random().toString(36).substring(7);
+              return done();
+            }
+          };
+          EOF
+          
+          # Run Artillery test
+          npx artillery run artillery-config.yml --output artillery-results.json
+          
+          echo "::endgroup::"
+      
+      - name: 🎯 Autocannon stress testing
+        run: |
+          echo "::group::Autocannon stress testing"
+          
+          # Quick stress test for specific endpoints
+          npx autocannon -c ${{ inputs.concurrent_users || 50 }} -d ${{ inputs.duration || 300 }} \
+            --json -o autocannon-results.json \
+            http://localhost:4173/api/health/system
+          
+          echo "::endgroup::"
+      
+      - name: 💾 Create results directory
+        run: |
+          mkdir -p ${{ env.RESULTS_DIR }}
+          mkdir -p ${{ env.BASELINE_DIR }}
+      
+      - name: 📊 Process Artillery results
+        run: |
+          echo "::group::Processing Artillery results"
+          
+          # Generate HTML report
+          npx artillery report artillery-results.json --output ${{ env.RESULTS_DIR }}/artillery-report.html
+          
+          # Extract key metrics to JSON for comparison
+          node -e "
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('artillery-results.json', 'utf8'));
+            
+            const summary = results.aggregate;
+            const metrics = {
+              timestamp: new Date().toISOString(),
+              git_sha: process.env.GITHUB_SHA,
+              git_ref: process.env.GITHUB_REF,
+              duration: ${{ inputs.duration || 300 }},
+              concurrent_users: ${{ inputs.concurrent_users || 50 }},
+              counters: summary.counters,
+              rates: summary.rates,
+              latency: {
+                min: summary.latency.min,
+                max: summary.latency.max,
+                median: summary.latency.median,
+                p95: summary.latency.p95,
+                p99: summary.latency.p99
+              },
+              errors: summary.errors || {}
+            };
+            
+            fs.writeFileSync('${{ env.RESULTS_DIR }}/performance-metrics.json', JSON.stringify(metrics, null, 2));
+            
+            // Performance summary for GitHub output
+            console.log('Performance Test Results:');
+            console.log('- Requests/sec:', summary.rates['http.request_rate']);
+            console.log('- P95 latency:', summary.latency.p95 + 'ms');
+            console.log('- P99 latency:', summary.latency.p99 + 'ms');
+            console.log('- Error rate:', ((summary.errors?.ECONNREFUSED || 0) / summary.counters['http.requests'] * 100).toFixed(2) + '%');
+          "
+          
+          echo "::endgroup::"
+      
+      - name: 📊 Process Autocannon results
+        run: |
+          echo "::group::Processing Autocannon results"
+          
+          # Extract Autocannon metrics
+          node -e "
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('autocannon-results.json', 'utf8'));
+            
+            const metrics = {
+              timestamp: new Date().toISOString(),
+              tool: 'autocannon',
+              duration: results.duration,
+              connections: results.connections,
+              throughput: {
+                average: results.throughput.average,
+                stddev: results.throughput.stddev,
+                min: results.throughput.min,
+                max: results.throughput.max
+              },
+              requests: {
+                average: results.requests.average,
+                stddev: results.requests.stddev,
+                min: results.requests.min,
+                max: results.requests.max,
+                total: results.requests.total
+              },
+              latency: {
+                average: results.latency.average,
+                stddev: results.latency.stddev,
+                min: results.latency.min,
+                max: results.latency.max
+              },
+              errors: results.errors,
+              timeouts: results.timeouts
+            };
+            
+            fs.writeFileSync('${{ env.RESULTS_DIR }}/autocannon-metrics.json', JSON.stringify(metrics, null, 2));
+          "
+          
+          echo "::endgroup::"
+      
+      - name: 🔍 Download baseline performance data
+        if: inputs.skip_regression_check != true
+        continue-on-error: true
+        run: |
+          echo "::group::Downloading baseline performance data"
+          
+          # Try to get baseline from artifacts of the target branch
+          # This is a simplified version - in practice, you'd integrate with your artifact storage
+          
+          if [ -f "${{ env.BASELINE_DIR }}/baseline-metrics.json" ]; then
+            echo "::notice::Found existing baseline data"
+          else
+            echo "::warning::No baseline data found, creating new baseline"
+            cp ${{ env.RESULTS_DIR }}/performance-metrics.json ${{ env.BASELINE_DIR }}/baseline-metrics.json
+          fi
+          
+          echo "::endgroup::"
+      
+      - name: 🔬 Performance regression analysis
+        id: regression
+        if: inputs.skip_regression_check != true
+        run: |
+          echo "::group::Performance regression analysis"
+          
+          # Performance regression detection script
+          node -e "
+            const fs = require('fs');
+            
+            if (!fs.existsSync('${{ env.BASELINE_DIR }}/baseline-metrics.json')) {
+              console.log('::notice::No baseline found for comparison');
+              process.exit(0);
+            }
+            
+            const current = JSON.parse(fs.readFileSync('${{ env.RESULTS_DIR }}/performance-metrics.json'));
+            const baseline = JSON.parse(fs.readFileSync('${{ env.BASELINE_DIR }}/baseline-metrics.json'));
+            
+            const comparison = {
+              timestamp: new Date().toISOString(),
+              baseline_sha: baseline.git_sha,
+              current_sha: current.git_sha,
+              metrics: {}
+            };
+            
+            // Compare key metrics
+            const metrics = [
+              { key: 'latency.p95', threshold: 20 }, // 20% increase threshold
+              { key: 'latency.p99', threshold: 15 }, // 15% increase threshold
+              { key: 'rates.http.request_rate', threshold: -10, invert: true } // 10% decrease threshold (inverted)
+            ];
+            
+            let regressionDetected = false;
+            
+            metrics.forEach(metric => {
+              const currentVal = getNestedValue(current, metric.key);
+              const baselineVal = getNestedValue(baseline, metric.key);
+              
+              if (currentVal && baselineVal) {
+                const change = ((currentVal - baselineVal) / baselineVal) * 100;
+                const actualChange = metric.invert ? -change : change;
+                
+                comparison.metrics[metric.key] = {
+                  current: currentVal,
+                  baseline: baselineVal,
+                  change_percent: actualChange.toFixed(2),
+                  threshold: metric.threshold,
+                  regression: actualChange > metric.threshold
+                };
+                
+                if (actualChange > metric.threshold) {
+                  regressionDetected = true;
+                  console.log('::error::Performance regression detected in', metric.key);
+                  console.log('::error::Current:', currentVal, 'Baseline:', baselineVal, 'Change:', actualChange.toFixed(2) + '%');
+                }
+              }
+            });
+            
+            fs.writeFileSync('${{ env.RESULTS_DIR }}/regression-analysis.json', JSON.stringify(comparison, null, 2));
+            
+            if (regressionDetected) {
+              console.log('::error::❌ Performance regression detected');
+              console.log('detected=true' >> process.env.GITHUB_OUTPUT);
+            } else {
+              console.log('::notice::✅ No significant performance regression detected');
+              console.log('detected=false' >> process.env.GITHUB_OUTPUT);
+            }
+            
+            function getNestedValue(obj, path) {
+              return path.split('.').reduce((o, p) => o?.[p], obj);
+            }
+          "
+          
+          echo "::endgroup::"
+      
+      - name: 📊 Test status determination
+        id: test-status
+        run: |
+          echo "::group::Determining test status"
+          
+          # Analyze test results and set status
+          node -e "
+            const fs = require('fs');
+            const metrics = JSON.parse(fs.readFileSync('${{ env.RESULTS_DIR }}/performance-metrics.json'));
+            
+            let status = 'success';
+            let issues = [];
+            
+            // Check thresholds from config
+            const thresholds = {
+              p95_max: 2000,    // 2 seconds
+              p99_max: 5000,    // 5 seconds
+              error_rate_max: 1 // 1%
+            };
+            
+            if (metrics.latency.p95 > thresholds.p95_max) {
+              status = 'failure';
+              issues.push('P95 latency exceeded threshold');
+            }
+            
+            if (metrics.latency.p99 > thresholds.p99_max) {
+              status = 'failure';
+              issues.push('P99 latency exceeded threshold');
+            }
+            
+            const errorRate = ((metrics.errors?.ECONNREFUSED || 0) / metrics.counters['http.requests']) * 100;
+            if (errorRate > thresholds.error_rate_max) {
+              status = 'failure';
+              issues.push('Error rate exceeded threshold');
+            }
+            
+            console.log('status=' + status + ' >> $GITHUB_OUTPUT');
+            
+            if (issues.length > 0) {
+              console.log('::error::Performance test failed:', issues.join(', '));
+            } else {
+              console.log('::notice::Performance test passed all thresholds');
+            }
+          "
+          
+          echo "::endgroup::"
+      
+      - name: 🛑 Stop application
+        if: always()
+        run: |
+          if [ -n "$APP_PID" ]; then
+            echo "::group::Stopping application"
+            kill $APP_PID || true
+            wait $APP_PID 2>/dev/null || true
+            echo "::endgroup::"
+          fi
+      
+      - name: 📊 Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.RESULTS_DIR }}/
+            artillery-results.json
+            autocannon-results.json
+          retention-days: 90
+      
+      - name: 📊 Upload performance baseline
+        if: inputs.skip_regression_check != true
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-baseline-${{ github.run_id }}
+          path: ${{ env.BASELINE_DIR }}/
+          retention-days: 365
+      
+      - name: 📈 Performance summary
+        if: always()
+        run: |
+          echo "::group::Performance Test Summary"
+          echo "**Performance Test Results** 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "${{ env.RESULTS_DIR }}/performance-metrics.json" ]; then
+            node -e "
+              const fs = require('fs');
+              const metrics = JSON.parse(fs.readFileSync('${{ env.RESULTS_DIR }}/performance-metrics.json'));
+              
+              console.log('| Metric | Value |');
+              console.log('|--------|-------|');
+              console.log('| Duration | ${{ inputs.duration || 300 }}s |');
+              console.log('| Concurrent Users | ${{ inputs.concurrent_users || 50 }} |');
+              console.log('| Requests/sec | ' + (metrics.rates?.['http.request_rate'] || 'N/A') + ' |');
+              console.log('| P95 Latency | ' + (metrics.latency?.p95 || 'N/A') + 'ms |');
+              console.log('| P99 Latency | ' + (metrics.latency?.p99 || 'N/A') + 'ms |');
+              console.log('| Total Requests | ' + (metrics.counters?.['http.requests'] || 'N/A') + ' |');
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Status**: ${{ steps.test-status.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Regression Detected**: ${{ steps.regression.outputs.detected || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "::endgroup::"

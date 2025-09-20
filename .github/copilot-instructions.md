@@ -5,7 +5,22 @@ src/
 ├── co## Key File Locations
 ```
 src/
+├── compone## Key File Locations
+```
+src/
 ├── components/TripDetails/
+│   ├── TravelersForm.tsx              # Main target for centering
+│   └── PreferenceModals/              # Modal styling targets
+│       ├── AccommodationPreferences.tsx
+│       └── RentalCarPreferences.tsx
+├── types/                             # TypeScript interfaces
+├── hooks/                             # Custom React hooks  
+└── utils/validation/                  # Zod schemas
+
+api/                                   # Edge functions
+tests/                                 # Test files
+specs/007-ai-workflow-integration/     # Current feature docs
+```
 │   ├── TravelersForm.tsx              # Main target for centering
 │   └── PreferenceModals/              # Modal styling targets
 │       ├── AccommodationPreferences.tsx
@@ -52,31 +67,61 @@ Hylo is a travel planning platform using React + TypeScript frontend with Vercel
 - **Forms**: React Hook Form patterns with Zod schemas
 - **Tests**: .test.tsx files, React Testing Library patterns
 
-## Current Feature: Trip Details Enhancements (Branch: 005-update-trip-details)
-**Context**: Enhancing trip details forms with budget mode switching, complete option selections, and comprehensive data gathering.
+## Current Feature: AI Multi-Agent Workflow Integration (Branch: 007-ai-workflow-integration)
+**Context**: Implementing a sophisticated multi-agent AI workflow system for enhanced travel itinerary generation using four specialized agents.
 
-**Key Components**:
-- `BudgetForm.tsx`: Add total vs per-person budget toggle with dynamic calculations
-- `TravelGroupSelector.tsx`: Include all group names and Other option with custom text
-- `TravelInterests.tsx`: Capture specific choice names including Other option
-- `ItineraryInclusions.tsx`: Complete options with preferences and Other capability
-- Travel style forms: Ensure all option selections are captured including Other text
-- `TripNickname.tsx`: Simplify to only trip nickname, name, and email fields
+**Agent Workflow Architecture**:
+- `Content Planner`: Analyzes form data and identifies required real-time web information
+- `Website Info Gatherer`: Uses Groq compound models for real-time data collection via LangChain + Vector DB + Jina embeddings
+- `Planning Strategist`: Processes gathered information for strategic recommendations
+- `Content Compiler`: Assembles final structured itinerary output
 
-**Requirements**:
-- Budget form MUST include total/per-person toggle with accurate calculations
-- All selection components MUST include Other option with custom text input
-- Travel style forms MUST capture all user selections comprehensively
-- Form data MUST be completely visible and accessible for future AI integration
-- Maintain existing design patterns and TypeScript safety
-- No AI/LLM integration yet (frontend data gathering focus)
+**Technical Stack Integration**:
+- **Orchestration**: LangGraph StateGraph for agent coordination
+- **Vector Pipeline**: LangChain → Text Splitter → Jina Embeddings → Upstash Vector/Qdrant
+- **LLM Providers**: Groq (info gathering), Cerebras, Google Gemini with fallback chains
+- **Workflow Management**: Upstash QStash for long-running processes
+- **Observability**: LangSmith tracing for agent workflows
+- **Parallel Processing**: LangChain RunnableParallel for concurrent operations
 
-**Implementation Approach**:
-- Extend existing FormData interface with new optional fields
-- Follow established Other option pattern from TripVibe component
-- Use existing switch pattern from budget flexibility toggle
-- Maintain backward compatibility with existing form handling
-- Preserve all Tailwind styling and accessibility features
+**Required Output Format**:
+- **TRIP SUMMARY**: Trip nickname, dates, travelers, budget (with mode: per-person/total/flexible)
+- **Prepared for**: Contact name section
+- **DAILY ITINERARY**: Day-by-day activities with duration based on trip dates
+- **TIPS FOR YOUR TRIP**: Travel recommendations section
+
+**Implementation Requirements**:
+- All agents run on Vercel Edge Functions with 30s timeout handling
+- Contract tests for agent communication protocols
+- Streaming responses for real-time workflow progress
+- Graceful degradation with multi-level fallback strategies
+- Cost tracking and budget enforcement per agent operation
+- Vector embeddings for travel content semantic search
+
+**Key File Structure**:
+```
+api/agents/                           # Individual agent implementations
+├── content-planner/route.ts         # Content planning agent endpoint
+├── info-gatherer/route.ts           # Web information gathering
+├── strategist/route.ts              # Strategic planning agent  
+└── compiler/route.ts                # Content compilation agent
+
+api/workflow/                         # Workflow orchestration
+├── orchestration/langgraph.ts       # LangGraph StateGraph setup
+├── start/route.ts                   # Main workflow endpoint
+└── state/                           # Session state management
+
+src/components/AgentWorkflow/         # Frontend workflow components
+src/services/agents/                  # Agent service clients
+src/types/agents.ts                  # Agent and workflow TypeScript types
+tests/agents/                        # Agent contract and integration tests
+```
+
+**Constitutional Compliance**:
+- TDD approach with contract tests for all agent interactions
+- Multi-agent orchestration aligns with constitutional AI principles
+- Edge-first architecture with streaming and timeout handling
+- Cost-conscious design with provider optimization and budget limits
 
 ## Constitutional Requirements
 - **TDD Mandatory**: Write failing tests first
@@ -86,9 +131,10 @@ Hylo is a travel planning platform using React + TypeScript frontend with Vercel
 - **Cost Conscious**: No impact on LLM costs for UI changes
 
 ## Recent Changes (Keep Updated)
-1. **2025-09-19**: Trip details enhancements specification and planning completed
-2. **2025-09-19**: Budget toggle, Other options, and comprehensive data gathering designed
-3. **Feature Focus**: Form enhancements for complete user selection capture + simplified contact form
+1. **2025-09-19**: AI Multi-Agent Workflow integration specification and planning completed
+2. **2025-09-19**: LangGraph StateGraph architecture designed with 4-agent coordination
+3. **2025-09-19**: Vector pipeline with Jina embeddings and Upstash Vector integration planned
+4. **Feature Focus**: Multi-agent AI orchestration for enhanced itinerary generation with real-time web data
 
 ## Key File Locations
 ```
