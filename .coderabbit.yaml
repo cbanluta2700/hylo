@@ -1,0 +1,40 @@
+# CodeRabbit configuration for AI Multi-Agent Workflow Project
+language: "en-US"
+
+reviews:
+  profile: "assertive"
+  high_level_summary: true
+  review_status: true
+  poem: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!**/*.md"
+    - "!docs/**"
+    - "!*.json"
+  request_changes_workflow: false
+  
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    enabled: true
+    scope: "repository"
+  
+tools:
+  github:
+    enabled: true
+  ast:
+    enabled: true
+  
+early_access: true
+
+# Focus areas for AI workflow development
+focus_areas:
+  - performance
+  - security  
+  - maintainability
+  - type_safety
+  - error_handling
