@@ -8,6 +8,7 @@
     "dev": "vite",
     "dev:api": "node dev-server.mjs",
     "dev:full": "concurrently \"npm run dev:api\" \"npm run dev\"",
+    "prebuild": "npm install --include=optional",
     "build": "vite build",
     "type-check": "tsc --noEmit",
     "test": "vitest",
@@ -62,7 +63,14 @@
     "zod": "^3.25.76"
   },
   "overrides": {
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "rollup": "^4.21.2"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.21.2",
+    "@rollup/rollup-win32-x64-msvc": "^4.21.2",
+    "@rollup/rollup-darwin-x64": "^4.21.2",
+    "@rollup/rollup-darwin-arm64": "^4.21.2"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
@@ -96,6 +104,7 @@
     "msw": "^2.11.2",
     "playwright": "^1.55.0",
     "postcss": "^8.4.35",
+    "rollup": "^4.21.2",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",

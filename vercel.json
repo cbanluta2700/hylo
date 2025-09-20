@@ -19,9 +19,13 @@
   },
   "build": {
     "env": {
-      "ENABLE_EXPERIMENTAL_COREPACK": "1"
+      "ENABLE_EXPERIMENTAL_COREPACK": "1",
+      "NPM_CONFIG_OPTIONAL": "true",
+      "NPM_CONFIG_INCLUDE": "optional"
     }
   },
+  "installCommand": "npm ci --include=optional",
+  "buildCommand": "npm run build",
   "headers": [
     {
       "source": "/api/(.*)",
