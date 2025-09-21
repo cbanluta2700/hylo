@@ -11,45 +11,13 @@ import type { InngestEvent } from './events';
  * - Error recovery and resilience
  * - Performance optimization for travel AI workloads
  */
-export const inngest = new Inngest<{
-  [K in InngestEvent['name']]: Extract<InngestEvent, { name: K }>['data'];
-}>({
+export const inngest = new Inngest({
   id: 'hylo-itinerary-generator',
   eventKey: config.inngest.eventKey,
   signingKey: config.inngest.signingKey,
 
   // Production configuration
   isDev: process.env.NODE_ENV === 'development',
-
-  // Retry configuration for AI workloads
-  retries: {
-    default: 3,
-    // Custom retry config for different operation types
-    'agent.*': 2, // Agents can be expensive, limit retries
-    'vector.*': 5, // Vector operations can be flaky, retry more
-    'search.*': 4, // Search operations moderate retry
-  },
-
-  // Rate limiting for external API compliance
-  rateLimiting: {
-    // Respect API rate limits for external services
-    'search.orchestration': {
-      limit: 30,
-      period: '60s', // Match Tavily's 60/min limit
-    },
-    'vector.operation': {
-      limit: 100,
-      period: '60s', // Upstash vector limits
-    },
-  },
-
-  // Concurrency management for AI workloads
-  concurrency: {
-    // Limit concurrent agent executions to manage costs
-    'itinerary.generate': 5,
-    'agent.*': 10,
-    'search.*': 3, // Match search provider concurrent limits
-  },
 });
 
 /**
@@ -97,7 +65,7 @@ export async function sendEvent<T extends InngestEvent['name']>(
     data,
     timestamp: Date.now(),
     v: '1.0.0', // Event schema version
-  });
+  } as any); // Type assertion for now
 }
 
 /**
@@ -135,7 +103,7 @@ export async function updateProgress(
     stage,
     progress,
     message,
-    agentName,
+    ...(agentName && { agentName }),
     timestamp: new Date().toISOString(),
   });
 }

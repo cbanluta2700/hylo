@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "node dev-server.mjs",
+    "dev:api": "node dev-server-simple.mjs",
     "dev:full": "concurrently \"npm run dev:api\" \"npm run dev\"",
     "build": "vite build",
     "type-check": "tsc --noEmit",

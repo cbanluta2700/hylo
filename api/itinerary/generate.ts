@@ -1,408 +1,210 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { itineraryArchitect } from '../../src/lib/agents/architect';
-import { webInformationGatherer } from '../../src/lib/agents/gatherer';
-import { informationSpecialist } from '../../src/lib/agents/specialist';
-import { formPutter } from '../../src/lib/agents/form-putter';
-import { generateSmartQueries, generateId } from '../../src/lib/smart-queries';
-import { EnhancedFormData } from '../../src/types/form-data';
-import { AgentInput } from '../../src/types/agent-responses';
-
 /**
- * POST /api/itinerary/generate
- * Main orchestration endpoint for AI-powered itinerary generation
+ * Enhanced Itinerary Generation Endpoint
  *
- * This endpoint coordinates multiple AI agents to create comprehensive travel itineraries:
- * 1. Itinerary Architect - High-level planning and structure
- * 2. Web Information Gatherer - Real-time data collection
- * 3. Information Specialist - Deep analysis and insights
- * 4. Form Putter - Professional formatting and presentation
+ * Updated to use Inngest event-driven workflow instead of direct agent calls.
+ * Now serves as an entry point that triggers the Inngest workflow and returns immediately.
  */
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+import { NextRequest } from 'next/server';
+import { sendEvent } from '../../src/lib/inngest/client-v2';
+import { EVENTS } from '../../src/lib/inngest/events';
+import { generateId } from '../../src/lib/smart-queries';
+import type { EnhancedFormData } from '../../src/types/form-data';
+
+// Edge Runtime configuration
+export const config = {
+  runtime: 'edge',
+};
+
+interface GenerateRequest {
+  formData: EnhancedFormData;
+  context?: {
+    userAgent?: string;
+    clientIP?: string;
+  };
+}
+
+interface GenerateResponse {
+  success: boolean;
+  data?: {
+    sessionId: string;
+    requestId: string;
+    status: 'queued' | 'processing';
+    message: string;
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  metadata: {
+    timestamp: string;
+    processingTime: number;
+  };
+}
+
+export default async function handler(req: NextRequest): Promise<Response> {
+  const startTime = Date.now();
+
   // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      error: {
-        code: 'METHOD_NOT_ALLOWED',
-        message: 'Only POST requests are allowed',
+    return Response.json(
+      {
+        success: false,
+        error: {
+          code: 'METHOD_NOT_ALLOWED',
+          message: 'Only POST requests are allowed',
+        },
       },
-    });
-  }
-
-  const startTime = Date.now();
-  const requestId = generateId();
-  const sessionId = generateId();
-
-  try {
-    const { formData } = req.body;
-
-    // Enhanced validation with detailed error messages
-    const validationError = validateItineraryRequest(formData);
-    if (validationError) {
-      return res.status(validationError.status).json({
-        error: validationError.error,
-        requestId,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Generate smart queries for information gathering
-    const smartQueries = generateSmartQueries(formData as EnhancedFormData);
-
-    // Start asynchronous itinerary generation
-    const generationPromise = orchestrateItineraryGeneration(
-      formData as EnhancedFormData,
-      smartQueries,
-      sessionId,
-      requestId
+      { status: 405 }
     );
-
-    // Don't await - return immediately with tracking info
-    generationPromise.catch((error) => {
-      console.error('Background itinerary generation failed:', error);
-      // Could send notification or update status here
-    });
-
-    // Return workflow tracking info
-    return res.status(202).json({
-      requestId,
-      sessionId,
-      status: 'processing',
-      message: 'Itinerary generation started successfully',
-      estimatedTime: '30-60 seconds',
-      progress: {
-        current: 0,
-        total: 4, // 4 agent stages
-        stages: [
-          'Analyzing preferences',
-          'Gathering information',
-          'Deep analysis',
-          'Formatting results',
-        ],
-      },
-      websocketUrl: `${
-        process.env['NEXT_PUBLIC_APP_URL']?.replace('http', 'ws') || 'ws://localhost:3000'
-      }/api/itinerary/live?requestId=${requestId}&sessionId=${sessionId}`,
-      pollingUrl: `/api/itinerary/status?requestId=${requestId}&sessionId=${sessionId}`,
-    });
-  } catch (error) {
-    console.error('Error in itinerary generation:', error);
-
-    return res.status(500).json({
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Failed to start itinerary generation',
-        details: process.env.NODE_ENV === 'development' ? error : undefined,
-      },
-      requestId,
-      sessionId,
-      timestamp: new Date().toISOString(),
-    });
   }
-}
-
-/**
- * Orchestrate the complete itinerary generation process
- */
-async function orchestrateItineraryGeneration(
-  formData: EnhancedFormData,
-  smartQueries: any[],
-  sessionId: string,
-  requestId: string
-): Promise<any> {
-  const results: any = {
-    sessionId,
-    requestId,
-    stages: [],
-    final: null,
-    errors: [],
-  };
 
   try {
-    // Stage 1: Itinerary Architect - High-level planning
-    console.log(`[${requestId}] Starting itinerary architect phase...`);
-    const architectInput: AgentInput = {
-      formData,
-      context: {
-        sessionId,
-        smartQueries,
-        stage: 'architect',
-      },
-    };
+    const body: GenerateRequest = await req.json();
+    const { formData, context } = body;
 
-    const architectResult = await itineraryArchitect.processRequest(architectInput);
-    results.stages.push({
-      stage: 'architect',
-      status: architectResult.success ? 'completed' : 'failed',
-      result: architectResult,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (!architectResult.success) {
-      throw new Error(`Architect phase failed: ${architectResult.error?.message}`);
+    // Validate required fields
+    if (!formData) {
+      return Response.json(
+        {
+          success: false,
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            message: 'Form data is required',
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            processingTime: Date.now() - startTime,
+          },
+        },
+        { status: 400 }
+      );
     }
 
-    // Stage 2: Web Information Gatherer - Data collection
-    console.log(`[${requestId}] Starting information gathering phase...`);
-    const gathererInput: AgentInput = {
-      formData,
-      context: {
-        sessionId,
-        previousResults: [architectResult],
-        stage: 'gatherer',
+    if (!formData.location) {
+      return Response.json(
+        {
+          success: false,
+          error: {
+            code: 'LOCATION_REQUIRED',
+            message: 'Destination location is required',
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            processingTime: Date.now() - startTime,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Generate unique identifiers
+    const sessionId = formData.sessionId || generateId();
+    const requestId = generateId();
+
+    // Send Inngest event to trigger workflow
+    await sendEvent(EVENTS.ITINERARY_GENERATE, {
+      sessionId,
+      requestId,
+      formData: {
+        ...formData,
+        sessionId, // Ensure sessionId is included
       },
-    };
-
-    const gathererResult = await webInformationGatherer.processRequest(gathererInput);
-    results.stages.push({
-      stage: 'gatherer',
-      status: gathererResult.success ? 'completed' : 'failed',
-      result: gathererResult,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (!gathererResult.success) {
-      console.warn(`[${requestId}] Gatherer phase failed, continuing with available data`);
-      results.errors.push({
-        stage: 'gatherer',
-        error: gathererResult.error,
+      context: {
+        userAgent: req.headers.get('user-agent') || undefined,
+        clientIP: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
         timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Stage 3: Information Specialist - Deep analysis
-    console.log(`[${requestId}] Starting specialist analysis phase...`);
-    const specialistInput: AgentInput = {
-      formData,
-      context: {
-        sessionId,
-        previousResults: [architectResult, gathererResult],
-        stage: 'specialist',
+        ...context,
       },
-    };
-
-    const specialistResult = await informationSpecialist.processRequest(specialistInput);
-    results.stages.push({
-      stage: 'specialist',
-      status: specialistResult.success ? 'completed' : 'failed',
-      result: specialistResult,
-      timestamp: new Date().toISOString(),
     });
 
-    if (!specialistResult.success) {
-      console.warn(`[${requestId}] Specialist phase failed, continuing with basic analysis`);
-      results.errors.push({
-        stage: 'specialist',
-        error: specialistResult.error,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Stage 4: Form Putter - Professional formatting
-    console.log(`[${requestId}] Starting formatting phase...`);
-    const putterInput: AgentInput = {
-      formData,
-      context: {
+    // Return immediately with tracking information
+    const response: GenerateResponse = {
+      success: true,
+      data: {
         sessionId,
-        previousResults: [architectResult, gathererResult, specialistResult],
-        stage: 'putter',
+        requestId,
+        status: 'queued',
+        message: 'Itinerary generation started. Use the status endpoint to track progress.',
       },
-    };
-
-    const putterResult = await formPutter.processRequest(putterInput);
-    results.stages.push({
-      stage: 'putter',
-      status: putterResult.success ? 'completed' : 'failed',
-      result: putterResult,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (!putterResult.success) {
-      throw new Error(`Putter phase failed: ${putterResult.error?.message}`);
-    }
-
-    // Synthesize final result
-    results.final = {
-      itinerary: putterResult.output?.data,
       metadata: {
-        generatedAt: new Date().toISOString(),
-        processingTime: Date.now() - Date.now(), // Would be passed from main handler
-        agentVersions: {
-          architect: architectResult.metadata?.agentVersion,
-          gatherer: gathererResult.metadata?.agentVersion,
-          specialist: specialistResult.metadata?.agentVersion,
-          putter: putterResult.metadata?.agentVersion,
-        },
-        confidence: calculateOverallConfidence([
-          architectResult,
-          gathererResult,
-          specialistResult,
-          putterResult,
-        ]),
+        timestamp: new Date().toISOString(),
+        processingTime: Date.now() - startTime,
       },
-      stages: results.stages,
-      errors: results.errors,
     };
 
-    console.log(`[${requestId}] Itinerary generation completed successfully`);
-
-    // TODO: Store results in cache/database for retrieval
-    // TODO: Send completion notification
-
-    return results;
-  } catch (error) {
-    console.error(`[${requestId}] Itinerary generation failed:`, error);
-    results.final = null;
-    results.errors.push({
-      stage: 'orchestration',
-      error: {
-        code: 'ORCHESTRATION_ERROR',
-        message: error instanceof Error ? error.message : 'Unknown orchestration error',
+    return Response.json(response, {
+      status: 202, // Accepted
+      headers: {
+        'Content-Type': 'application/json',
+        // Add CORS headers if needed
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST',
+        'Access-Control-Allow-Headers': 'Content-Type',
       },
-      timestamp: new Date().toISOString(),
     });
+  } catch (error: any) {
+    console.error('Itinerary generation error:', error);
 
-    throw error;
+    const errorResponse: GenerateResponse = {
+      success: false,
+      error: {
+        code: 'GENERATION_START_ERROR',
+        message: 'Failed to start itinerary generation',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      },
+      metadata: {
+        timestamp: new Date().toISOString(),
+        processingTime: Date.now() - startTime,
+      },
+    };
+
+    return Response.json(errorResponse, { status: 500 });
   }
 }
 
 /**
- * Validate itinerary generation request
+ * API Documentation
+ *
+ * POST /api/itinerary/generate
+ *
+ * Request:
+ * {
+ *   "formData": {
+ *     "location": "Paris, France",
+ *     "departDate": "2024-06-15",
+ *     "returnDate": "2024-06-22",
+ *     "adults": 2,
+ *     "children": 0,
+ *     "budget": 3000,
+ *     "currency": "USD",
+ *     // ... other form fields
+ *   },
+ *   "context": {
+ *     "userAgent": "...",
+ *     "clientIP": "..."
+ *   }
+ * }
+ *
+ * Response (202 Accepted):
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "sessionId": "unique-session-id",
+ *     "requestId": "unique-request-id",
+ *     "status": "queued",
+ *     "message": "Itinerary generation started..."
+ *   },
+ *   "metadata": {
+ *     "timestamp": "2024-01-01T00:00:00.000Z",
+ *     "processingTime": 45
+ *   }
+ * }
+ *
+ * To track progress:
+ * GET /api/itinerary/status?requestId={requestId}&sessionId={sessionId}
+ *
+ * To receive real-time updates:
+ * WebSocket connection to /api/itinerary/live?sessionId={sessionId}
  */
-function validateItineraryRequest(formData: any): { status: number; error: any } | null {
-  if (!formData) {
-    return {
-      status: 400,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Request body must include formData',
-      },
-    };
-  }
-
-  if (!formData.location || typeof formData.location !== 'string') {
-    return {
-      status: 400,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'formData.location is required and must be a string',
-      },
-    };
-  }
-
-  if (!formData.adults || typeof formData.adults !== 'number' || formData.adults < 1) {
-    return {
-      status: 400,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'formData.adults is required and must be a positive number',
-      },
-    };
-  }
-
-  if (formData.children && (typeof formData.children !== 'number' || formData.children < 0)) {
-    return {
-      status: 400,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'formData.children must be a non-negative number if provided',
-      },
-    };
-  }
-
-  // Validate budget if provided
-  if (
-    formData.budget !== undefined &&
-    (typeof formData.budget !== 'number' || formData.budget <= 0)
-  ) {
-    return {
-      status: 400,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'formData.budget must be a positive number if provided',
-      },
-    };
-  }
-
-  // Validate dates if provided
-  if (formData.departDate) {
-    const departDate = new Date(formData.departDate);
-    if (isNaN(departDate.getTime())) {
-      return {
-        status: 400,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'formData.departDate must be a valid date string',
-        },
-      };
-    }
-  }
-
-  if (formData.returnDate) {
-    const returnDate = new Date(formData.returnDate);
-    if (isNaN(returnDate.getTime())) {
-      return {
-        status: 400,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'formData.returnDate must be a valid date string',
-        },
-      };
-    }
-  }
-
-  // Validate date range
-  if (formData.departDate && formData.returnDate) {
-    const departDate = new Date(formData.departDate);
-    const returnDate = new Date(formData.returnDate);
-
-    if (returnDate <= departDate) {
-      return {
-        status: 400,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Return date must be after departure date',
-        },
-      };
-    }
-
-    const diffTime = Math.abs(returnDate.getTime() - departDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 90) {
-      return {
-        status: 400,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Trip duration cannot exceed 90 days',
-        },
-      };
-    }
-  }
-
-  return null; // No validation errors
-}
-
-/**
- * Calculate overall confidence from all agent results
- */
-function calculateOverallConfidence(agentResults: any[]): number {
-  const successfulResults = agentResults.filter((result) => result.success);
-
-  if (successfulResults.length === 0) return 0;
-
-  const avgConfidence =
-    successfulResults.reduce((sum, result) => {
-      return sum + (result.output?.confidence || 0);
-    }, 0) / successfulResults.length;
-
-  // Weight by completion rate
-  const completionRate = successfulResults.length / agentResults.length;
-
-  return Math.min(1.0, avgConfidence * completionRate);
-}
-
-/**
- * Export for testing purposes
- */
-export { orchestrateItineraryGeneration, validateItineraryRequest, calculateOverallConfidence };
