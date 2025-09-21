@@ -1,0 +1,802 @@
+openapi: 3.0.3
+info:
+  title: Hylo AI Itinerary Generation API
+  description: AI-powered personalized travel itinerary generation with multi-agent workflows
+  version: 1.0.0
+  contact:
+    name: Hylo Development Team
+    url: https://hylo.travel
+  license:
+    name: MIT
+
+servers:
+  - url: https://hylo.vercel.app/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+paths:
+  /itinerary/generate:
+    post:
+      summary: Generate personalized itinerary
+      description: Creates a new AI-generated travel itinerary based on form data
+      operationId: generateItinerary
+      tags:
+        - Itinerary Generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItineraryRequest'
+            examples:
+              basic_request:
+                summary: Basic itinerary generation
+                value:
+                  formData:
+                    destination: 'Paris, France'
+                    startDate: '2025-06-01'
+                    endDate: '2025-06-07'
+                    adults: 2
+                    budget: 3000
+                    travelStyle: 'cultural'
+                  requestType: 'initial'
+                  priority: 'normal'
+      responses:
+        '202':
+          description: Generation started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationStarted'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /itinerary/update:
+    put:
+      summary: Update existing itinerary
+      description: Real-time update of itinerary based on form changes
+      operationId: updateItinerary
+      tags:
+        - Itinerary Generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItineraryUpdateRequest'
+      responses:
+        '202':
+          description: Update started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateStarted'
+        '404':
+          description: Itinerary not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid update data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /itinerary/status/{requestId}:
+    get:
+      summary: Get generation status
+      description: Check the progress of itinerary generation
+      operationId: getGenerationStatus
+      tags:
+        - Itinerary Generation
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique request identifier
+      responses:
+        '200':
+          description: Status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationStatus'
+        '404':
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /itinerary/{itineraryId}:
+    get:
+      summary: Get complete itinerary
+      description: Retrieve the full generated itinerary
+      operationId: getItinerary
+      tags:
+        - Itinerary Retrieval
+      parameters:
+        - name: itineraryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique itinerary identifier
+      responses:
+        '200':
+          description: Itinerary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItineraryResponse'
+        '404':
+          description: Itinerary not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /agents/status:
+    get:
+      summary: Get agent system status
+      description: Health check for all AI agents
+      operationId: getAgentStatus
+      tags:
+        - System Health
+      responses:
+        '200':
+          description: Agent status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSystemStatus'
+
+components:
+  schemas:
+    ItineraryRequest:
+      type: object
+      required:
+        - formData
+        - requestType
+        - priority
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Auto-generated request ID
+        userId:
+          type: string
+          format: uuid
+          description: Optional authenticated user ID
+        formData:
+          $ref: '#/components/schemas/EnhancedFormData'
+        requestType:
+          type: string
+          enum: [initial, update, refresh]
+        priority:
+          type: string
+          enum: [low, normal, high]
+          default: normal
+        metadata:
+          type: object
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+            userAgent:
+              type: string
+            source:
+              type: string
+              enum: [web, api]
+              default: web
+
+    EnhancedFormData:
+      allOf:
+        - $ref: '#/components/schemas/BaseFormData'
+        - type: object
+          properties:
+            aiPreferences:
+              $ref: '#/components/schemas/AIPreferences'
+            generationId:
+              type: string
+              format: uuid
+            previousItineraries:
+              type: array
+              items:
+                type: string
+                format: uuid
+              maxItems: 5
+            sessionId:
+              type: string
+              format: uuid
+
+    BaseFormData:
+      type: object
+      required:
+        - destination
+        - startDate
+        - endDate
+        - adults
+      properties:
+        destination:
+          type: string
+          minLength: 2
+          maxLength: 100
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        adults:
+          type: integer
+          minimum: 1
+          maximum: 20
+        children:
+          type: integer
+          minimum: 0
+          maximum: 10
+          default: 0
+        budget:
+          type: number
+          minimum: 100
+        travelStyle:
+          type: string
+          enum: [luxury, comfort, budget, adventure, cultural, relaxation]
+        interests:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+
+    AIPreferences:
+      type: object
+      properties:
+        creativityLevel:
+          type: string
+          enum: [conservative, balanced, adventurous]
+          default: balanced
+        localInsights:
+          type: boolean
+          default: true
+        realTimeUpdates:
+          type: boolean
+          default: true
+        contentDepth:
+          type: string
+          enum: [basic, detailed, comprehensive]
+          default: detailed
+
+    ItineraryUpdateRequest:
+      type: object
+      required:
+        - itineraryId
+        - changes
+      properties:
+        itineraryId:
+          type: string
+          format: uuid
+        changes:
+          type: object
+          properties:
+            formData:
+              $ref: '#/components/schemas/EnhancedFormData'
+            specificUpdates:
+              type: array
+              items:
+                $ref: '#/components/schemas/SpecificUpdate'
+
+    SpecificUpdate:
+      type: object
+      properties:
+        field:
+          type: string
+        oldValue:
+          type: string
+        newValue:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+
+    GenerationStarted:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [started]
+        estimatedTime:
+          type: integer
+          description: Estimated completion time in seconds
+        websocketUrl:
+          type: string
+          format: uri
+          description: WebSocket URL for real-time updates
+
+    UpdateStarted:
+      type: object
+      properties:
+        updateId:
+          type: string
+          format: uuid
+        itineraryId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [updating]
+        estimatedTime:
+          type: integer
+          description: Estimated update time in seconds
+
+    GenerationStatus:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, complete, error]
+        progress:
+          $ref: '#/components/schemas/ProgressIndicator'
+        currentStep:
+          type: string
+        agentStatus:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentStatus'
+        estimatedCompletion:
+          type: string
+          format: date-time
+
+    ProgressIndicator:
+      type: object
+      properties:
+        percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        currentPhase:
+          type: string
+          enum: [research, planning, enrichment, formatting]
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    AgentStatus:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [itinerary-architect, web-gatherer, information-specialist, form-putter]
+        status:
+          type: string
+          enum: [idle, processing, complete, error]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        lastUpdate:
+          type: string
+          format: date-time
+
+    ItineraryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        requestId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, complete, error]
+        itinerary:
+          $ref: '#/components/schemas/GeneratedItinerary'
+        error:
+          $ref: '#/components/schemas/ErrorDetails'
+        metadata:
+          $ref: '#/components/schemas/ResponseMetadata'
+
+    GeneratedItinerary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        summary:
+          type: string
+        totalDuration:
+          type: integer
+          description: Duration in days
+        estimatedCost:
+          $ref: '#/components/schemas/CostEstimate'
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayPlan'
+        recommendations:
+          $ref: '#/components/schemas/Recommendations'
+        metadata:
+          $ref: '#/components/schemas/ItineraryMetadata'
+
+    DayPlan:
+      type: object
+      properties:
+        day:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        theme:
+          type: string
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineItem'
+        notes:
+          type: string
+
+    TimelineItem:
+      type: object
+      properties:
+        time:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+        duration:
+          type: integer
+          minimum: 15
+          description: Duration in minutes
+        activity:
+          $ref: '#/components/schemas/ActivityDetails'
+        location:
+          $ref: '#/components/schemas/LocationDetails'
+        cost:
+          $ref: '#/components/schemas/CostEstimate'
+
+    ActivityDetails:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [accommodation, dining, activity, transportation, shopping]
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+        bookingRequired:
+          type: boolean
+        bookingUrl:
+          type: string
+          format: uri
+
+    LocationDetails:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        vicinity:
+          type: string
+
+    Coordinates:
+      type: object
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+
+    CostEstimate:
+      type: object
+      properties:
+        min:
+          type: number
+          minimum: 0
+        max:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        priceLevel:
+          type: integer
+          minimum: 1
+          maximum: 4
+
+    Recommendations:
+      type: object
+      properties:
+        accommodation:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccommodationRecommendation'
+        dining:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiningRecommendation'
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityRecommendation'
+        transportation:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransportationRecommendation'
+
+    AccommodationRecommendation:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [hotel, hostel, apartment, resort, boutique]
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+        priceRange:
+          $ref: '#/components/schemas/CostEstimate'
+        amenities:
+          type: array
+          items:
+            type: string
+        location:
+          $ref: '#/components/schemas/LocationDetails'
+        bookingUrl:
+          type: string
+          format: uri
+
+    DiningRecommendation:
+      type: object
+      properties:
+        name:
+          type: string
+        cuisine:
+          type: string
+        priceLevel:
+          type: integer
+          minimum: 1
+          maximum: 4
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+        specialties:
+          type: array
+          items:
+            type: string
+        dietary:
+          type: array
+          items:
+            type: string
+            enum: [vegetarian, vegan, gluten-free, halal, kosher]
+        location:
+          $ref: '#/components/schemas/LocationDetails'
+
+    ActivityRecommendation:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        duration:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, moderate, challenging]
+        cost:
+          $ref: '#/components/schemas/CostEstimate'
+        bestTime:
+          type: string
+        location:
+          $ref: '#/components/schemas/LocationDetails'
+
+    TransportationRecommendation:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [flight, train, bus, car, taxi, metro, walk]
+        provider:
+          type: string
+        route:
+          type: string
+        duration:
+          type: string
+        cost:
+          $ref: '#/components/schemas/CostEstimate'
+        bookingUrl:
+          type: string
+          format: uri
+
+    ResponseMetadata:
+      type: object
+      properties:
+        processingTime:
+          type: integer
+          description: Processing time in milliseconds
+        agentsUsed:
+          type: array
+          items:
+            type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceAttribution'
+
+    ItineraryMetadata:
+      type: object
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        lastUpdated:
+          type: string
+          format: date-time
+        version:
+          type: string
+        agentContributions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentContribution'
+
+    AgentContribution:
+      type: object
+      properties:
+        agentType:
+          type: string
+        contribution:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        processingTime:
+          type: integer
+
+    SourceAttribution:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        title:
+          type: string
+        provider:
+          type: string
+        reliability:
+          type: number
+          minimum: 0
+          maximum: 1
+        lastAccessed:
+          type: string
+          format: date-time
+
+    AgentSystemStatus:
+      type: object
+      properties:
+        overall:
+          type: string
+          enum: [healthy, degraded, error]
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentHealthStatus'
+        lastCheck:
+          type: string
+          format: date-time
+
+    AgentHealthStatus:
+      type: object
+      properties:
+        type:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, error]
+        responseTime:
+          type: integer
+        lastSuccessfulRequest:
+          type: string
+          format: date-time
+        errorRate:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetails'
+        requestId:
+          type: string
+          format: uuid
+
+    ErrorDetails:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+security:
+  - ApiKey: []
+  - BearerAuth: []
+
+tags:
+  - name: Itinerary Generation
+    description: AI-powered itinerary creation and updates
+  - name: Itinerary Retrieval
+    description: Access completed itineraries
+  - name: System Health
+    description: Agent and system monitoring
