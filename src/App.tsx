@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import TripDetails from './components/TripDetails';
 import { FormData } from './components/TripDetails/types';
 import ConditionalTravelStyle from './components/ConditionalTravelStyle';
@@ -48,6 +48,31 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string>('');
   const itineraryRef = useRef<HTMLDivElement>(null);
+
+  // Test API endpoints on app load
+  useEffect(() => {
+    const testAPIs = async () => {
+      console.log('🚀 Testing API endpoints...');
+
+      try {
+        // Test health endpoint
+        console.log('📞 Calling /api/health...');
+        const healthResponse = await fetch('/api/health');
+        const healthData = await healthResponse.json();
+        console.log('🏥 Health endpoint response:', healthData);
+
+        // Test environment validation endpoint
+        console.log('📞 Calling /api/validate-env...');
+        const envResponse = await fetch('/api/validate-env');
+        const envData = await envResponse.json();
+        console.log('🔧 Environment validation response:', envData);
+      } catch (error) {
+        console.error('❌ API call failed:', error);
+      }
+    };
+
+    testAPIs();
+  }, []);
 
   // Handle travel style choice selection
   const handleTravelStyleChoice = (choice: TravelStyleChoice) => {
@@ -164,6 +189,51 @@ ${JSON.stringify(organizedFormData, null, 2)}
     <div className="min-h-screen bg-primary py-8 font-raleway">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-6">
+          {/* Debug Panel - Only in development */}
+          {process.env['NODE_ENV'] === 'development' && (
+            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded">
+              <p className="font-bold">🔧 Debug Panel</p>
+              <div className="mt-2 space-x-2">
+                <button
+                  onClick={async () => {
+                    console.log('🧪 Manual API test...');
+                    try {
+                      const response = await fetch('/api/health');
+                      const data = await response.json();
+                      console.log('🏥 Health check result:', data);
+                      alert(`Health check: ${data.status} - Check console for details`);
+                    } catch (error) {
+                      console.error('❌ Health check failed:', error);
+                      alert('Health check failed - Check console');
+                    }
+                  }}
+                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                >
+                  Test Health API
+                </button>
+                <button
+                  onClick={async () => {
+                    console.log('🧪 Manual env validation test...');
+                    try {
+                      const response = await fetch('/api/validate-env');
+                      const data = await response.json();
+                      console.log('🔧 Environment validation result:', data);
+                      alert(
+                        `Env validation: ${data.success ? 'Success' : 'Failed'} - Check console`
+                      );
+                    } catch (error) {
+                      console.error('❌ Env validation failed:', error);
+                      alert('Env validation failed - Check console');
+                    }
+                  }}
+                  className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                >
+                  Test Env API
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Trip Details Header - Full Width No Rounded Corners */}
           <div className="bg-trip-details text-primary py-4 px-6 shadow-lg -mx-4 sm:-mx-6 lg:-mx-8 2xl:-mx-16">
             <div className="flex items-center justify-center space-x-3">

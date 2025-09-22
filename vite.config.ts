@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
       // Explicitly define all API keys for Vercel compatibility
       // Note: Vercel doesn't use .env files, these are defined in Vercel dashboard
       'process.env.NODE_ENV': JSON.stringify(env.NODE_ENV || mode),
-      'process.env.XAI_API_KEY': JSON.stringify(env.XAI_API_KEY),
+      'process.env.XAI_API_KEYq': JSON.stringify(env.XAI_API_KEY),
       'process.env.GROQ_API_KEY': JSON.stringify(env.GROQ_API_KEY),
       'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY),
       'process.env.TAVILY_API_KEY': JSON.stringify(env.TAVILY_API_KEY),
