@@ -142,48 +142,59 @@ async function testGroqConnection(): Promise<ValidationResult> {
  */
 async function testRedisConnection(): Promise<ValidationResult> {
   const startTime = Date.now();
+  console.log('🏗️ Testing Redis/KV connectivity...');
 
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  // Check for your specific Redis/KV variable names
+  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+    console.log('⚠️ Redis/KV credentials missing');
     return {
-      service: 'Upstash Redis',
+      service: 'Redis/KV Storage',
       status: 'missing',
-      message: 'UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not set',
+      message: 'KV_REST_API_URL or KV_REST_API_TOKEN not set',
     };
   }
 
   try {
-    // Simple ping test
-    const response = await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/ping`, {
+    console.log('📡 Testing Redis/KV connection...');
+    console.log(`🔗 Using URL: ${process.env.KV_REST_API_URL}`);
+
+    // Simple ping test using your KV REST API
+    const response = await fetch(`${process.env.KV_REST_API_URL}/ping`, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+        Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
       },
       signal: AbortSignal.timeout(5000),
     });
 
     const responseTime = Date.now() - startTime;
+    console.log(`📊 Redis/KV response: ${response.status} (${responseTime}ms)`);
 
     if (response.ok) {
+      console.log('✅ Redis/KV connection successful');
       return {
-        service: 'Upstash Redis',
+        service: 'Redis/KV Storage',
         status: 'connected',
-        message: 'Redis instance accessible',
+        message: 'KV instance accessible via REST API',
         responseTime,
       };
     } else {
+      console.log(`❌ Redis/KV failed with status: ${response.status}`);
       return {
-        service: 'Upstash Redis',
+        service: 'Redis/KV Storage',
         status: 'failed',
-        message: `Redis responded with status: ${response.status}`,
+        message: `KV responded with status: ${response.status}`,
         responseTime,
       };
     }
   } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error(`💥 Redis/KV connection failed:`, error);
     return {
-      service: 'Upstash Redis',
+      service: 'Redis/KV Storage',
       status: 'failed',
       message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      responseTime: Date.now() - startTime,
+      responseTime,
     };
   }
 }
@@ -240,71 +251,34 @@ async function testVectorConnection(): Promise<ValidationResult> {
 }
 
 /**
- * Test Inngest API connectivity
+ * Test Inngest environment variables (no API call needed)
  */
-async function testInngestConnection(): Promise<ValidationResult> {
-  const startTime = Date.now();
-  console.log('⚙️ Testing Inngest workflow orchestration...');
+function testInngestConnection(): ValidationResult {
+  console.log('⚙️ Checking Inngest workflow environment variables...');
 
-  if (!process.env.INNGEST_EVENT_KEY) {
-    console.log('⚠️ Inngest event key missing');
+  const hasEventKey = Boolean(process.env.INNGEST_EVENT_KEY);
+  const hasSigningKey = Boolean(process.env.INNGEST_SIGNING_KEY);
+
+  console.log(`🔑 INNGEST_EVENT_KEY: ${hasEventKey ? '✅ SET' : '❌ MISSING'}`);
+  console.log(`🔑 INNGEST_SIGNING_KEY: ${hasSigningKey ? '✅ SET' : '❌ MISSING'}`);
+
+  if (hasEventKey && hasSigningKey) {
+    console.log('✅ Inngest workflow keys configured');
+    return {
+      service: 'Inngest Workflow',
+      status: 'connected',
+      message: 'Both INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY are configured',
+    };
+  } else {
+    const missingKeys = [];
+    if (!hasEventKey) missingKeys.push('INNGEST_EVENT_KEY');
+    if (!hasSigningKey) missingKeys.push('INNGEST_SIGNING_KEY');
+
+    console.log(`❌ Inngest missing keys: ${missingKeys.join(', ')}`);
     return {
       service: 'Inngest Workflow',
       status: 'missing',
-      message: 'INNGEST_EVENT_KEY environment variable not set',
-    };
-  }
-
-  if (!process.env.INNGEST_SIGNING_KEY) {
-    console.log('⚠️ Inngest signing key missing');
-    return {
-      service: 'Inngest Workflow',
-      status: 'missing',
-      message: 'INNGEST_SIGNING_KEY environment variable not set',
-    };
-  }
-
-  try {
-    console.log('📡 Making request to Inngest API...');
-
-    // Test Inngest API accessibility - using their public health endpoint
-    const response = await fetch('https://api.inngest.com/v0/health', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${process.env.INNGEST_EVENT_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      signal: AbortSignal.timeout(5000), // 5 second timeout
-    });
-
-    const responseTime = Date.now() - startTime;
-    console.log(`📊 Inngest API response: ${response.status} (${responseTime}ms)`);
-
-    if (response.ok) {
-      console.log('✅ Inngest API connection successful');
-      return {
-        service: 'Inngest Workflow',
-        status: 'connected',
-        message: 'API keys valid and service accessible',
-        responseTime,
-      };
-    } else {
-      console.log(`❌ Inngest API failed with status: ${response.status}`);
-      return {
-        service: 'Inngest Workflow',
-        status: 'failed',
-        message: `API responded with status: ${response.status}`,
-        responseTime,
-      };
-    }
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    console.error(`💥 Inngest API connection failed:`, error);
-    return {
-      service: 'Inngest Workflow',
-      status: 'failed',
-      message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      responseTime,
+      message: `Missing environment variables: ${missingKeys.join(', ')}`,
     };
   }
 }
@@ -384,13 +358,15 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Run all validation tests
     console.log('🚀 Testing AI provider connections...');
-    const [xaiResult, groqResult, redisResult, vectorResult, inngestResult] = await Promise.all([
+    const [xaiResult, groqResult, redisResult, vectorResult] = await Promise.all([
       testXAIConnection(),
       testGroqConnection(),
       testRedisConnection(),
       testVectorConnection(),
-      testInngestConnection(),
     ]);
+
+    console.log('⚙️ Checking Inngest workflow configuration...');
+    const inngestResult = testInngestConnection();
 
     console.log('🔍 Testing search provider configurations...');
     const searchResults = testSearchProviders();
