@@ -228,109 +228,24 @@ Please fill in all required fields with valid values and try again.
         throw new Error('Form validation failed - see details above');
       }
     } catch (error) {
-      console.error('❌ Transformation error:', error);
+      console.error('❌ Error during form processing or API call:', error);
+      setGenerationError(`
+❌ **Error generating itinerary:**
+
+${error instanceof Error ? error.message : 'Unknown error occurred'}
+
+**Troubleshooting:**
+1. Check that all form fields are filled correctly
+2. Ensure your internet connection is working
+3. Try refreshing the page and filling the form again
+4. Check the browser console for detailed error logs
+
+**Need help?** Check the console logs above for more technical details.
+      `);
     }
     console.groupEnd();
 
-    try {
-      // Instead of calling AI/LLM, display the gathered form data organized by form sections
-      const organizedFormData = {
-        '1. Destination & Dates': {
-          destination: formData.location,
-          departureDate: formData.departDate,
-          returnDate: formData.returnDate,
-          flexibleDates: formData.flexibleDates,
-          ...(formData.flexibleDates &&
-            formData.plannedDays && {
-              plannedDays: formData.plannedDays,
-            }),
-        },
-        '2. Travelers': {
-          adults: formData.adults,
-          children: formData.children,
-          childrenAges: formData.childrenAges,
-        },
-        '3. Budget': {
-          flexibleBudget: formData.flexibleBudget,
-          ...(formData.flexibleBudget
-            ? {
-                budgetNote: 'User indicated budget is flexible - specific amount not relevant',
-              }
-            : {
-                amount: formData.budget,
-                currency: formData.currency,
-                budgetMode: formData.budgetMode,
-              }),
-        },
-        '4. Travel Group': {
-          selectedGroups: formData.selectedGroups,
-          customGroupText: formData.customGroupText,
-        },
-        '5. Travel Interests': {
-          selectedInterests: formData.selectedInterests,
-          customInterestsText: formData.customInterestsText,
-        },
-        '6. Itinerary Inclusions': {
-          selectedInclusions: formData.selectedInclusions,
-          customInclusionsText: formData.customInclusionsText,
-          inclusionPreferences: formData.inclusionPreferences,
-        },
-        '7. Travel Style Questions': {
-          travelStyleChoice: travelStyleChoice,
-          experience: formData.travelStyleAnswers?.['experience'] || [],
-          vibes: formData.travelStyleAnswers?.['vibes'] || [],
-          vibesOther: formData.travelStyleAnswers?.['vibesOther'],
-          sampleDays: formData.travelStyleAnswers?.['sampleDays'] || [],
-          dinnerChoices: formData.travelStyleAnswers?.['dinnerChoices'] || [],
-        },
-        '8. Contact & Trip Details': {
-          tripNickname: formData.travelStyleAnswers?.['tripNickname'] || tripNickname,
-          contactName: (formData as any)?.contactInfo?.name || (contactInfo as any)?.name || '',
-          contactEmail: (formData as any)?.contactInfo?.email || (contactInfo as any)?.email || '',
-        },
-      };
-
-      const debugItinerary = `
-# 📋 Complete Form Data Review
-
-${Object.entries(organizedFormData)
-  .map(
-    ([sectionTitle, sectionData]) => `
-## ${sectionTitle}
-\`\`\`json
-${JSON.stringify(sectionData, null, 2)}
-\`\`\`
-`
-  )
-  .join('')}
-
----
-
-**Note**: This is a debug view showing all collected form data organized by form sections. AI/LLM functionality has been temporarily disabled.
-
-## Raw Complete Data Object
-\`\`\`json
-${JSON.stringify(organizedFormData, null, 2)}
-\`\`\`
-      `;
-
-      setGeneratedItinerary(debugItinerary);
-
-      // Smooth scroll to the itinerary after a short delay
-      setTimeout(() => {
-        itineraryRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      }, 100);
-    } catch (error) {
-      console.error('Error displaying form data:', error);
-      setGenerationError(
-        'Sorry, we encountered an error displaying the form data. Please try again.'
-      );
-    } finally {
-      setIsGenerating(false);
-    }
+    setIsGenerating(false);
   };
 
   return (
