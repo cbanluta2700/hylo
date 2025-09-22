@@ -1,50 +1,40 @@
 /**
  * Environment Configuration for AI-Powered Itinerary Generation
  *
- * CONSTITUTIONAL COMPLIANCE:
- * - Principle I: Edge Runtime compatible (uses process.env directly)
- * - Principle V: Type-safe development with Zod validation
- *
  * Centralized environment variable management with validation
- * Compatible with Vercel Edge Runtime and Vite define() configuration
+ * Compatible with Vercel Edge Runtime
  */
 
 import { z } from 'zod';
 
 // Environment variable schema for validation
 const envSchema = z.object({
-  // AI Provider API Keys (Required)
+  // AI Provider API Keys
   XAI_API_KEY: z.string().min(1, 'XAI API key is required'),
   GROQ_API_KEY: z.string().min(1, 'Groq API key is required'),
 
-  // Workflow Orchestration (Required)
-  INNGEST_EVENT_KEY: z.string().min(1, 'Inngest event key is required'),
-  INNGEST_SIGNING_KEY: z.string().optional(), // Optional signing key for production
+  // Workflow Orchestration
+  INNGEST_EVENT_KEY: z.string().min(1, 'Inngest signing key is required'),
+  INNGEST_SIGNING_KEY: z.string().optional(), // Alternative name used in some configs
 
-  // State Management - Upstash Redis (Required)
+  // State Management (Upstash Redis)
   UPSTASH_REDIS_REST_URL: z.string().url('Invalid Upstash Redis URL'),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'Upstash Redis token is required'),
 
-  // Vector Storage - Upstash Vector (Required)
+  // Vector Storage (Upstash Vector)
   UPSTASH_VECTOR_REST_URL: z.string().url('Invalid Upstash Vector URL'),
   UPSTASH_VECTOR_REST_TOKEN: z.string().min(1, 'Upstash Vector token is required'),
 
-  // Search Providers (Required for AI workflow)
+  // Search Providers
   TAVILY_API_KEY: z.string().min(1, 'Tavily API key is required'),
   EXA_API_KEY: z.string().min(1, 'Exa API key is required'),
   SERP_API_KEY: z.string().min(1, 'SERP API key is required'),
 
-  // Public Frontend Configuration (Optional)
+  // Frontend Configuration (Public)
   NEXT_PUBLIC_WS_URL: z.string().url('Invalid WebSocket URL').optional(),
 
-  // Environment Detection (Defaults handled)
+  // Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
-  VERCEL: z.string().optional(), // Set by Vercel platform
-
-  // Additional Vercel environment variables (for completeness)
-  VERCEL_URL: z.string().optional(),
-  VERCEL_REGION: z.string().optional(),
 });
 
 // Type for validated environment
@@ -52,31 +42,25 @@ export type Env = z.infer<typeof envSchema>;
 
 /**
  * Validate and get environment variables
- * Constitutional Compliance: Edge Runtime compatible - uses process.env directly
- * with proper TypeScript strict mode array notation
+ * Edge Runtime compatible - uses process.env directly
  */
 function getEnv(): Env {
   try {
     // In Edge Runtime, process.env is available but limited
-    // Using array notation for TypeScript strict mode compliance
     const env = {
-      XAI_API_KEY: process.env['XAI_API_KEY'],
-      GROQ_API_KEY: process.env['GROQ_API_KEY'],
-      INNGEST_EVENT_KEY: process.env['INNGEST_EVENT_KEY'] || process.env['INNGEST_SIGNING_KEY'],
-      INNGEST_SIGNING_KEY: process.env['INNGEST_SIGNING_KEY'],
-      UPSTASH_REDIS_REST_URL: process.env['UPSTASH_REDIS_REST_URL'],
-      UPSTASH_REDIS_REST_TOKEN: process.env['UPSTASH_REDIS_REST_TOKEN'],
-      UPSTASH_VECTOR_REST_URL: process.env['UPSTASH_VECTOR_REST_URL'],
-      UPSTASH_VECTOR_REST_TOKEN: process.env['UPSTASH_VECTOR_REST_TOKEN'],
-      TAVILY_API_KEY: process.env['TAVILY_API_KEY'],
-      EXA_API_KEY: process.env['EXA_API_KEY'],
-      SERP_API_KEY: process.env['SERP_API_KEY'],
-      NEXT_PUBLIC_WS_URL: process.env['NEXT_PUBLIC_WS_URL'],
-      NODE_ENV: (process.env['NODE_ENV'] as 'development' | 'production' | 'test') || 'development',
-      VERCEL_ENV: process.env['VERCEL_ENV'] as 'development' | 'preview' | 'production',
-      VERCEL: process.env['VERCEL'],
-      VERCEL_URL: process.env['VERCEL_URL'],
-      VERCEL_REGION: process.env['VERCEL_REGION'],
+      XAI_API_KEY: process.env.XAI_API_KEY,
+      GROQ_API_KEY: process.env.GROQ_API_KEY,
+      INNGEST_EVENT_KEY: process.env.INNGEST_EVENT_KEY || process.env.INNGEST_SIGNING_KEY,
+      INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY,
+      UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+      UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+      UPSTASH_VECTOR_REST_URL: process.env.UPSTASH_VECTOR_REST_URL,
+      UPSTASH_VECTOR_REST_TOKEN: process.env.UPSTASH_VECTOR_REST_TOKEN,
+      TAVILY_API_KEY: process.env.TAVILY_API_KEY,
+      EXA_API_KEY: process.env.EXA_API_KEY,
+      SERP_API_KEY: process.env.SERP_API_KEY,
+      NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
+      NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test',
     };
 
     return envSchema.parse(env);
@@ -85,10 +69,7 @@ function getEnv(): Env {
       const missingVars = error.errors.map((err) => err.path.join('.'));
       throw new Error(
         `Missing or invalid environment variables: ${missingVars.join(', ')}\n` +
-          'Please check your .env.local file or Vercel environment configuration.\n' +
-          'For Vercel deployment, set these in the Vercel dashboard:\n' +
-          '• Project Settings > Environment Variables\n' +
-          '• Ensure all API keys are configured for Production, Preview, and Development'
+          'Please check your .env.local file or Vercel environment configuration.'
       );
     }
     throw error;

@@ -1,189 +1,249 @@
 /**
- * Generate Itinerary API Endpoint (T036)
+ * Generate Itinerary API Endpoint
  *
- * CONSTITUTIONAL COMPLIANCE:
- * - Principle I: Edge Runtime compatible (Vercel Edge Functions)
- * - Principle V: Type-safe development with Zod validation
- * - Principle IV: Code-Deploy-Debug with comprehensive error handling
+ * Constitutional Requirements:
+ * - Vercel Edge Runtime only
+ * - Zod v    console.log('✅ [28] API Generate: Request validated successfully', { 
+      sessionId: sessionId.substring(0, 8) + '...',
+      location: formData.location,
+      travelers: `${formData.adults || 0} adults, ${formData.children || 0} children`,
+      dates: `${formData.departDate} to ${formData.returnDate}`
+    });ion at API boundaries
+ * - Structured error handling
  *
- * POST /api/itinerary/generate
- * Initiates AI workflow and returns workflowId for progress tracking
+ * Task: T036 - Implement /api/itinerary/generate endpoint
  */
 
 import { z } from 'zod';
-import { inngest, sendWorkflowEvent } from '../../src/lib/inngest/client';
-import { SessionManager } from '../../src/lib/session/SessionManager';
-import { travelFormSchema } from '../../src/schemas/formSchemas';
+import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator';
+import { TravelFormDataSchema } from '../../src/schemas/ai-workflow-schemas';
 
-// Edge Runtime configuration (constitutional requirement)
+// Runtime configuration for Vercel Edge
 export const config = {
   runtime: 'edge',
 };
 
 /**
  * Request validation schema
- * Constitutional requirement: Type-safe API boundaries
  */
 const generateRequestSchema = z.object({
-  formData: travelFormSchema,
   sessionId: z.string().min(1, 'Session ID is required'),
+  formData: TravelFormDataSchema,
 });
 
 /**
- * Response schema for type safety
+ * Success response schema
  */
-const generateResponseSchema = z.object({
-  workflowId: z.string(),
-  status: z.literal('initiated'),
-  estimatedTime: z.number(),
-  progressUrl: z.string(),
-});
-
-export default async function handler(request: Request): Promise<Response> {
-  // Handle CORS preflight
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-    });
-  }
-
-  if (request.method !== 'POST') {
-    console.log('❌ [DEBUG-105] Invalid method attempted', { method: request.method });
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  try {
-    console.log('📥 [DEBUG-106] Processing generate itinerary request');
-
-    // Parse and validate request body
-    const body = await request.json();
-    console.log('🔍 [DEBUG-107] Request body parsed', {
-      hasFormData: !!body.formData,
-      hasSessionId: !!body.sessionId,
-      bodyKeys: Object.keys(body),
-    });
-
-    const validation = generateRequestSchema.safeParse(body);
-
-    if (!validation.success) {
-      console.log('❌ [DEBUG-108] Validation failed', {
-        errors: validation.error.errors,
-        errorCount: validation.error.errors.length,
-      });
-      return new Response(
-        JSON.stringify({
-          error: 'Invalid request data',
-          details: validation.error.errors,
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { formData, sessionId } = validation.data;
-    console.log('✅ [DEBUG-109] Request validation successful', {
-      sessionId,
-      location: formData.location,
-      hasAllRequiredFields: !!(formData.location && formData.departDate && formData.returnDate),
-    });
-
-    // Generate unique request ID
-    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('🆔 [DEBUG-110] Generated request ID', { requestId, sessionId });
-
-    // Create workflow session
-    console.log('💾 [DEBUG-111] Creating workflow session');
-    const session = await SessionManager.createSession({
-      sessionId,
-      requestId,
-      formData,
-    });
-    console.log('✅ [DEBUG-112] Workflow session created', {
-      workflowId: session.id,
-      sessionId: session.sessionId,
-      status: session.status,
-    });
-
-    // Send Inngest event to start AI workflow
-    console.log('🔄 [DEBUG-113] Sending workflow event to Inngest', {
-      eventName: 'itinerary/generation.requested',
-      workflowId: session.id,
-    });
-    await sendWorkflowEvent('itinerary/generation.requested', {
-      workflowId: session.id,
-      sessionId: validation.data.sessionId,
-      formData,
-      requestedAt: new Date().toISOString(),
-    });
-    console.log('✅ [DEBUG-114] Workflow event sent successfully');
-
-    // Construct progress tracking URL
-    const url = new URL(request.url);
-    const baseUrl = `${url.protocol}//${url.host}`;
-    const progressUrl = `${baseUrl}/api/itinerary/progress/${session.id}`;
-
-    // Estimate processing time based on complexity
-    const estimatedTime = estimateProcessingTime(formData);
-
-    const response = generateResponseSchema.parse({
-      workflowId: session.id,
-      status: 'initiated' as const,
-      estimatedTime,
-      progressUrl,
-    });
-
-    console.log(`✅ Initiated workflow ${session.id} for session ${validation.data.sessionId}`);
-    return new Response(JSON.stringify(response), {
-      status: 202, // Accepted - processing asynchronously
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-      },
-    });
-  } catch (error) {
-    console.error('Generate itinerary API error:', error);
-
-    return new Response(
-      JSON.stringify({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        code: 'GENERATION_FAILED',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+interface GenerateResponse {
+  success: true;
+  workflowId: string;
+  estimatedCompletionTime: number;
+  message: string;
 }
 
 /**
- * Estimate processing time based on trip complexity
- * Constitutional requirement: User experience consistency
+ * Error response schema
  */
-function estimateProcessingTime(formData: any): number {
-  let baseTime = 60; // 1 minute base time
+interface ErrorResponse {
+  success: false;
+  error: string;
+  code?: string;
+}
 
-  // Add time based on trip duration
-  baseTime += formData.plannedDays * 15; // 15 seconds per day
+/**
+ * POST /api/itinerary/generate
+ * Initiates AI workflow for itinerary generation
+ */
+export default async function handler(request: Request): Promise<Response> {
+  console.log('🚀 [21] API Generate: Request received', {
+    method: request.method,
+    url: request.url,
+    timestamp: new Date().toISOString(),
+  });
 
-  // Add time for complex preferences
-  if (formData.interests && formData.interests.length > 5) {
-    baseTime += 30;
+  // Only allow POST method
+  if (request.method !== 'POST') {
+    console.log('❌ [22] API Generate: Method not allowed', { method: request.method });
+    return Response.json(
+      {
+        success: false,
+        error: 'Method not allowed',
+        code: 'METHOD_NOT_ALLOWED',
+      } satisfies ErrorResponse,
+      { status: 405 }
+    );
   }
 
-  if (formData.avoidances && formData.avoidances.length > 0) {
-    baseTime += 20;
-  }
+  const startTime = Date.now();
+  console.log('⏱️ [23] API Generate: Processing started', { startTime });
 
-  if (formData.accessibility && formData.accessibility.length > 0) {
-    baseTime += 25;
-  }
+  try {
+    // Parse request body
+    const body = await request.json().catch(() => null);
 
-  // Cap at 5 minutes maximum
-  return Math.min(baseTime, 300);
+    console.log('📝 [24] API Generate: Request body parsed', {
+      hasBody: !!body,
+      bodyKeys: body ? Object.keys(body) : [],
+    });
+
+    if (!body) {
+      console.log('❌ [25] API Generate: Invalid JSON in request body');
+      return Response.json(
+        {
+          success: false,
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON',
+        } satisfies ErrorResponse,
+        { status: 400 }
+      );
+    }
+
+    // Validate request data
+    const validation = generateRequestSchema.safeParse(body);
+
+    console.log('🔍 [26] API Generate: Request validation', {
+      success: validation.success,
+      hasSessionId: !!body.sessionId,
+      hasFormData: !!body.formData,
+    });
+
+    if (!validation.success) {
+      console.error('❌ [27] API Generate: Validation failed', validation.error.format());
+      return Response.json(
+        {
+          success: false,
+          error: 'Invalid request data',
+          code: 'VALIDATION_ERROR',
+          details: validation.error.format(),
+        } as ErrorResponse & { details: any },
+        { status: 400 }
+      );
+    }
+
+    const { sessionId, formData } = validation.data;
+
+    console.log('✅ [28] API Generate: Request validated successfully', {
+      sessionId: sessionId.substring(0, 8) + '...',
+      destination: formData.destination,
+      travelers: `${formData.adults || 0} adults, ${formData.children || 0} children`,
+      dates: `${formData.departDate} to ${formData.returnDate}`,
+    });
+
+    // Convert string dates to Date objects for TravelFormData compatibility
+    const processedFormData = {
+      ...formData,
+      departDate: formData.departDate,
+      returnDate: formData.returnDate,
+      submittedAt: formData.submittedAt ? new Date(formData.submittedAt) : new Date(),
+    };
+
+    console.log('🔄 [29] API Generate: Form data processed', {
+      submittedAt: processedFormData.submittedAt,
+      formDataKeys: Object.keys(processedFormData),
+    });
+
+    console.log(`🚀 [30] API Generate: Starting workflow for session ${sessionId}`);
+
+    // Initiate workflow
+    const workflowResult = await WorkflowOrchestrator.startWorkflow(sessionId, processedFormData);
+    const processingTime = Date.now() - startTime;
+
+    console.log(`✅ [31] API Generate: Workflow initiated successfully`, {
+      workflowId: workflowResult.workflowId,
+      processingTime: `${processingTime}ms`,
+      estimatedCompletion: `${workflowResult.estimatedCompletionTime}ms`,
+    });
+
+    // Success response
+    const response: GenerateResponse = {
+      success: true,
+      workflowId: workflowResult.workflowId,
+      estimatedCompletionTime: workflowResult.estimatedCompletionTime,
+      message: 'Itinerary generation started successfully',
+    };
+
+    console.log('🎉 [32] API Generate: Success response prepared', {
+      workflowId: response.workflowId,
+      estimatedTime: response.estimatedCompletionTime,
+      totalProcessingTime: `${processingTime}ms`,
+    });
+
+    return Response.json(response, {
+      status: 202, // Accepted - processing will continue asynchronously
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Processing-Time': processingTime.toString(),
+        'X-Workflow-Id': workflowResult.workflowId,
+      },
+    });
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+
+    console.error('💥 [33] API Generate: Error caught', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      processingTime: `${processingTime}ms`,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // Handle specific error types
+    if (error instanceof Error) {
+      console.log('🔍 [34] API Generate: Error analysis', {
+        errorType: error.constructor.name,
+        isInngestError: error.message.includes('Inngest'),
+        isWorkflowError: error.message.includes('workflow'),
+        isAIError: error.message.includes('provider') || error.message.includes('AI'),
+      });
+
+      // Inngest or workflow initialization errors
+      if (error.message.includes('Inngest') || error.message.includes('workflow')) {
+        console.log('🚧 [35] API Generate: Workflow service error detected');
+        return Response.json(
+          {
+            success: false,
+            error: 'Workflow service temporarily unavailable',
+            code: 'SERVICE_UNAVAILABLE',
+          } satisfies ErrorResponse,
+          {
+            status: 503,
+            headers: {
+              'X-Processing-Time': processingTime.toString(),
+            },
+          }
+        );
+      }
+
+      // AI provider errors
+      if (error.message.includes('provider') || error.message.includes('AI')) {
+        console.log('🤖 [36] API Generate: AI service error detected');
+        return Response.json(
+          {
+            success: false,
+            error: 'AI services temporarily unavailable',
+            code: 'AI_SERVICE_ERROR',
+          } satisfies ErrorResponse,
+          {
+            status: 503,
+            headers: {
+              'X-Processing-Time': processingTime.toString(),
+            },
+          }
+        );
+      }
+    }
+
+    // Generic server error
+    return Response.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      } satisfies ErrorResponse,
+      {
+        status: 500,
+        headers: {
+          'X-Processing-Time': processingTime.toString(),
+        },
+      }
+    );
+  }
 }

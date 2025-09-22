@@ -1,14 +1,59 @@
-import React from 'react';
-import { Download, Mail, MapPin, Clock, DollarSign, Calendar, CheckCircle } from 'lucide-react';
-import ResilientLoading from './ResilientLoading';
+/**
+ * ItineraryDisplay Component
+ *
+ * Constitutional Requirements:
+ * - Design tokens: bg-form-box (#ece8de), rounded-[36px]
+ * - BaseFormProps pattern for consistency
+ * - Type-safe development
+ *
+ * Task: T040 - Enhanced ItineraryDisplay component
+ */
 
-interface ItineraryDisplayProps {
-  itinerary: string;
-  isLoading: boolean;
-  error?: string;
+import React from 'react';
+import {
+  Download,
+  Mail,
+  MapPin,
+  Clock,
+  DollarSign,
+  Calendar,
+  CheckCircle,
+  User,
+  AlertCircle,
+} from 'lucide-react';
+import ResilientLoading from './ResilientLoading';
+import type { FinalItinerary } from '../lib/ai-agents/formatter-agent';
+
+/**
+ * Base form props interface following constitutional pattern
+ */
+interface BaseFormProps {
+  className?: string;
+  onFormChange?: (data: any) => void;
 }
 
-const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itinerary, isLoading, error }) => {
+/**
+ * ItineraryDisplay component props
+ */
+interface ItineraryDisplayProps extends BaseFormProps {
+  itinerary?: FinalItinerary;
+  isLoading: boolean;
+  error?: string;
+  workflowId?: string;
+}
+
+/**
+ * ItineraryDisplay Component
+ * Constitutional design: bg-form-box, rounded-[36px], consistent typography
+ */
+const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
+  itinerary,
+  isLoading,
+  error,
+  workflowId,
+  className = '',
+  onFormChange,
+}) => {
   const handleDownload = () => {
     const element = document.createElement('a');
     const file = new Blob([itinerary], { type: 'text/plain' });

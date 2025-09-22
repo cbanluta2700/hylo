@@ -7,10 +7,8 @@ import { validateTravelFormData, formatValidationErrors } from '@/schemas/ai-wor
  * Returns validation state and warnings
  */
 export function aggregateFormData(sections: Partial<TravelFormData>): FormAggregationResult {
-  console.log('📝 [DEBUG-102] Starting form data aggregation', {
-    sectionsReceived: Object.keys(sections),
-    hasLocation: !!sections.location,
-    hasDates: !!(sections.departDate && sections.returnDate),
+  console.log('📝 [1] Form Aggregation: Starting form data aggregation', {
+    sectionsKeys: Object.keys(sections),
   });
 
   // Merge all form sections into a single object
@@ -25,20 +23,15 @@ export function aggregateFormData(sections: Partial<TravelFormData>): FormAggreg
     submittedAt: sections.submittedAt ?? undefined,
   } as TravelFormData;
 
-  console.log('📝 VERCEL AUDIT: Aggregated data:', data);
-  console.log('🔍 [DEBUG-103] Form data aggregation validation', {
-    location: data.location,
-    departDate: data.departDate,
-    returnDate: data.returnDate,
-    budget: data.budget?.total,
-    formVersion: data.formVersion,
-  });
+  console.log('📝 [2] Form Aggregation: Aggregated travel form data', data);
 
   // Validate aggregated data
   const validationResult = validateTravelFormData(data);
   let validation: FormValidationState;
   let missingFields: string[] = [];
   let warnings: string[] = [];
+
+  console.log('📝 [3] Form Aggregation: Validation result', { success: validationResult.success });
 
   if (!validationResult.success) {
     validation = {
@@ -50,6 +43,7 @@ export function aggregateFormData(sections: Partial<TravelFormData>): FormAggreg
     };
     missingFields = Object.keys(validation.errors);
     warnings.push('Some required fields are missing or invalid.');
+    console.log('📝 [4] Form Aggregation: Validation failed', { missingFields, warnings });
   } else {
     validation = {
       isValid: true,
@@ -58,6 +52,9 @@ export function aggregateFormData(sections: Partial<TravelFormData>): FormAggreg
       requiredSections: [],
       completionPercentage: 100,
     };
+    console.log('📝 [5] Form Aggregation: Validation successful', {
+      completedSections: validation.completedSections,
+    });
   }
 
   return {

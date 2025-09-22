@@ -1,163 +1,142 @@
 /**
- * Get Itinerary API Endpoint (T038)
+ * Get Itinerary API Endpoint
  *
- * CONSTITUTIONAL COMPLIANCE:
- * - Principle I: Edge Runtime compatible (Vercel Edge Functions)
- * - Principle V: Type-safe development with Zod validation
- * - Principle IV: Code-Deploy-Debug with comprehensive retrieval
+ * Constitutional Requirements:
+ * - Vercel Edge Runtime only
+ * - Type-safe development
  *
- * GET /api/itinerary/[itineraryId]
- * Retrieves completed itinerary by ID
+ * Task: T037 - Implement /api/itinerary/get-itinerary endpoint
  */
 
-// Edge Runtime configuration (constitutional requirement)
+import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator';
+
+// Runtime configuration for Vercel Edge
 export const config = {
   runtime: 'edge',
 };
 
+/**
+ * Success response interface
+ */
+interface GetItineraryResponse {
+  success: true;
+  workflowId: string;
+  status: string;
+  progress: number;
+  currentStage: string;
+  itinerary?: any;
+  estimatedTimeRemaining?: number;
+}
+
+/**
+ * Error response interface
+ */
+interface ErrorResponse {
+  success: false;
+  error: string;
+  code?: string;
+}
+
+/**
+ * GET /api/itinerary/get-itinerary
+ * Retrieves itinerary status and results
+ */
 export default async function handler(request: Request): Promise<Response> {
-  console.log('📋 [DEBUG-138] Get Itinerary API endpoint called', {
-    method: request.method,
-    url: request.url,
-    timestamp: new Date().toISOString(),
-  });
-
-  const url = new URL(request.url);
-  const pathSegments = url.pathname.split('/');
-  const itineraryId = pathSegments[pathSegments.length - 1];
-  console.log('🔍 [DEBUG-139] Extracting itinerary ID', {
-    pathSegments,
-    itineraryId,
-    fullPath: url.pathname,
-  });
-
-  // Handle CORS preflight
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-    });
-  }
-
+  // Only allow GET method
   if (request.method !== 'GET') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return Response.json(
+      {
+        success: false,
+        error: 'Method not allowed',
+        code: 'METHOD_NOT_ALLOWED',
+      } satisfies ErrorResponse,
+      { status: 405 }
+    );
   }
+
+  const startTime = Date.now();
 
   try {
-    if (!itineraryId) {
-      console.log('❌ [DEBUG-140] Missing itinerary ID');
-      return new Response(JSON.stringify({ error: 'Itinerary ID is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    const url = new URL(request.url);
+    const workflowId = url.searchParams.get('workflowId');
+
+    if (!workflowId) {
+      return Response.json(
+        {
+          success: false,
+          error: 'workflowId parameter is required',
+          code: 'MISSING_WORKFLOW_ID',
+        } satisfies ErrorResponse,
+        { status: 400 }
+      );
     }
 
-    console.log('🔄 [DEBUG-141] Processing itinerary retrieval', { itineraryId });
+    console.log(`[Get Itinerary API] Retrieving status for workflow ${workflowId}`);
 
-    // For now, return a mock response to satisfy contract tests
-    // In full implementation, this would retrieve from Redis/database
-    const mockItinerary = {
-      id: itineraryId,
-      title: 'Amazing 5-Day Paris Adventure',
-      subtitle: 'A perfect blend of culture, cuisine, and iconic sights',
-      overview: {
-        description:
-          'Experience the magic of Paris with this carefully crafted 5-day itinerary that balances must-see attractions with local experiences.',
-        highlights: [
-          'Visit the Eiffel Tower at sunset',
-          'Explore the Louvre Museum',
-          'Stroll through Montmartre',
-          'Seine River cruise',
-          'French culinary experiences',
-        ],
-        bestFor: ['First-time visitors', 'Culture enthusiasts', 'Food lovers'],
-        totalCost: '$1,200 USD',
-        duration: '5 days',
-      },
-      dailyItinerary: [
+    // Get workflow status
+    const workflowStatus = await WorkflowOrchestrator.getWorkflowStatus(workflowId);
+
+    if (!workflowStatus) {
+      return Response.json(
         {
-          day: 1,
-          title: 'Classic Paris Icons',
-          theme: 'Historic landmarks and cultural immersion',
-          description: "Begin your Parisian adventure with the city's most iconic sights",
-          schedule: [
-            {
-              time: '9:00 AM',
-              title: 'Eiffel Tower Visit',
-              description: 'Start early to avoid crowds and enjoy breathtaking views',
-              location: 'Champ de Mars, 75007 Paris',
-              cost: '€26',
-              tips: ['Book tickets online in advance', 'Visit the second floor for best views'],
-              icon: '🗼',
-            },
-          ],
-          meals: {
-            breakfast: {
-              name: 'Café de Flore',
-              description: 'Classic Parisian café experience',
-              cost: '€15',
-            },
-            lunch: { name: "L'Ami Jean", description: 'Traditional French bistro', cost: '€35' },
-            dinner: {
-              name: 'Le Comptoir du Relais',
-              description: 'Intimate neighborhood gem',
-              cost: '€45',
-            },
-          },
-          dayTotal: '€121',
-        },
-      ],
-      practicalInfo: {
-        budgetBreakdown: {
-          accommodation: '€400',
-          food: '€350',
-          activities: '€250',
-          transport: '€100',
-        },
-        essentialTips: [
-          'Purchase a Navigo pass for unlimited metro travel',
-          'Most museums are closed on Mondays',
-          'Restaurants typically close between lunch and dinner',
-        ],
-        packingList: ['Comfortable walking shoes', 'Light jacket', 'Portable phone charger'],
-        localEtiquette: [
-          'Greet shopkeepers when entering stores',
-          'Say "Bonjour" before asking questions',
-        ],
-        emergencyInfo: ['Emergency: 112', 'Tourist Police: +33 1 53 71 53 71'],
-      },
-      alternatives: {
-        rainDayOptions: ['Visit covered passages', 'Explore department stores', 'Museum hopping'],
-        budgetFriendly: ['Free walking tours', 'Picnic in parks', 'Free museum days'],
-        splurgeOptions: ['Michelin-starred dining', 'Seine dinner cruise', 'Private guide tours'],
-      },
-      generatedAt: new Date().toISOString(),
-      status: 'completed',
+          success: false,
+          error: 'Workflow not found',
+          code: 'WORKFLOW_NOT_FOUND',
+        } satisfies ErrorResponse,
+        { status: 404 }
+      );
+    }
+
+    const processingTime = Date.now() - startTime;
+
+    // Calculate estimated time remaining
+    let estimatedTimeRemaining: number | undefined;
+    if (workflowStatus.status === 'processing') {
+      const elapsed = Date.now() - workflowStatus.startedAt.getTime();
+      const totalEstimated = 5 * 60 * 1000; // 5 minutes estimated total
+      estimatedTimeRemaining = Math.max(0, totalEstimated - elapsed);
+    }
+
+    const response: GetItineraryResponse = {
+      success: true,
+      workflowId: workflowStatus.id,
+      status: workflowStatus.status,
+      progress: workflowStatus.progress,
+      currentStage: workflowStatus.currentStage,
+      ...(estimatedTimeRemaining !== undefined && { estimatedTimeRemaining }),
+      // TODO: Include final itinerary when completed
+      // This would require storing the final result in Redis
     };
 
-    return new Response(JSON.stringify(mockItinerary), {
+    console.log(
+      `[Get Itinerary API] Status retrieved in ${processingTime}ms: ${workflowStatus.status}`
+    );
+
+    return Response.json(response, {
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
-        'Access-Control-Allow-Origin': '*',
+        'X-Processing-Time': processingTime.toString(),
+        'Cache-Control': 'no-cache',
       },
     });
   } catch (error) {
-    console.error('Get itinerary API error:', error);
+    const processingTime = Date.now() - startTime;
 
-    return new Response(
-      JSON.stringify({
+    console.error('[Get Itinerary API] Error:', error);
+
+    return Response.json(
+      {
+        success: false,
         error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+        code: 'INTERNAL_ERROR',
+      } satisfies ErrorResponse,
+      {
+        status: 500,
+        headers: {
+          'X-Processing-Time': processingTime.toString(),
+        },
+      }
     );
   }
 }

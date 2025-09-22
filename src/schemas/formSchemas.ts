@@ -67,14 +67,14 @@ export const tripDetailsSchema = z
     selectedInclusions: z.array(z.string()).optional(),
     customInclusionsText: z.string().max(200, 'Custom inclusion text too long').optional(),
     inclusionPreferences: z.record(z.any()).optional(),
-
+    
     // T002: Travel style comprehensive data
     travelExperience: z.array(z.string()).optional(),
     tripVibes: z.array(z.string()).optional(),
     customVibeText: z.string().max(200, 'Custom vibe text too long').optional(),
     sampleDays: z.array(z.string()).optional(),
     dinnerPreferences: z.array(z.string()).optional(),
-
+    
     // T002: Simplified contact information
     tripNickname: z.string().max(100, 'Trip nickname too long').optional(),
     contactName: z.string().max(50, 'Contact name too long').optional(),
@@ -148,63 +148,3 @@ export type TravelInterestsFormData = z.infer<typeof travelInterestsSchema>;
 export type AccommodationPreferencesFormData = z.infer<typeof accommodationPreferencesSchema>;
 export type RentalCarPreferencesFormData = z.infer<typeof rentalCarPreferencesSchema>;
 export type TravelStyleGroupData = z.infer<typeof travelStyleGroupSchema>;
-
-// Complete Travel Form Schema for API validation
-export const travelFormSchema = z.object({
-  // Trip Details
-  location: z.string().min(1, 'Location is required'),
-  departDate: z.string().min(1, 'Departure date is required'),
-  returnDate: z.string().optional(),
-  flexibleDates: z.boolean().default(false),
-  plannedDays: z.number().min(1).max(31).optional(),
-  adults: z.number().min(1).max(10),
-  children: z.number().min(0).max(10),
-  childrenAges: z.array(z.number().min(0).max(17)).optional(),
-
-  // Budget Information
-  budget: z.object({
-    total: z.number().min(0),
-    currency: z.string().default('USD'),
-    breakdown: z.object({
-      accommodation: z.number().min(0),
-      food: z.number().min(0),
-      activities: z.number().min(0),
-      transportation: z.number().min(0),
-      shopping: z.number().min(0),
-      emergency: z.number().min(0),
-    }),
-    flexibility: z.enum(['strict', 'flexible', 'very-flexible']),
-  }),
-
-  // Travel Preferences
-  travelStyle: z.object({
-    pace: z.enum(['slow', 'moderate', 'fast']),
-    accommodationType: z.enum(['budget', 'mid-range', 'luxury', 'mixed']),
-    diningPreferences: z.enum(['local', 'international', 'mixed']),
-    activityLevel: z.enum(['low', 'moderate', 'high']),
-    culturalImmersion: z.enum(['minimal', 'moderate', 'deep']),
-  }),
-
-  // Travel Interests
-  interests: z.array(z.string()),
-  avoidances: z.array(z.string()),
-  dietaryRestrictions: z.array(z.string()),
-  accessibility: z.array(z.string()),
-
-  // Experience and Vibe
-  travelExperience: z.string(),
-  tripVibe: z.string(),
-  dinnerChoice: z.string(),
-
-  // Additional Services
-  additionalServices: z.object({
-    flightBooking: z.boolean().default(false),
-    accommodation: z.boolean().default(false),
-    localTransport: z.boolean().default(false),
-    experiences: z.boolean().default(false),
-  }),
-
-  // Optional Fields
-  tripNickname: z.string().optional(),
-  specialRequirements: z.string().optional(),
-});

@@ -154,81 +154,81 @@
 
 ### T019-T031: 4-Agent Workflow System
 
-- [x] T019 [P] Create Inngest client configuration in `src/lib/inngest/client.ts`
+- [ ] T019 [P] Create Inngest client configuration in `src/lib/inngest/client.ts`
 
   - Initialize Inngest with proper event signing
   - Configure Edge Runtime compatibility
   - Set up development/production environment handling
 
-- [x] T020 [P] Implement WorkflowSession Redis management in `src/lib/session/SessionManager.ts`
+- [ ] T020 [P] Implement WorkflowSession Redis management in `src/lib/workflows/session-manager.ts`
 
   - Create, update, and retrieve workflow state from Redis
   - Handle session expiration and cleanup
   - Implement progress tracking with atomic updates
 
-- [x] T021 [P] Create AI provider client setup in `src/lib/ai/AIClient.ts`
+- [ ] T021 [P] Create AI provider client setup in `src/lib/ai-clients/providers.ts`
 
   - Initialize XAI Grok client for reasoning tasks
   - Set up Groq client for information gathering
   - Configure GPT-OSS client for form processing
   - Add error handling and retry logic
 
-- [x] T022 [P] Implement Itinerary Architect agent in `src/lib/agents/AgentWorkflow.ts`
+- [ ] T022 [P] Implement Itinerary Architect agent in `src/lib/ai-agents/architect-agent.ts`
 
   - Create trip structure and framework planning
   - Use XAI Grok-4-Fast-Reasoning model
   - Generate daily schedule templates and budget allocation
 
-- [x] T023 [P] Implement Web Information Gatherer agent in `src/lib/agents/AgentWorkflow.ts`
+- [ ] T023 [P] Implement Web Information Gatherer agent in `src/lib/ai-agents/gatherer-agent.ts`
 
   - Search and collect destination data using Tavily/Exa/SERP
   - Use Groq Compound model for fast information processing
   - Gather activity, restaurant, and accommodation data
 
-- [x] T024 [P] Implement Information Specialist agent in `src/lib/agents/AgentWorkflow.ts`
+- [ ] T024 [P] Implement Information Specialist agent in `src/lib/ai-agents/specialist-agent.ts`
 
   - Process and refine gathered travel data
   - Use XAI Grok-4-Fast-Reasoning for data analysis
   - Filter and rank recommendations based on user preferences
 
-- [x] T025 [P] Implement Form Putter agent in `src/lib/agents/AgentWorkflow.ts`
+- [ ] T025 [P] Implement Form Putter agent in `src/lib/ai-agents/formatter-agent.ts`
 
   - Format final itinerary output using GPT-OSS-20B
   - Structure data according to GeneratedItinerary interface
   - Ensure proper budget calculations and feasibility
 
-- [x] T026 [P] Create main workflow orchestration in `src/lib/agents/AgentWorkflow.ts`
+- [ ] T026 [P] Create main workflow orchestration in `src/lib/inngest/functions/itinerary-workflow.ts`
 
   - Coordinate all 4 AI agents in sequence
   - Update Redis state at each step
   - Handle agent failures with retry logic
   - Emit progress events for real-time updates
 
-- [x] T027 [P] Implement Server-Sent Events for progress updates in `api/itinerary/progress/[workflowId].ts`
+- [ ] T027 [P] Implement Server-Sent Events for progress updates in `src/lib/workflows/progress-stream.ts`
 
   - Stream workflow progress to frontend
   - Connect Redis state changes to SSE events
   - Handle client disconnections gracefully
 
-- [x] T028 [P] Create workflow error handling in `src/lib/agents/AgentWorkflow.ts`
+- [ ] T028 [P] Create workflow error handling in `src/lib/workflows/error-handler.ts`
 
   - Comprehensive error boundaries for AI failures
   - Retry logic for transient service issues
   - Graceful degradation strategies
 
-- [x] T029 [P] Implement search provider integration in `src/lib/search/SearchClient.ts`
+- [ ] T029 [P] Implement search provider integration in `src/lib/search/providers.ts`
 
   - Tavily client for travel-specific searches
   - Exa client for semantic travel queries
   - SERP client as fallback for general information
 
-- [x] T030 [P] Create vector storage for embeddings in `src/lib/vector/VectorStorageManager.ts`
+- [ ] T030 [P] Create vector storage for embeddings in `src/lib/vector/embeddings-store.ts`
 
   - Store and retrieve travel destination embeddings
   - Enable similarity search for recommendations
   - Optimize for fast retrieval during AI processing
 
-- [x] T031 [P] Implement workflow monitoring and logging in `src/lib/vector/VectorStorageManager.ts`
+- [ ] T031 [P] Implement workflow monitoring and logging in `src/lib/workflows/monitoring.ts`
   - Track AI agent performance metrics
   - Log token usage and costs
   - Monitor workflow success rates
@@ -237,45 +237,45 @@
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
-- [x] T032 [P] Contract test POST /api/itinerary/generate in `tests/contract/generate-itinerary.test.ts`
+- [ ] T032 [P] Contract test POST /api/itinerary/generate in `tests/contract/generate-itinerary.test.ts`
 
   - Test request/response schema validation
   - Verify workflow initiation logic
   - Ensure proper error handling for invalid inputs
 
-- [x] T033 [P] Contract test GET /api/itinerary/progress/:workflowId in `tests/contract/progress-stream-v2.test.ts`
+- [ ] T033 [P] Contract test GET /api/itinerary/progress/:workflowId in `tests/contract/progress-stream.test.ts`
 
   - Test Server-Sent Events stream format
   - Verify progress update broadcasting
   - Ensure proper connection handling
 
-- [x] T034 [P] Contract test GET /api/itinerary/:itineraryId in `tests/contract/get-itinerary.test.ts`
+- [ ] T034 [P] Contract test GET /api/itinerary/:itineraryId in `tests/contract/get-itinerary.test.ts`
 
   - Test itinerary retrieval and formatting
   - Verify data structure compliance
   - Ensure proper 404 handling for missing itineraries
 
-- [x] T035 [P] Integration test complete workflow in `tests/contract/end-to-end-workflow.test.ts`
+- [ ] T035 [P] Integration test complete workflow in `tests/integration/end-to-end-workflow.test.ts`
   - Test full form submission to itinerary generation
   - Verify all 4 AI agents execute correctly
   - Validate real-time progress updates
 
 ### T036-T039: Core API Implementation (ONLY after tests are failing)
 
-- [x] T036 Implement POST /api/itinerary/generate endpoint in `api/itinerary/generate.ts`
+- [ ] T036 Implement POST /api/itinerary/generate endpoint in `api/itinerary/generate.ts`
 
   - Validate TravelFormData using Zod schemas
   - Create WorkflowSession in Redis
   - Trigger Inngest workflow with form data
   - Export Edge Runtime configuration
 
-- [x] T037 Implement GET /api/itinerary/progress/[workflowId].ts for SSE streaming
+- [ ] T037 Implement GET /api/itinerary/progress/[workflowId].ts for SSE streaming
 
   - Stream workflow progress updates from Redis
   - Handle client connections and disconnections
   - Ensure proper SSE headers and formatting
 
-- [x] T038 Implement GET /api/itinerary/[itineraryId].ts for result retrieval
+- [ ] T038 Implement GET /api/itinerary/[itineraryId].ts for result retrieval
 
   - Retrieve completed itinerary from Redis/storage
   - Format according to GeneratedItinerary interface

@@ -29,30 +29,56 @@ describe('Contract: POST /api/itinerary/generate', () => {
     children: 0,
     childrenAges: [],
 
-    // Budget
-    budget: 3000,
-    currency: 'USD',
-    flexibleBudget: true,
-    budgetMode: 'total',
+    // Budget Information
+    budget: {
+      total: 3000,
+      currency: 'USD',
+      breakdown: {
+        accommodation: 1200,
+        food: 600,
+        activities: 800,
+        transportation: 300,
+        shopping: 100,
+        emergency: 0,
+      },
+      flexibility: 'flexible',
+    },
 
-    // Travel Style & Preferences
-    travelStyleChoice: 'answer-questions',
-    travelStyleAnswers: {},
-    selectedGroups: ['cultural', 'food'],
-    selectedInterests: ['museums', 'restaurants'],
-    selectedInclusions: ['accommodation', 'activities'],
-    inclusionPreferences: {},
+    // Travel Preferences
+    travelStyle: {
+      pace: 'moderate',
+      accommodationType: 'mid-range',
+      diningPreferences: 'local',
+      activityLevel: 'moderate',
+      culturalImmersion: 'moderate',
+    },
 
-    // Experience Preferences
-    travelExperience: ['first-time'],
-    tripVibes: ['cultural', 'relaxed'],
-    sampleDays: ['museum-day'],
-    dinnerPreferences: ['local-cuisine'],
+    // Travel Interests
+    interests: ['museums', 'restaurants', 'culture'],
+    avoidances: ['crowds'],
+    dietaryRestrictions: [],
+    accessibility: [],
 
-    // Contact
-    tripNickname: 'Paris Adventure',
-    contactName: 'Test User',
-    contactEmail: 'test@example.com',
+    // Travel Style Choices
+    tripVibe: 'cultural',
+    travelExperience: 'first-time',
+    dinnerChoice: 'local-spots',
+    nickname: 'Paris Adventure',
+
+    // Additional Services
+    additionalServices: {
+      carRental: false,
+      travel_insurance: true,
+      tours: true,
+      airport_transfers: false,
+      spa_wellness: false,
+      adventure_activities: false,
+    },
+
+    // Metadata
+    sessionId: 'test-session-123',
+    formVersion: '1.0.0',
+    submittedAt: new Date(),
   };
 
   const validRequest = {

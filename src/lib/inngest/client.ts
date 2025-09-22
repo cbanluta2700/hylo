@@ -1,156 +1,137 @@
 /**
- * Inngest Client Configuration (T019)
+ * Inngest Client Configuration for AI Workflow Orchestration
  *
- * CONSTITUTIONAL COMPLIANCE:
- * - Principle I: Edge Runtime compatible
- * - Principle V: Type-safe development with strict TypeScript
+ * Constitutional Requirements:
+ * - Edge Runtime compatibility (no Node.js built-ins)
+ * - Type-safe development with strict TypeScript
+ * - Environment variable security patterns
  *
- * This initializes the Inngest client for AI workflow orchestration
- * with proper Edge Runtime compatibility and event signing.
+ * Task: T019 - Create Inngest client configuration
  */
 
 import { Inngest } from 'inngest';
 
-// Constitutional requirement: Environment variable validation
-const INNGEST_EVENT_KEY = process.env.INNGEST_EVENT_KEY;
-const INNGEST_SIGNING_KEY = process.env.INNGEST_SIGNING_KEY;
+/**
+ * Environment configuration for Inngest
+ * Must be compatible with Vercel Edge Runtime
+ */
+const getInngestConfig = () => {
+  // Check for required environment variables
+  const eventKey = process.env['INNGEST_EVENT_KEY'];
+  const isDevelopment = process.env['NODE_ENV'] === 'development';
 
-if (!INNGEST_EVENT_KEY) {
-  throw new Error('INNGEST_EVENT_KEY is required but not configured');
-}
+  if (!eventKey && !isDevelopment) {
+    throw new Error('INNGEST_EVENT_KEY is required for production deployment');
+  }
 
-// Create Inngest client with Edge Runtime compatibility
-export const inngest = new Inngest({
-  id: 'hylo-travel-ai',
-  name: 'Hylo Travel AI Workflow',
-
-  // Constitutional requirement: Edge Runtime environment handling
-  eventKey: INNGEST_EVENT_KEY,
-
-  // Development vs production environment handling
-  env: process.env.NODE_ENV === 'production' ? 'production' : 'development',
-
-  // Edge Runtime compatible configuration
-  isDev: process.env.NODE_ENV !== 'production',
-
-  // Signing key for webhook security (production only)
-  ...(INNGEST_SIGNING_KEY &&
-    process.env.NODE_ENV === 'production' && {
-      signingKey: INNGEST_SIGNING_KEY,
-    }),
-
-  // Edge Runtime compatible logger
-  logger: {
-    info: (msg: string, extra?: any) => console.info(`[Inngest] ${msg}`, extra),
-    warn: (msg: string, extra?: any) => console.warn(`[Inngest] ${msg}`, extra),
-    error: (msg: string, extra?: any) => console.error(`[Inngest] ${msg}`, extra),
-    debug: (msg: string, extra?: any) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.debug(`[Inngest] ${msg}`, extra);
-      }
-    },
-  },
-});
+  return {
+    id: 'hylo-travel-ai',
+    name: 'Hylo Travel AI Workflow',
+    ...(eventKey && { eventKey }), // Only include if defined
+    isDev: isDevelopment,
+    // Configure for Edge Runtime compatibility
+    isProduction: process.env['NODE_ENV'] === 'production',
+    baseUrl: process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3000',
+  };
+};
 
 /**
- * Event Types for AI Workflow
- * Constitutional requirement: Type-safe development
+ * Inngest client instance
+ * Configured for Edge Runtime deployment on Vercel
+ */
+export const inngest = new Inngest(getInngestConfig());
+
+/**
+ * Event types for AI workflow orchestration
+ * Type-safe event definitions following constitutional requirements
  */
 export interface WorkflowEvents {
-  'itinerary/generation.requested': {
-    workflowId: string;
-    sessionId: string;
-    formData: any; // Will be properly typed when imported from travel-form.ts
-    requestedAt: string;
-  };
-
-  'itinerary/agent.started': {
-    workflowId: string;
-    agentType: 'architect' | 'gatherer' | 'specialist' | 'formatter';
-    input: any;
-    startedAt: string;
-  };
-
-  'itinerary/agent.completed': {
-    workflowId: string;
-    agentType: 'architect' | 'gatherer' | 'specialist' | 'formatter';
-    output: any;
-    processingTime: number;
-    completedAt: string;
-  };
-
-  'itinerary/agent.failed': {
-    workflowId: string;
-    agentType: 'architect' | 'gatherer' | 'specialist' | 'formatter';
-    error: {
-      code: string;
-      message: string;
-      details?: any;
+  'itinerary/generate': {
+    data: {
+      workflowId: string;
+      sessionId: string;
+      formData: any; // Will be replaced with TravelFormData import
     };
-    retryAttempt: number;
-    failedAt: string;
   };
-
-  'itinerary/generation.completed': {
-    workflowId: string;
-    itineraryId: string;
-    processingTime: number;
-    completedAt: string;
-  };
-
-  'itinerary/generation.failed': {
-    workflowId: string;
-    error: {
-      code: string;
-      message: string;
-      stage: string;
-      details?: any;
+  'itinerary/agent-complete': {
+    data: {
+      workflowId: string;
+      agentType: 'architect' | 'gatherer' | 'specialist' | 'formatter';
+      result: any;
+      tokensUsed?: number;
+      processingTime: number;
     };
-    finalAttempt: boolean;
-    failedAt: string;
+  };
+  'itinerary/progress-update': {
+    data: {
+      workflowId: string;
+      progress: number;
+      currentStage: 'architect' | 'gatherer' | 'specialist' | 'formatter' | 'complete';
+      message?: string;
+    };
+  };
+  'itinerary/workflow-error': {
+    data: {
+      workflowId: string;
+      error: string;
+      agentType?: string;
+      retryCount: number;
+    };
   };
 }
 
 /**
- * Helper function to send events with type safety
- * Constitutional requirement: Type-safe development
+ * Inngest configuration validation
+ * Ensures Edge Runtime compatibility
  */
-export async function sendWorkflowEvent<T extends keyof WorkflowEvents>(
-  eventName: T,
-  data: WorkflowEvents[T]
-): Promise<void> {
-  console.log('🔄 [DEBUG-122] Inngest sending workflow event', {
-    eventName,
-    hasData: !!data,
-    dataKeys: typeof data === 'object' && data ? Object.keys(data) : [],
-  });
-
+export const validateInngestConfig = (): boolean => {
   try {
-    await inngest.send({
-      name: eventName,
-      data,
+    console.log('🔧 [40] Inngest Client: Starting configuration validation');
+    const config = getInngestConfig();
+
+    // Verify required configuration exists
+    if (!config.id || !config.name) {
+      console.error('❌ [41] Inngest Client: Missing required configuration', {
+        hasId: !!config.id,
+        hasName: !!config.name,
+      });
+      return false;
+    }
+
+    // Verify production requirements
+    if (config.isProduction && !config.eventKey) {
+      console.error('❌ [42] Inngest Client: Event key required for production');
+      return false;
+    }
+
+    console.log('✅ [43] Inngest Client: Configuration validated successfully', {
+      id: config.id,
+      name: config.name,
+      isProduction: config.isProduction,
+      hasEventKey: !!config.eventKey,
     });
-    console.log('✅ [DEBUG-123] Inngest event sent successfully', { eventName });
+    return true;
   } catch (error) {
-    console.error(`❌ [DEBUG-124] Failed to send Inngest event ${eventName}:`, error);
-    // Don't throw - events are fire-and-forget for resilience
+    console.error('💥 [44] Inngest Client: Configuration validation failed', error);
+    return false;
   }
-}
+};
 
 /**
- * Batch send multiple events efficiently
- * Edge Runtime compatible batch processing
+ * Development helper for Inngest client
+ * Only available in development mode
  */
-export async function sendWorkflowEvents(
-  events: Array<{
-    name: keyof WorkflowEvents;
-    data: WorkflowEvents[keyof WorkflowEvents];
-  }>
-): Promise<void> {
-  try {
-    await inngest.send(events);
-  } catch (error) {
-    console.error('Failed to send batch Inngest events:', error);
-    // Don't throw - events are fire-and-forget for resilience
+export const getInngestDevInfo = () => {
+  const config = getInngestConfig();
+
+  if (!config.isDev) {
+    return null;
   }
-}
+
+  return {
+    clientId: config.id,
+    baseUrl: config.baseUrl,
+    eventKey: config.eventKey ? 'configured' : 'not configured',
+    isProduction: config.isProduction,
+  };
+};
