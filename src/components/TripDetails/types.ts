@@ -1,27 +1,36 @@
 // src/components/TripDetails/types.ts
 import { TripDetailsFormData, tripDetailsSchema } from '../../schemas/formSchemas';
 
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'CAD' | 'AUD';
-export type BudgetMode = 'total' | 'per-person';
+export type Currency = 'USD' | 'EUR' | 'GBP' | 'CAD' | 'AUD' | ''; // Allow empty string
+export type BudgetMode = 'total' | 'per-person' | ''; // Allow empty string
 
-// Use the validated FormData from schemas
-export type FormData = TripDetailsFormData & {
+// Use the validated FormData from schemas with overrides for form initialization
+export type FormData = Omit<
+  TripDetailsFormData,
+  'adults' | 'children' | 'budget' | 'currency' | 'budgetMode'
+> & {
+  // Allow strings for form initialization (will be converted to numbers during processing)
+  adults: number | string;
+  children: number | string;
+  budget: number | string;
+  currency: Currency;
+
   // Budget Configuration (T001)
   budgetMode?: BudgetMode;
-  
+
   // Travel Group Selection (T001)
   selectedGroups?: string[];
   customGroupText?: string;
-  
+
   // Travel Interest Selection (T001)
   selectedInterests?: string[];
   customInterestsText?: string;
-  
+
   // Itinerary Inclusion Selection (T001)
   selectedInclusions?: string[];
   customInclusionsText?: string;
   inclusionPreferences?: Record<string, any>;
-  
+
   // Travel Style Comprehensive Data (T001)
   travelExperience?: string[];
   customTravelExperienceText?: string;
@@ -35,7 +44,7 @@ export type FormData = TripDetailsFormData & {
   otherDinnerChoiceText?: string;
   sampleDays?: string[];
   dinnerPreferences?: string[];
-  
+
   // Simplified Contact Information (T001)
   tripNickname?: string;
   contactName?: string;
@@ -123,6 +132,7 @@ export const currencySymbols: Record<Currency, string> = {
   GBP: '£',
   CAD: 'C$',
   AUD: 'A$',
+  '': '', // Empty string for unselected currency
 };
 
 // Travel Group options constants

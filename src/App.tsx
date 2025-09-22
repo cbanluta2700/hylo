@@ -11,13 +11,13 @@ function App() {
     departDate: '',
     returnDate: '',
     flexibleDates: false,
-    adults: 0, // Removed default value of 2
-    children: 0, // Keep 0 as default (no children by default is reasonable)
+    adults: '', // Empty string instead of number
+    children: '', // Empty string instead of number
     childrenAges: [],
-    budget: 0, // Removed default value of 5000
-    currency: 'USD', // Required by Currency type, but budget is 0
+    budget: '', // Empty string instead of number
+    currency: '', // Empty string instead of Currency type
     flexibleBudget: false,
-    budgetMode: 'total', // Add the missing budgetMode property
+    budgetMode: '', // Empty string instead of BudgetMode type
     travelStyleChoice: 'not-selected',
     travelStyleAnswers: {},
     // Additional fields for new components
