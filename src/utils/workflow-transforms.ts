@@ -133,11 +133,15 @@ export function transformExistingFormDataToWorkflow(formData: FormData): TravelF
  * Handles currency conversions, date formatting, and sanitization
  */
 export function transformFormDataForWorkflow(formData: TravelFormData) {
-  // Format dates to ISO strings
-  const departDateISO = new Date(formData.departDate).toISOString();
-  const returnDateISO = formData.returnDate
-    ? new Date(formData.returnDate).toISOString()
-    : undefined;
+  // Format dates to ISO strings - handle flexible dates with empty strings
+  const departDateISO =
+    formData.departDate && formData.departDate !== ''
+      ? new Date(formData.departDate).toISOString()
+      : undefined;
+  const returnDateISO =
+    formData.returnDate && formData.returnDate !== ''
+      ? new Date(formData.returnDate).toISOString()
+      : undefined;
 
   // Currency conversion (stub: assumes USD, extend as needed)
   const currency = formData.budget.currency || 'USD';
