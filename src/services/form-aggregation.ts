@@ -7,6 +7,12 @@ import { validateTravelFormData, formatValidationErrors } from '@/schemas/ai-wor
  * Returns validation state and warnings
  */
 export function aggregateFormData(sections: Partial<TravelFormData>): FormAggregationResult {
+  console.log('📝 [DEBUG-102] Starting form data aggregation', {
+    sectionsReceived: Object.keys(sections),
+    hasLocation: !!sections.location,
+    hasDates: !!(sections.departDate && sections.returnDate),
+  });
+
   // Merge all form sections into a single object
   const data: TravelFormData = {
     ...sections,
@@ -20,6 +26,13 @@ export function aggregateFormData(sections: Partial<TravelFormData>): FormAggreg
   } as TravelFormData;
 
   console.log('📝 VERCEL AUDIT: Aggregated data:', data);
+  console.log('🔍 [DEBUG-103] Form data aggregation validation', {
+    location: data.location,
+    departDate: data.departDate,
+    returnDate: data.returnDate,
+    budget: data.budget?.total,
+    formVersion: data.formVersion,
+  });
 
   // Validate aggregated data
   const validationResult = validateTravelFormData(data);

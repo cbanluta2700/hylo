@@ -42,6 +42,11 @@ function mapTripVibeToEnum(value: string | undefined): string {
  * Maps all form sections to the unified interface
  */
 export function transformExistingFormDataToWorkflow(formData: FormData): TravelFormData {
+  console.log('🔄 [DEBUG-100] Starting form data transformation to AI workflow format', {
+    location: formData.location,
+    hasAllFields: !!formData.location && !!formData.departDate,
+  });
+
   const result = {
     // Trip Details
     location: formData.location,
@@ -178,6 +183,14 @@ export function transformFormDataForWorkflow(formData: TravelFormData) {
       preferredPace: formData.travelStyle.pace,
     },
   };
+
+  console.log('✅ [DEBUG-101] Form data transformation completed', {
+    location: result.location,
+    plannedDays,
+    totalBudget: result.budget.total,
+    groupSize: result.travelContext.groupSize,
+    budgetPerDay: result.travelContext.budgetPerDay,
+  });
 
   return result;
 }
