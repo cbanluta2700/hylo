@@ -240,21 +240,126 @@ async function testVectorConnection(): Promise<ValidationResult> {
 }
 
 /**
+ * Test Inngest API connectivity
+ */
+async function testInngestConnection(): Promise<ValidationResult> {
+  const startTime = Date.now();
+  console.log('⚙️ Testing Inngest workflow orchestration...');
+
+  if (!process.env.INNGEST_EVENT_KEY) {
+    console.log('⚠️ Inngest event key missing');
+    return {
+      service: 'Inngest Workflow',
+      status: 'missing',
+      message: 'INNGEST_EVENT_KEY environment variable not set',
+    };
+  }
+
+  if (!process.env.INNGEST_SIGNING_KEY) {
+    console.log('⚠️ Inngest signing key missing');
+    return {
+      service: 'Inngest Workflow',
+      status: 'missing',
+      message: 'INNGEST_SIGNING_KEY environment variable not set',
+    };
+  }
+
+  try {
+    console.log('📡 Making request to Inngest API...');
+
+    // Test Inngest API accessibility - using their public health endpoint
+    const response = await fetch('https://api.inngest.com/v0/health', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${process.env.INNGEST_EVENT_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    });
+
+    const responseTime = Date.now() - startTime;
+    console.log(`📊 Inngest API response: ${response.status} (${responseTime}ms)`);
+
+    if (response.ok) {
+      console.log('✅ Inngest API connection successful');
+      return {
+        service: 'Inngest Workflow',
+        status: 'connected',
+        message: 'API keys valid and service accessible',
+        responseTime,
+      };
+    } else {
+      console.log(`❌ Inngest API failed with status: ${response.status}`);
+      return {
+        service: 'Inngest Workflow',
+        status: 'failed',
+        message: `API responded with status: ${response.status}`,
+        responseTime,
+      };
+    }
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error(`💥 Inngest API connection failed:`, error);
+    return {
+      service: 'Inngest Workflow',
+      status: 'failed',
+      message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      responseTime,
+    };
+  }
+}
+
+/**
  * Test search provider API keys (basic validation)
  */
 function testSearchProviders(): ValidationResult[] {
   const providers = [
-    { name: 'Tavily', key: 'TAVILY_API_KEY' },
-    { name: 'Exa', key: 'EXA_API_KEY' },
-    { name: 'SERP', key: 'SERP_API_KEY' },
+    { name: 'Tavily AI Search', key: 'TAVILY_API_KEY' },
+    { name: 'Exa AI Search', key: 'EXA_API_KEY' },
+    { name: 'SERP API', key: 'SERP_API_KEY' },
   ];
 
   return providers.map((provider) => {
     const hasKey = Boolean(process.env[provider.key]);
+    console.log(`🔍 ${provider.name}: ${hasKey ? '✅ SET' : '❌ MISSING'}`);
     return {
       service: provider.name,
       status: hasKey ? 'connected' : 'missing',
       message: hasKey ? `${provider.key} is set` : `${provider.key} environment variable not set`,
+    };
+  });
+}
+
+/**
+ * Test additional environment variables (Redis/KV and AI backup keys)
+ */
+function testAdditionalEnvVars(): ValidationResult[] {
+  console.log('🔧 Testing additional environment variables...');
+
+  const additionalVars = [
+    // AI Provider backup keys
+    { name: 'XAI Grok (Backup)', key: 'XAI_API_KEY_2' },
+    { name: 'Groq (Backup)', key: 'GROQ_API_KEY_2' },
+    { name: 'OpenAI', key: 'OPENAI_API_KEY' },
+    // Your specific Redis/KV configuration
+    { name: 'KV REST API URL', key: 'KV_REST_API_URL' },
+    { name: 'KV URL', key: 'KV_URL' },
+    { name: 'Redis URL', key: 'REDIS_URL' },
+    // NextAuth and public URLs
+    { name: 'NextAuth Secret', key: 'NEXTAUTH_SECRET' },
+    { name: 'Public API URL', key: 'NEXT_PUBLIC_API_URL' },
+    { name: 'Public WebSocket URL', key: 'NEXT_PUBLIC_WS_URL' },
+  ];
+
+  return additionalVars.map((envVar) => {
+    const hasKey = Boolean(process.env[envVar.key]);
+    console.log(`🔧 ${envVar.name}: ${hasKey ? '✅ SET' : '❌ MISSING'}`);
+    return {
+      service: envVar.name,
+      status: hasKey ? 'connected' : 'missing',
+      message: hasKey
+        ? `${envVar.key} is configured`
+        : `${envVar.key} environment variable not set`,
     };
   });
 }
@@ -279,17 +384,29 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Run all validation tests
     console.log('🚀 Testing AI provider connections...');
-    const [xaiResult, groqResult, redisResult, vectorResult] = await Promise.all([
+    const [xaiResult, groqResult, redisResult, vectorResult, inngestResult] = await Promise.all([
       testXAIConnection(),
       testGroqConnection(),
       testRedisConnection(),
       testVectorConnection(),
+      testInngestConnection(),
     ]);
 
     console.log('🔍 Testing search provider configurations...');
     const searchResults = testSearchProviders();
 
-    const allResults = [xaiResult, groqResult, redisResult, vectorResult, ...searchResults];
+    console.log('🔧 Testing additional environment variables...');
+    const additionalResults = testAdditionalEnvVars();
+
+    const allResults = [
+      xaiResult,
+      groqResult,
+      redisResult,
+      vectorResult,
+      inngestResult,
+      ...searchResults,
+      ...additionalResults,
+    ];
 
     // Log individual results
     allResults.forEach((result, index) => {

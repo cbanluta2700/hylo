@@ -14,8 +14,13 @@ export default defineConfig(({ mode }) => {
       // Explicitly define all API keys for Vercel compatibility
       // Note: Vercel doesn't use .env files, these are defined in Vercel dashboard
       'process.env.NODE_ENV': JSON.stringify(env.NODE_ENV || mode),
+      // XAI API Keys (primary + backup)
       'process.env.XAI_API_KEY': JSON.stringify(env.XAI_API_KEY),
+      'process.env.XAI_API_KEY_2': JSON.stringify(env.XAI_API_KEY_2),
+      // GROQ API Keys (primary + backup)
       'process.env.GROQ_API_KEY': JSON.stringify(env.GROQ_API_KEY),
+      'process.env.GROQ_API_KEY_2': JSON.stringify(env.GROQ_API_KEY_2),
+      // Other AI providers
       'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY),
       'process.env.TAVILY_API_KEY': JSON.stringify(env.TAVILY_API_KEY),
       'process.env.EXA_API_KEY': JSON.stringify(env.EXA_API_KEY),
@@ -24,8 +29,12 @@ export default defineConfig(({ mode }) => {
       'process.env.UPSTASH_VECTOR_REST_TOKEN': JSON.stringify(env.UPSTASH_VECTOR_REST_TOKEN),
       'process.env.UPSTASH_REDIS_REST_URL': JSON.stringify(env.UPSTASH_REDIS_REST_URL),
       'process.env.UPSTASH_REDIS_REST_TOKEN': JSON.stringify(env.UPSTASH_REDIS_REST_TOKEN),
-      'process.env.KV_REST_API_TOKEN': JSON.stringify(env.KV_REST_API_TOKEN),
+      // Your specific Redis/KV configuration
+      'process.env.KV_REST_API_URL': JSON.stringify(env.KV_REST_API_URL),
+      'process.env.KV_URL': JSON.stringify(env.KV_URL),
       'process.env.KV_REST_API_READ_ONLY_TOKEN': JSON.stringify(env.KV_REST_API_READ_ONLY_TOKEN),
+      'process.env.REDIS_URL': JSON.stringify(env.REDIS_URL),
+      'process.env.KV_REST_API_TOKEN': JSON.stringify(env.KV_REST_API_TOKEN),
       'process.env.INNGEST_EVENT_KEY': JSON.stringify(env.INNGEST_EVENT_KEY),
       'process.env.INNGEST_SIGNING_KEY': JSON.stringify(env.INNGEST_SIGNING_KEY),
       'process.env.NEXTAUTH_SECRET': JSON.stringify(env.NEXTAUTH_SECRET),
