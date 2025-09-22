@@ -132,8 +132,100 @@ function App() {
         console.log('✅ Validation passed! Data is valid for AI workflow');
         const workflowData = transformFormDataForWorkflow(transformedData);
         console.log('🚀 Final AI Workflow Data:', workflowData);
+
+        // 🚀 Phase 4: Call the actual API endpoint to trigger AI workflow
+        console.log('🎯 [6] App: Calling /api/itinerary/generate to trigger Phase 4 workflow');
+
+        try {
+          const apiResponse = await fetch('/api/itinerary/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              sessionId: `session_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+              formData: workflowData,
+            }),
+          });
+
+          console.log('📡 [7] App: API response received', {
+            status: apiResponse.status,
+            statusText: apiResponse.statusText,
+          });
+
+          if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            console.error('❌ [8] App: API error response', errorData);
+            throw new Error(`API Error: ${errorData.error || 'Unknown error'}`);
+          }
+
+          const result = await apiResponse.json();
+          console.log('✅ [9] App: AI workflow initiated successfully', result);
+
+          setGeneratedItinerary(`
+# 🎉 AI Itinerary Generation Started!
+
+Your personalized itinerary is being generated using our advanced AI agents:
+
+## 🚀 Workflow Status
+- **Workflow ID**: ${result.workflowId}
+- **Estimated Completion**: ${Math.round(result.estimatedCompletionTime / 1000)} seconds
+- **Status**: ${result.message}
+
+## 🤖 AI Agent Pipeline
+1. **🏗️ Architect Agent** - Designing your trip structure
+2. **🌐 Gatherer Agent** - Collecting destination information  
+3. **👨‍💼 Specialist Agent** - Processing recommendations
+4. **📝 Formatter Agent** - Creating your final itinerary
+
+Check your browser console to see the complete Phase 4 AI workflow logs (numbers 21-99)!
+
+---
+*Your itinerary will be displayed here once the AI agents complete processing.*
+          `);
+        } catch (apiError) {
+          console.error('💥 [10] App: Failed to call AI workflow API', apiError);
+          throw apiError;
+        }
       } else {
         console.error('❌ Validation failed:', validationResult.error);
+        console.error('❌ Form validation details:', {
+          location: transformedData.location || 'MISSING',
+          adults: transformedData.adults || 'MISSING/INVALID',
+          children: transformedData.children,
+          departDate: transformedData.departDate || 'MISSING',
+          returnDate: transformedData.returnDate || 'MISSING',
+          formDataAdults: formData.adults,
+          formDataAdultsType: typeof formData.adults,
+        });
+
+        // Show validation error to user
+        setGenerationError(`
+❌ Form validation failed. Please check:
+
+**Required fields missing or invalid:**
+${Object.entries(validationResult.error.flatten().fieldErrors)
+  .map(([field, errors]) => `• ${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+  .join('\n')}
+
+**Current form data:**
+• Location: "${formData.location}" ${formData.location ? '✅' : '❌ Required'}
+• Adults: "${formData.adults}" (Type: ${typeof formData.adults}) ${
+          formData.adults && typeof formData.adults === 'number' && formData.adults > 0
+            ? '✅'
+            : '❌ Must be a number > 0'
+        }
+• Children: "${formData.children}" ${
+          typeof formData.children === 'number'
+            ? '✅'
+            : '⚠️ Optional but must be number if provided'
+        }
+• Departure: "${formData.departDate}" ${formData.departDate ? '✅' : '❌ Required'}
+• Return: "${formData.returnDate}" ${formData.returnDate ? '✅' : '❌ Required'}
+
+Please fill in all required fields with valid values and try again.
+        `);
+        throw new Error('Form validation failed - see details above');
       }
     } catch (error) {
       console.error('❌ Transformation error:', error);
