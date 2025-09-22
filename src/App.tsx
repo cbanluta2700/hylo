@@ -1,13 +1,9 @@
 import { useState, useRef } from 'react';
-import { TravelFormData, AgentLog } from './services/groqService';
 import TripDetails from './components/TripDetails';
 import { FormData } from './components/TripDetails/types';
 import ConditionalTravelStyle from './components/ConditionalTravelStyle';
 import { TravelStyleChoice } from './types/travel-style-choice';
 import ItineraryDisplay from './components/ItineraryDisplay';
-import BehindTheScenes from './components/BehindTheScenes';
-import AIErrorBoundary from './components/AIErrorBoundary';
-import HealthMonitor from './components/HealthMonitor';
 
 function App() {
   const [formData, setFormData] = useState<FormData>({
@@ -39,9 +35,11 @@ function App() {
   const [dinnerChoices, setDinnerChoices] = useState<string[]>([]);
   const [tripNickname, setTripNickname] = useState<string>('');
   const [contactInfo, setContactInfo] = useState({});
-  
+
   // Travel style choice state management
-  const [travelStyleChoice, setTravelStyleChoice] = useState<TravelStyleChoice>(TravelStyleChoice.NOT_SELECTED);
+  const [travelStyleChoice, setTravelStyleChoice] = useState<TravelStyleChoice>(
+    TravelStyleChoice.NOT_SELECTED
+  );
 
   // Custom text inputs for "other" options (remaining for travel style components)
   const [customVibesText, setCustomVibesText] = useState<string>('');
@@ -49,7 +47,6 @@ function App() {
   const [generatedItinerary, setGeneratedItinerary] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string>('');
-  const [agentLogs, setAgentLogs] = useState<AgentLog[]>([]);
   const itineraryRef = useRef<HTMLDivElement>(null);
 
   // Handle travel style choice selection
@@ -61,72 +58,78 @@ function App() {
     setIsGenerating(true);
     setGenerationError('');
     setGeneratedItinerary(''); // Clear previous itinerary
-    setAgentLogs([]); // Clear previous logs
 
     try {
       // Instead of calling AI/LLM, display the gathered form data organized by form sections
       const organizedFormData = {
-        "1. Destination & Dates": {
-          "destination": formData.location,
-          "departureDate": formData.departDate,
-          "returnDate": formData.returnDate,
-          "flexibleDates": formData.flexibleDates,
-          ...(formData.flexibleDates && formData.plannedDays && {
-            "plannedDays": formData.plannedDays
-          })
+        '1. Destination & Dates': {
+          destination: formData.location,
+          departureDate: formData.departDate,
+          returnDate: formData.returnDate,
+          flexibleDates: formData.flexibleDates,
+          ...(formData.flexibleDates &&
+            formData.plannedDays && {
+              plannedDays: formData.plannedDays,
+            }),
         },
-        "2. Travelers": {
-          "adults": formData.adults,
-          "children": formData.children,
-          "childrenAges": formData.childrenAges
+        '2. Travelers': {
+          adults: formData.adults,
+          children: formData.children,
+          childrenAges: formData.childrenAges,
         },
-        "3. Budget": {
-          "flexibleBudget": formData.flexibleBudget,
-          ...(formData.flexibleBudget ? {
-            "budgetNote": "User indicated budget is flexible - specific amount not relevant"
-          } : {
-            "amount": formData.budget,
-            "currency": formData.currency,
-            "budgetMode": formData.budgetMode
-          })
+        '3. Budget': {
+          flexibleBudget: formData.flexibleBudget,
+          ...(formData.flexibleBudget
+            ? {
+                budgetNote: 'User indicated budget is flexible - specific amount not relevant',
+              }
+            : {
+                amount: formData.budget,
+                currency: formData.currency,
+                budgetMode: formData.budgetMode,
+              }),
         },
-        "4. Travel Group": {
-          "selectedGroups": formData.selectedGroups,
-          "customGroupText": formData.customGroupText
+        '4. Travel Group': {
+          selectedGroups: formData.selectedGroups,
+          customGroupText: formData.customGroupText,
         },
-        "5. Travel Interests": {
-          "selectedInterests": formData.selectedInterests,
-          "customInterestsText": formData.customInterestsText
+        '5. Travel Interests': {
+          selectedInterests: formData.selectedInterests,
+          customInterestsText: formData.customInterestsText,
         },
-        "6. Itinerary Inclusions": {
-          "selectedInclusions": formData.selectedInclusions,
-          "customInclusionsText": formData.customInclusionsText,
-          "inclusionPreferences": formData.inclusionPreferences
+        '6. Itinerary Inclusions': {
+          selectedInclusions: formData.selectedInclusions,
+          customInclusionsText: formData.customInclusionsText,
+          inclusionPreferences: formData.inclusionPreferences,
         },
-        "7. Travel Style Questions": {
-          "travelStyleChoice": travelStyleChoice,
-          "experience": formData.travelStyleAnswers?.['experience'] || [],
-          "vibes": formData.travelStyleAnswers?.['vibes'] || [],
-          "vibesOther": formData.travelStyleAnswers?.['vibesOther'],
-          "sampleDays": formData.travelStyleAnswers?.['sampleDays'] || [],
-          "dinnerChoices": formData.travelStyleAnswers?.['dinnerChoices'] || []
+        '7. Travel Style Questions': {
+          travelStyleChoice: travelStyleChoice,
+          experience: formData.travelStyleAnswers?.['experience'] || [],
+          vibes: formData.travelStyleAnswers?.['vibes'] || [],
+          vibesOther: formData.travelStyleAnswers?.['vibesOther'],
+          sampleDays: formData.travelStyleAnswers?.['sampleDays'] || [],
+          dinnerChoices: formData.travelStyleAnswers?.['dinnerChoices'] || [],
         },
-        "8. Contact & Trip Details": {
-          "tripNickname": formData.travelStyleAnswers?.['tripNickname'] || tripNickname,
-          "contactName": (formData as any)?.contactInfo?.name || (contactInfo as any)?.name || '',
-          "contactEmail": (formData as any)?.contactInfo?.email || (contactInfo as any)?.email || ''
-        }
+        '8. Contact & Trip Details': {
+          tripNickname: formData.travelStyleAnswers?.['tripNickname'] || tripNickname,
+          contactName: (formData as any)?.contactInfo?.name || (contactInfo as any)?.name || '',
+          contactEmail: (formData as any)?.contactInfo?.email || (contactInfo as any)?.email || '',
+        },
       };
 
       const debugItinerary = `
 # 📋 Complete Form Data Review
 
-${Object.entries(organizedFormData).map(([sectionTitle, sectionData]) => `
+${Object.entries(organizedFormData)
+  .map(
+    ([sectionTitle, sectionData]) => `
 ## ${sectionTitle}
 \`\`\`json
 ${JSON.stringify(sectionData, null, 2)}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
 ---
 
@@ -139,15 +142,6 @@ ${JSON.stringify(organizedFormData, null, 2)}
       `;
 
       setGeneratedItinerary(debugItinerary);
-      setAgentLogs([{
-        agentId: 0,
-        agentName: 'Form Data Collector',
-        model: 'Debug Mode',
-        timestamp: new Date().toISOString(),
-        input: 'Form data collection request',
-        output: 'Successfully gathered all form fields',
-        decisions: ['Form data collected', 'AI/LLM functionality disabled for debugging']
-      }]);
 
       // Smooth scroll to the itinerary after a short delay
       setTimeout(() => {
@@ -164,20 +158,6 @@ ${JSON.stringify(organizedFormData, null, 2)}
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  // Prepare form data for behind the scenes view
-  const completeFormData: TravelFormData = {
-    tripDetails: formData,
-    groups: formData.selectedGroups || [],
-    interests: formData.selectedInterests || [],
-    inclusions: formData.selectedInclusions || [],
-    experience: selectedExperience,
-    vibes: selectedVibes,
-    sampleDays: selectedSampleDays,
-    dinnerChoices: dinnerChoices,
-    nickname: tripNickname,
-    contact: contactInfo,
   };
 
   return (
@@ -225,41 +205,15 @@ ${JSON.stringify(organizedFormData, null, 2)}
           {/* Itinerary Results Section - Directly below the travel style */}
           <div ref={itineraryRef}>
             {(isGenerating || generatedItinerary || generationError) && (
-              <AIErrorBoundary
-                enableRecovery={true}
-                maxRetries={2}
-                onError={(error, errorInfo) => {
-                  console.error('AI Error Boundary caught error:', error, errorInfo);
-                  setGenerationError(
-                    'Our AI service encountered an error. Please try again or refresh the page.'
-                  );
-                }}
-                className="w-full"
-              >
-                <ItineraryDisplay
-                  itinerary={generatedItinerary}
-                  isLoading={isGenerating}
-                  error={generationError}
-                />
-              </AIErrorBoundary>
+              <ItineraryDisplay
+                itinerary={generatedItinerary}
+                isLoading={isGenerating}
+                error={generationError}
+              />
             )}
           </div>
         </div>
       </main>
-
-      {/* Behind the Scenes Component */}
-      <BehindTheScenes
-        formData={completeFormData}
-        agentLogs={agentLogs}
-        isProcessing={isGenerating}
-      />
-
-      {/* System Health Monitor - Only show during development or when there are issues */}
-      {(process.env['NODE_ENV'] === 'development' || generationError) && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-          <HealthMonitor showDetails={process.env['NODE_ENV'] === 'development'} className="mt-6" />
-        </div>
-      )}
     </div>
   );
 }
