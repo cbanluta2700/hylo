@@ -1,0 +1,438 @@
+openapi: 3.0.3
+info:
+  title: Hylo Travel AI - Itinerary Generation API
+  description: AI-powered travel itinerary generation with multi-LLM workflow
+  version: 1.0.0
+  contact:
+    name: Hylo Travel AI
+    url: https://hylo.travel
+
+servers:
+  - url: https://hylo.vercel.app/api
+    description: Production server
+  - url: https://hylo-staging.vercel.app/api
+    description: Staging server
+
+paths:
+  /itinerary/generate:
+    post:
+      summary: Generate AI itinerary
+      description: Initiates 4-agent AI workflow to generate personalized travel itinerary
+      operationId: generateItinerary
+      tags:
+        - Itinerary Generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateItineraryRequest'
+      responses:
+        '200':
+          description: Workflow initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateItineraryResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /itinerary/progress/{workflowId}:
+    get:
+      summary: Real-time workflow progress
+      description: Server-Sent Events stream for workflow progress updates
+      operationId: getWorkflowProgress
+      tags:
+        - Workflow Tracking
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Progress event stream
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ProgressEvent'
+
+  /itinerary/{itineraryId}:
+    get:
+      summary: Get generated itinerary
+      description: Retrieve complete generated itinerary by ID
+      operationId: getItinerary
+      tags:
+        - Itinerary Retrieval
+      parameters:
+        - name: itineraryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Itinerary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetItineraryResponse'
+        '404':
+          description: Itinerary not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /itinerary/status/{workflowId}:
+    get:
+      summary: Get workflow status
+      description: Get current workflow execution status (non-streaming)
+      operationId: getWorkflowStatus
+      tags:
+        - Workflow Tracking
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowStatusResponse'
+
+components:
+  schemas:
+    GenerateItineraryRequest:
+      type: object
+      required:
+        - sessionId
+        - formData
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: User session identifier
+        formData:
+          $ref: '#/components/schemas/TravelFormData'
+
+    TravelFormData:
+      type: object
+      required:
+        - location
+        - departDate
+        - adults
+        - budget
+        - currency
+      properties:
+        location:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Tokyo, Japan'
+        departDate:
+          type: string
+          format: date
+          example: '2025-12-15'
+        returnDate:
+          type: string
+          format: date
+          example: '2025-12-22'
+        flexibleDates:
+          type: boolean
+          default: false
+        adults:
+          type: integer
+          minimum: 1
+          maximum: 10
+        children:
+          type: integer
+          minimum: 0
+          maximum: 10
+        childrenAges:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 17
+        budget:
+          type: number
+          minimum: 0
+          maximum: 10000
+        currency:
+          type: string
+          enum: [USD, EUR, GBP, CAD, AUD]
+          default: USD
+        flexibleBudget:
+          type: boolean
+          default: false
+        budgetMode:
+          type: string
+          enum: [total, per-person]
+          default: total
+        travelStyleChoice:
+          type: string
+          enum: [answer-questions, skip-to-details, not-selected]
+        selectedInterests:
+          type: array
+          items:
+            type: string
+        tripVibes:
+          type: array
+          items:
+            type: string
+        dinnerPreferences:
+          type: array
+          items:
+            type: string
+
+    GenerateItineraryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            workflowId:
+              type: string
+              format: uuid
+            sessionId:
+              type: string
+              format: uuid
+            estimatedCompletionTime:
+              type: integer
+              description: Estimated seconds to completion
+              example: 45
+            progressUrl:
+              type: string
+              format: uri
+              example: '/api/itinerary/progress/123e4567-e89b-12d3-a456-426614174000'
+
+    ProgressEvent:
+      type: object
+      properties:
+        event:
+          type: string
+          enum: [progress, complete, error]
+        data:
+          type: object
+          properties:
+            workflowId:
+              type: string
+              format: uuid
+            progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+            currentStage:
+              type: string
+              enum: [architect, gatherer, specialist, formatter, complete]
+            completedSteps:
+              type: array
+              items:
+                type: string
+            message:
+              type: string
+            error:
+              type: string
+
+    GetItineraryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/GeneratedItinerary'
+
+    GeneratedItinerary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflowId:
+          type: string
+          format: uuid
+        destination:
+          type: object
+          properties:
+            city:
+              type: string
+            country:
+              type: string
+        totalDays:
+          type: integer
+        totalBudget:
+          type: number
+        currency:
+          type: string
+        dayPlans:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayPlan'
+        travelTips:
+          type: array
+          items:
+            type: string
+        budgetBreakdown:
+          type: object
+          additionalProperties:
+            type: number
+
+    DayPlan:
+      type: object
+      properties:
+        day:
+          type: integer
+        date:
+          type: string
+          format: date
+        location:
+          type: string
+        morning:
+          $ref: '#/components/schemas/Activity'
+        afternoon:
+          $ref: '#/components/schemas/Activity'
+        evening:
+          $ref: '#/components/schemas/Activity'
+        meals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Meal'
+        estimatedBudget:
+          type: number
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        duration:
+          type: string
+          example: '2-3 hours'
+        cost:
+          type: number
+        bookingRequired:
+          type: boolean
+        bookingUrl:
+          type: string
+          format: uri
+        tips:
+          type: array
+          items:
+            type: string
+
+    Meal:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [breakfast, lunch, dinner, snack, street-food]
+        restaurant:
+          type: string
+        cuisine:
+          type: string
+        priceRange:
+          type: string
+          enum: [$, $$, $$$, $$$$]
+        averageCost:
+          type: number
+        specialties:
+          type: array
+          items:
+            type: string
+
+    WorkflowStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            workflowId:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [pending, processing, completed, failed]
+            progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+            currentStage:
+              type: string
+            itineraryId:
+              type: string
+              format: uuid
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                [
+                  INVALID_REQUEST,
+                  VALIDATION_ERROR,
+                  RATE_LIMITED,
+                  WORKFLOW_NOT_FOUND,
+                  AI_SERVICE_ERROR,
+                  INTERNAL_ERROR,
+                ]
+            message:
+              type: string
+            details:
+              type: object
+            timestamp:
+              type: string
+              format: date-time
+            requestId:
+              type: string
+
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: hylo-session
+
+security:
+  - SessionCookie: []
+
+tags:
+  - name: Itinerary Generation
+    description: AI-powered itinerary creation operations
+  - name: Workflow Tracking
+    description: Real-time workflow progress monitoring
+  - name: Itinerary Retrieval
+    description: Access generated travel plans
