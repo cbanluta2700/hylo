@@ -4,26 +4,6 @@
       "ENABLE_EXPERIMENTAL_COREPACK": "1"
     }
   },
-  "functions": {
-    "api/itinerary/generate.ts": {
-      "maxDuration": 30
-    },
-    "api/itinerary/progress/[workflowId].ts": {
-      "maxDuration": 300
-    },
-    "api/itinerary/[itineraryId].ts": {
-      "maxDuration": 10
-    },
-    "api/inngest/webhook.ts": {
-      "maxDuration": 60
-    },
-    "api/health.ts": {
-      "maxDuration": 5
-    },
-    "api/validate-env.ts": {
-      "maxDuration": 10
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
@@ -37,17 +17,5 @@
       ]
     }
   ],
-  "env": {
-    "XAI_API_KEY": "@xai_api_key",
-    "GROQ_API_KEY": "@groq_api_key",
-    "INNGEST_EVENT_KEY": "@inngest_event_key",
-    "UPSTASH_REDIS_REST_URL": "@upstash_redis_rest_url",
-    "UPSTASH_REDIS_REST_TOKEN": "@upstash_redis_rest_token",
-    "UPSTASH_VECTOR_REST_URL": "@upstash_vector_rest_url",
-    "UPSTASH_VECTOR_REST_TOKEN": "@upstash_vector_rest_token",
-    "TAVILY_API_KEY": "@tavily_api_key",
-    "EXA_API_KEY": "@exa_api_key",
-    "SERP_API_KEY": "@serp_api_key"
-  },
   "framework": "vite"
 }
