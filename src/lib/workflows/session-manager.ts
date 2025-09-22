@@ -32,15 +32,15 @@ export interface WorkflowSession {
 
 /**
  * Redis client configuration for Edge Runtime
- * Uses Upstash Redis REST API for compatibility
+ * Uses user's specific Upstash Redis/KV configuration
  */
 const getRedisClient = (): Redis => {
-  const url = process.env['UPSTASH_REDIS_REST_URL'];
-  const token = process.env['UPSTASH_REDIS_REST_TOKEN'];
+  const url = process.env['KV_REST_API_URL'];
+  const token = process.env['KV_REST_API_TOKEN'];
 
   if (!url || !token) {
     throw new Error(
-      'Upstash Redis credentials not configured. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN'
+      'Upstash Redis/KV credentials not configured. Check KV_REST_API_URL and KV_REST_API_TOKEN'
     );
   }
 

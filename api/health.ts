@@ -41,8 +41,10 @@ function checkEnvironmentVariables(): { success: boolean; missing: string[] } {
     'XAI_API_KEY',
     'GROQ_API_KEY',
     'INNGEST_EVENT_KEY',
-    'UPSTASH_REDIS_REST_URL',
-    'UPSTASH_REDIS_REST_TOKEN',
+    // User's specific Upstash Redis/KV configuration
+    'KV_REST_API_URL',
+    'KV_REST_API_TOKEN',
+    // Upstash Vector Database
     'UPSTASH_VECTOR_REST_URL',
     'UPSTASH_VECTOR_REST_TOKEN',
     'TAVILY_API_KEY',
@@ -137,14 +139,14 @@ export default async function handler(req: Request): Promise<Response> {
 
     // State management check (Redis/Vector URLs exist)
     const stateManagementCheck = Boolean(
-      process.env.UPSTASH_REDIS_REST_URL &&
-        process.env.UPSTASH_REDIS_REST_TOKEN &&
+      process.env.KV_REST_API_URL &&
+        process.env.KV_REST_API_TOKEN &&
         process.env.UPSTASH_VECTOR_REST_URL &&
         process.env.UPSTASH_VECTOR_REST_TOKEN
     );
     console.log('🗄️ State management check:', stateManagementCheck ? '✅ PASS' : '❌ FAIL', {
-      redisUrl: process.env.UPSTASH_REDIS_REST_URL ? 'SET' : 'MISSING',
-      redisToken: process.env.UPSTASH_REDIS_REST_TOKEN ? 'SET' : 'MISSING',
+      kvUrl: process.env.KV_REST_API_URL ? 'SET' : 'MISSING',
+      kvToken: process.env.KV_REST_API_TOKEN ? 'SET' : 'MISSING',
       vectorUrl: process.env.UPSTASH_VECTOR_REST_URL ? 'SET' : 'MISSING',
       vectorToken: process.env.UPSTASH_VECTOR_REST_TOKEN ? 'SET' : 'MISSING',
     });

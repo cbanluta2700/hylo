@@ -24,16 +24,20 @@ export default defineConfig(({ mode }) => {
       'process.env.TAVILY_API_KEY': JSON.stringify(env.TAVILY_API_KEY),
       'process.env.EXA_API_KEY': JSON.stringify(env.EXA_API_KEY),
       'process.env.SERP_API_KEY': JSON.stringify(env.SERP_API_KEY),
+
+      // Upstash Vector Database
       'process.env.UPSTASH_VECTOR_REST_URL': JSON.stringify(env.UPSTASH_VECTOR_REST_URL),
       'process.env.UPSTASH_VECTOR_REST_TOKEN': JSON.stringify(env.UPSTASH_VECTOR_REST_TOKEN),
-      'process.env.UPSTASH_REDIS_REST_URL': JSON.stringify(env.UPSTASH_REDIS_REST_URL),
-      'process.env.UPSTASH_REDIS_REST_TOKEN': JSON.stringify(env.UPSTASH_REDIS_REST_TOKEN),
-      // Your specific Redis/KV configuration
+
+      // User's Specific Upstash Redis/KV Configuration
+      // These are your actual Upstash Redis instance variables
       'process.env.KV_REST_API_URL': JSON.stringify(env.KV_REST_API_URL),
       'process.env.KV_URL': JSON.stringify(env.KV_URL),
+      'process.env.KV_REST_API_TOKEN': JSON.stringify(env.KV_REST_API_TOKEN),
       'process.env.KV_REST_API_READ_ONLY_TOKEN': JSON.stringify(env.KV_REST_API_READ_ONLY_TOKEN),
       'process.env.REDIS_URL': JSON.stringify(env.REDIS_URL),
-      'process.env.KV_REST_API_TOKEN': JSON.stringify(env.KV_REST_API_TOKEN),
+
+      // Inngest Workflow Configuration
       'process.env.INNGEST_EVENT_KEY': JSON.stringify(env.INNGEST_EVENT_KEY),
       'process.env.INNGEST_SIGNING_KEY': JSON.stringify(env.INNGEST_SIGNING_KEY),
       'process.env.NEXT_PUBLIC_API_URL': JSON.stringify(env.NEXT_PUBLIC_API_URL),

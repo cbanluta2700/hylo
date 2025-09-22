@@ -17,9 +17,9 @@ const envSchema = z.object({
   INNGEST_EVENT_KEY: z.string().min(1, 'Inngest signing key is required'),
   INNGEST_SIGNING_KEY: z.string().optional(), // Alternative name used in some configs
 
-  // State Management (Upstash Redis)
-  UPSTASH_REDIS_REST_URL: z.string().url('Invalid Upstash Redis URL'),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'Upstash Redis token is required'),
+  // State Management (User's specific Upstash Redis/KV)
+  KV_REST_API_URL: z.string().url('Invalid KV REST API URL'),
+  KV_REST_API_TOKEN: z.string().min(1, 'KV REST API token is required'),
 
   // Vector Storage (Upstash Vector)
   UPSTASH_VECTOR_REST_URL: z.string().url('Invalid Upstash Vector URL'),
@@ -48,19 +48,19 @@ function getEnv(): Env {
   try {
     // In Edge Runtime, process.env is available but limited
     const env = {
-      XAI_API_KEY: process.env.XAI_API_KEY,
-      GROQ_API_KEY: process.env.GROQ_API_KEY,
-      INNGEST_EVENT_KEY: process.env.INNGEST_EVENT_KEY || process.env.INNGEST_SIGNING_KEY,
-      INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY,
-      UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
-      UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
-      UPSTASH_VECTOR_REST_URL: process.env.UPSTASH_VECTOR_REST_URL,
-      UPSTASH_VECTOR_REST_TOKEN: process.env.UPSTASH_VECTOR_REST_TOKEN,
-      TAVILY_API_KEY: process.env.TAVILY_API_KEY,
-      EXA_API_KEY: process.env.EXA_API_KEY,
-      SERP_API_KEY: process.env.SERP_API_KEY,
-      NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
-      NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test',
+      XAI_API_KEY: process.env['XAI_API_KEY'],
+      GROQ_API_KEY: process.env['GROQ_API_KEY'],
+      INNGEST_EVENT_KEY: process.env['INNGEST_EVENT_KEY'] || process.env['INNGEST_SIGNING_KEY'],
+      INNGEST_SIGNING_KEY: process.env['INNGEST_SIGNING_KEY'],
+      KV_REST_API_URL: process.env['KV_REST_API_URL'],
+      KV_REST_API_TOKEN: process.env['KV_REST_API_TOKEN'],
+      UPSTASH_VECTOR_REST_URL: process.env['UPSTASH_VECTOR_REST_URL'],
+      UPSTASH_VECTOR_REST_TOKEN: process.env['UPSTASH_VECTOR_REST_TOKEN'],
+      TAVILY_API_KEY: process.env['TAVILY_API_KEY'],
+      EXA_API_KEY: process.env['EXA_API_KEY'],
+      SERP_API_KEY: process.env['SERP_API_KEY'],
+      NEXT_PUBLIC_WS_URL: process.env['NEXT_PUBLIC_WS_URL'],
+      NODE_ENV: process.env['NODE_ENV'] as 'development' | 'production' | 'test',
     };
 
     return envSchema.parse(env);
@@ -102,10 +102,10 @@ export const config = {
     isDev: env.NODE_ENV === 'development',
   },
 
-  // State management
+  // State management (User's specific KV configuration)
   redis: {
-    url: env.UPSTASH_REDIS_REST_URL,
-    token: env.UPSTASH_REDIS_REST_TOKEN,
+    url: env.KV_REST_API_URL,
+    token: env.KV_REST_API_TOKEN,
     // TTL configurations
     workflowTTL: 60 * 60, // 1 hour for workflow sessions
     itineraryTTL: 60 * 60 * 24 * 7, // 7 days for completed itineraries
