@@ -23,36 +23,11 @@
     "api/health.ts": {
       "maxDuration": 5,
       "runtime": "edge"
+    },
+    "api/validate-env.ts": {
+      "maxDuration": 10,
+      "runtime": "edge"
     }
-  },
-  "env": {
-    "GROQ_API_KEY": "your-groq-api-key-here",
-    "GROQ_API_KEY_2": "your-groq-api-key-here",
-    "GROQ_API_KEY_3": "your-groq-api-key-here",
-    "CEREBRAS_API_KEY": "your-cerebras-api-key-here",
-    "CEREBRAS_API_KEY_2": "your-cerebras-api-key-here",
-    "CEREBRAS_API_KEY_3": "your-cerebras-api-key-here",
-    "GEMINI_API_KEY": "your-gemini-api-key-here",
-    "GEMINI_API_KEY_2": "your-gemini-api-key-here",
-    "GEMINI_API_KEY_3": "your-gemini-api-key-here",
-    "LANGSMITH_API_KEY": "your-langsmith-api-key-here",
-    "LANGSMITH_TRACE_URL": "your-langsmith-trace-url-here",
-    "DNS_VERIFICATION_TIMEOUT": "30000",
-    "HEALTH_CHECK_INTERVAL": "300000",
-    "PROVIDER_CACHE_TTL": "300000",
-    "MAX_RETRIES": "3",
-    "FALLBACK_TIMEOUT": "10000",
-    "XAI_API_KEY": "@xai-api-key",
-    "INNGEST_EVENT_KEY": "@inngest-signing-key",
-    "INNGEST_SIGNING_KEY": "@inngest-signing-key",
-    "UPSTASH_REDIS_REST_URL": "@upstash-redis-url",
-    "UPSTASH_REDIS_REST_TOKEN": "@upstash-redis-token",
-    "UPSTASH_VECTOR_REST_URL": "@upstash-vector-url",
-    "UPSTASH_VECTOR_REST_TOKEN": "@upstash-vector-token",
-    "TAVILY_API_KEY": "@tavily-api-key",
-    "EXA_API_KEY": "@exa-api-key",
-    "SERP_API_KEY": "@serp-api-key",
-    "NEXT_PUBLIC_WS_URL": "@websocket-url"
   },
   "build": {
     "env": {
