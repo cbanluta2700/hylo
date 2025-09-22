@@ -36,26 +36,11 @@ function App() {
   const [tripNickname, setTripNickname] = useState<string>('');
   const [contactInfo, setContactInfo] = useState({});
 
-  // 🔍 HARD-CODED CONSOLE LOGS FOR VERCEL DEPLOYMENT
+  // Clean form data setter without logging (logs only on Generate button click)
   const loggedSetFormData = (newFormData: FormData | ((prev: FormData) => FormData)) => {
-    // Reduced logging to prevent spam - only log key info
-    console.log(
-      '🔥 VERCEL AUDIT: Form data changing...',
-      typeof newFormData === 'function' ? '(functional update)' : '(direct update)'
-    );
-
     if (typeof newFormData === 'function') {
-      setFormData((prev) => {
-        const result = newFormData(prev);
-        // Only log if it's a significant change
-        const changed = JSON.stringify(prev) !== JSON.stringify(result);
-        if (changed) {
-          console.log('📊 VERCEL AUDIT: Significant form change detected');
-        }
-        return result;
-      });
+      setFormData(newFormData);
     } else {
-      console.log('📊 VERCEL AUDIT: Direct form update with keys:', Object.keys(newFormData));
       setFormData(newFormData);
     }
   };
@@ -72,25 +57,6 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string>('');
   const itineraryRef = useRef<HTMLDivElement>(null);
-
-  // 🔍 PHASE 3 AUDIT: Monitor form data changes (only when not generating to avoid spam)
-  useEffect(() => {
-    if (!isGenerating) {
-      console.log('📝 Form data updated:', {
-        location: formData.location,
-        dates: { departDate: formData.departDate, returnDate: formData.returnDate },
-        travelers: { adults: formData.adults, children: formData.children },
-        budget: {
-          amount: formData.budget,
-          currency: formData.currency,
-          flexible: formData.flexibleBudget,
-        },
-        groups: formData.selectedGroups,
-        interests: formData.selectedInterests,
-        travelStyleAnswers: formData.travelStyleAnswers,
-      });
-    }
-  }, [formData, isGenerating]);
 
   // Test API endpoints on app load
   useEffect(() => {

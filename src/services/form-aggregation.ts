@@ -7,10 +7,6 @@ import { validateTravelFormData, formatValidationErrors } from '@/schemas/ai-wor
  * Returns validation state and warnings
  */
 export function aggregateFormData(sections: Partial<TravelFormData>): FormAggregationResult {
-  // 🔥 HARD-CODED CONSOLE LOGS FOR VERCEL DEPLOYMENT
-  console.log('🔥 VERCEL AUDIT: Form aggregation starting...');
-  console.log('📊 VERCEL AUDIT: Input sections:', sections);
-
   // Merge all form sections into a single object
   const data: TravelFormData = {
     ...sections,
@@ -32,7 +28,6 @@ export function aggregateFormData(sections: Partial<TravelFormData>): FormAggreg
   let warnings: string[] = [];
 
   if (!validationResult.success) {
-    console.log('❌ VERCEL AUDIT: Validation failed:', validationResult.error);
     validation = {
       isValid: false,
       errors: formatValidationErrors(validationResult.error),
@@ -43,7 +38,6 @@ export function aggregateFormData(sections: Partial<TravelFormData>): FormAggreg
     missingFields = Object.keys(validation.errors);
     warnings.push('Some required fields are missing or invalid.');
   } else {
-    console.log('✅ VERCEL AUDIT: Validation passed!');
     validation = {
       isValid: true,
       errors: {},
@@ -53,13 +47,10 @@ export function aggregateFormData(sections: Partial<TravelFormData>): FormAggreg
     };
   }
 
-  const result = {
+  return {
     data,
     validation,
     missingFields,
     warnings,
   };
-
-  console.log('🚀 VERCEL AUDIT: Aggregation result:', result);
-  return result;
 }

@@ -6,32 +6,54 @@ import { FormData } from '@/components/TripDetails/types';
  * Maps all form sections to the unified interface
  */
 export function transformExistingFormDataToWorkflow(formData: FormData): TravelFormData {
-  // 🔥 HARD-CODED CONSOLE LOGS FOR VERCEL DEPLOYMENT
-  console.log('🔥 VERCEL AUDIT: Starting FormData → TravelFormData transformation');
-  console.log('📊 VERCEL AUDIT: Input FormData:', formData);
-
   const result = {
     // Trip Details
     location: formData.location,
     departDate: formData.departDate,
-    returnDate: formData.returnDate || undefined,
+    returnDate: formData.returnDate || '',
     flexibleDates: formData.flexibleDates,
     plannedDays: formData.plannedDays || undefined,
-    adults: formData.adults,
-    children: formData.children,
+    adults: typeof formData.adults === 'string' ? parseInt(formData.adults) || 0 : formData.adults,
+    children:
+      typeof formData.children === 'string' ? parseInt(formData.children) || 0 : formData.children,
     childrenAges: formData.childrenAges || undefined,
 
     // Budget Information
     budget: {
-      total: formData.budget,
-      currency: formData.currency,
+      total:
+        typeof formData.budget === 'string' ? parseFloat(formData.budget) || 0 : formData.budget,
+      currency: formData.currency || 'USD',
       breakdown: {
-        accommodation: Math.round(formData.budget * 0.4), // 40%
-        food: Math.round(formData.budget * 0.25), // 25%
-        activities: Math.round(formData.budget * 0.2), // 20%
-        transportation: Math.round(formData.budget * 0.1), // 10%
-        shopping: Math.round(formData.budget * 0.03), // 3%
-        emergency: Math.round(formData.budget * 0.02), // 2%
+        accommodation: Math.round(
+          (typeof formData.budget === 'string'
+            ? parseFloat(formData.budget) || 0
+            : formData.budget) * 0.4
+        ), // 40%
+        food: Math.round(
+          (typeof formData.budget === 'string'
+            ? parseFloat(formData.budget) || 0
+            : formData.budget) * 0.25
+        ), // 25%
+        activities: Math.round(
+          (typeof formData.budget === 'string'
+            ? parseFloat(formData.budget) || 0
+            : formData.budget) * 0.2
+        ), // 20%
+        transportation: Math.round(
+          (typeof formData.budget === 'string'
+            ? parseFloat(formData.budget) || 0
+            : formData.budget) * 0.1
+        ), // 10%
+        shopping: Math.round(
+          (typeof formData.budget === 'string'
+            ? parseFloat(formData.budget) || 0
+            : formData.budget) * 0.03
+        ), // 3%
+        emergency: Math.round(
+          (typeof formData.budget === 'string'
+            ? parseFloat(formData.budget) || 0
+            : formData.budget) * 0.02
+        ), // 2%
       },
       flexibility: formData.flexibleBudget ? 'very-flexible' : 'strict',
     },
@@ -82,8 +104,7 @@ export function transformExistingFormDataToWorkflow(formData: FormData): TravelF
     submittedAt: undefined,
   };
 
-  console.log('✅ VERCEL AUDIT: Transformation complete:', result);
-  return result;
+  return result as any;
 }
 
 /**
@@ -91,17 +112,11 @@ export function transformExistingFormDataToWorkflow(formData: FormData): TravelF
  * Handles currency conversions, date formatting, and sanitization
  */
 export function transformFormDataForWorkflow(formData: TravelFormData) {
-  // 🔥 HARD-CODED CONSOLE LOGS FOR VERCEL DEPLOYMENT
-  console.log('🔥 VERCEL AUDIT: Starting TravelFormData → AI workflow transformation');
-  console.log('📊 VERCEL AUDIT: Input TravelFormData:', formData);
-
   // Format dates to ISO strings
   const departDateISO = new Date(formData.departDate).toISOString();
   const returnDateISO = formData.returnDate
     ? new Date(formData.returnDate).toISOString()
     : undefined;
-
-  console.log('📅 VERCEL AUDIT: Date formatting:', { departDateISO, returnDateISO });
 
   // Currency conversion (stub: assumes USD, extend as needed)
   const currency = formData.budget.currency || 'USD';
@@ -139,6 +154,5 @@ export function transformFormDataForWorkflow(formData: TravelFormData) {
     },
   };
 
-  console.log('✅ VERCEL AUDIT: AI workflow transformation complete:', result);
   return result;
 }

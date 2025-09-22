@@ -20,14 +20,9 @@ const TripDetails: React.FC<TripDetailsProps> = ({
   onFormChange,
   showAdditionalForms = false,
 }) => {
-  // 🔥 HARD-CODED CONSOLE LOGS FOR VERCEL DEPLOYMENT (reduced to prevent spam)
-  // console.log('🔥 VERCEL AUDIT: TripDetails rendered with formData:', formData);
-
   const handleFormUpdate = useCallback(
     (updates: Partial<FormData>) => {
-      console.log('🔥 VERCEL AUDIT: TripDetails field update:', Object.keys(updates));
       const newData = { ...formData, ...updates };
-      // console.log('🔥 VERCEL AUDIT: TripDetails new formData:', newData);
       onFormChange(newData);
     },
     [formData, onFormChange]
