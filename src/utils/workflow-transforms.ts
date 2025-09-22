@@ -1,6 +1,42 @@
 import { TravelFormData } from '@/types/travel-form';
 import { FormData } from '@/components/TripDetails/types';
 
+// Helper functions to map form text values to enum values
+function mapTravelExperienceToEnum(
+  value: string | undefined
+): 'first-time' | 'experienced' | 'expert' {
+  if (!value) return 'experienced';
+  const lower = value.toLowerCase();
+  if (lower.includes("haven't") || lower.includes('new') || lower.includes('first'))
+    return 'first-time';
+  if (lower.includes('expert') || lower.includes('extensively') || lower.includes('many times'))
+    return 'expert';
+  return 'experienced';
+}
+
+function mapDinnerChoiceToEnum(
+  value: string | undefined
+): 'fine-dining' | 'local-spots' | 'street-food' | 'mixed' {
+  if (!value) return 'local-spots';
+  const lower = value.toLowerCase();
+  if (lower.includes('michelin') || lower.includes('fine') || lower.includes('upscale'))
+    return 'fine-dining';
+  if (lower.includes('street') || lower.includes('food truck') || lower.includes('hawker'))
+    return 'street-food';
+  if (lower.includes('mix') || lower.includes('variety') || lower.includes('both')) return 'mixed';
+  return 'local-spots';
+}
+
+function mapTripVibeToEnum(value: string | undefined): string {
+  if (!value) return 'adventure';
+  const lower = value.toLowerCase();
+  if (lower.includes('up-for-anything')) return 'adventure';
+  if (lower.includes('romantic')) return 'romantic';
+  if (lower.includes('cultural')) return 'cultural';
+  if (lower.includes('relaxed') || lower.includes('chill')) return 'relaxed';
+  return value; // Return original if no mapping found
+}
+
 /**
  * Converts existing FormData from App.tsx to TravelFormData for AI workflow
  * Maps all form sections to the unified interface
@@ -13,48 +49,40 @@ export function transformExistingFormDataToWorkflow(formData: FormData): TravelF
     returnDate: formData.returnDate || '',
     flexibleDates: formData.flexibleDates,
     plannedDays: formData.plannedDays || undefined,
-    adults: typeof formData.adults === 'string' ? parseInt(formData.adults) || 0 : formData.adults,
+    // Use UI default values when state is empty
+    adults:
+      typeof formData.adults === 'string'
+        ? parseInt(formData.adults) || (formData.adults === '' ? 2 : 0)
+        : formData.adults || 2,
     children:
-      typeof formData.children === 'string' ? parseInt(formData.children) || 0 : formData.children,
+      typeof formData.children === 'string'
+        ? parseInt(formData.children) || (formData.children === '' ? 0 : 0)
+        : formData.children || 0,
     childrenAges: formData.childrenAges || undefined,
 
     // Budget Information
     budget: {
-      total:
-        typeof formData.budget === 'string' ? parseFloat(formData.budget) || 0 : formData.budget,
+      total: formData.flexibleBudget
+        ? 5000 // Use average budget when flexible
+        : typeof formData.budget === 'string'
+        ? parseFloat(formData.budget) || (formData.budget === '' ? 5000 : 0)
+        : formData.budget || 5000,
       currency: formData.currency || 'USD',
-      breakdown: {
-        accommodation: Math.round(
-          (typeof formData.budget === 'string'
-            ? parseFloat(formData.budget) || 0
-            : formData.budget) * 0.4
-        ), // 40%
-        food: Math.round(
-          (typeof formData.budget === 'string'
-            ? parseFloat(formData.budget) || 0
-            : formData.budget) * 0.25
-        ), // 25%
-        activities: Math.round(
-          (typeof formData.budget === 'string'
-            ? parseFloat(formData.budget) || 0
-            : formData.budget) * 0.2
-        ), // 20%
-        transportation: Math.round(
-          (typeof formData.budget === 'string'
-            ? parseFloat(formData.budget) || 0
-            : formData.budget) * 0.1
-        ), // 10%
-        shopping: Math.round(
-          (typeof formData.budget === 'string'
-            ? parseFloat(formData.budget) || 0
-            : formData.budget) * 0.03
-        ), // 3%
-        emergency: Math.round(
-          (typeof formData.budget === 'string'
-            ? parseFloat(formData.budget) || 0
-            : formData.budget) * 0.02
-        ), // 2%
-      },
+      breakdown: (() => {
+        const budgetAmount = formData.flexibleBudget
+          ? 5000 // Use average for flexible budget
+          : typeof formData.budget === 'string'
+          ? parseFloat(formData.budget) || (formData.budget === '' ? 5000 : 0)
+          : formData.budget || 5000;
+        return {
+          accommodation: Math.round(budgetAmount * 0.4), // 40%
+          food: Math.round(budgetAmount * 0.25), // 25%
+          activities: Math.round(budgetAmount * 0.2), // 20%
+          transportation: Math.round(budgetAmount * 0.1), // 10%
+          shopping: Math.round(budgetAmount * 0.03), // 3%
+          emergency: Math.round(budgetAmount * 0.02), // 2%
+        };
+      })(),
       flexibility: formData.flexibleBudget ? 'very-flexible' : 'strict',
     },
 
@@ -73,19 +101,12 @@ export function transformExistingFormDataToWorkflow(formData: FormData): TravelF
     dietaryRestrictions: [], // not in existing form
     accessibility: [], // not in existing form
 
-    // Travel Style Choices
-    tripVibe: formData.travelStyleAnswers?.['vibes']?.[0] || 'adventure',
+    // Travel Style Choices (map full text to enum values)
+    tripVibe: mapTripVibeToEnum(formData.travelStyleAnswers?.['vibes']?.[0]) || 'adventure',
     travelExperience:
-      (formData.travelStyleAnswers?.['experience']?.[0] as
-        | 'first-time'
-        | 'experienced'
-        | 'expert') || 'experienced',
+      mapTravelExperienceToEnum(formData.travelStyleAnswers?.['experience']?.[0]) || 'experienced',
     dinnerChoice:
-      (formData.travelStyleAnswers?.['dinnerChoices']?.[0] as
-        | 'fine-dining'
-        | 'local-spots'
-        | 'street-food'
-        | 'mixed') || 'local-spots',
+      mapDinnerChoiceToEnum(formData.travelStyleAnswers?.['dinnerChoices']?.[0]) || 'local-spots',
     nickname: formData.travelStyleAnswers?.['tripNickname'] || formData.tripNickname || undefined,
 
     // Additional Services (defaults)

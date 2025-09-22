@@ -76,7 +76,7 @@ const BudgetSchema = z
   .object({
     total: z
       .number()
-      .positive('Total budget must be positive')
+      .min(0, 'Total budget cannot be negative') // Allow 0 for flexible budgets
       .max(1000000, 'Budget cannot exceed $1,000,000'),
     currency: z
       .string()
@@ -192,8 +192,10 @@ export const TravelFormDataSchema = z
   })
   .refine(
     (data) => {
-      // Skip date validation if flexible dates are enabled
-      if (data.flexibleDates) return true;
+      // For flexible dates, require plannedDays
+      if (data.flexibleDates) {
+        return data.plannedDays && data.plannedDays > 0;
+      }
 
       // For fixed dates, require valid departure date
       if (!data.departDate || data.departDate === '') {
@@ -210,7 +212,7 @@ export const TravelFormDataSchema = z
     },
     {
       message:
-        'For fixed dates, valid departure date is required, and return date must be after departure date',
+        'For flexible dates, plannedDays is required. For fixed dates, valid departure date is required and return date must be after departure date',
       path: ['departDate'],
     }
   )
