@@ -38,33 +38,24 @@ function App() {
 
   // 🔍 HARD-CODED CONSOLE LOGS FOR VERCEL DEPLOYMENT
   const loggedSetFormData = (newFormData: FormData | ((prev: FormData) => FormData)) => {
-    console.log('🔥 VERCEL AUDIT: Form data changing...');
+    // Reduced logging to prevent spam - only log key info
+    console.log(
+      '🔥 VERCEL AUDIT: Form data changing...',
+      typeof newFormData === 'function' ? '(functional update)' : '(direct update)'
+    );
+
     if (typeof newFormData === 'function') {
       setFormData((prev) => {
         const result = newFormData(prev);
-        console.log('📝 VERCEL AUDIT: Form data updated (functional):', result);
-        console.log('📊 VERCEL AUDIT: Key form fields:', {
-          location: result.location,
-          dates: `${result.departDate} → ${result.returnDate}`,
-          travelers: `${result.adults} adults, ${result.children} children`,
-          budget: `${result.currency} ${result.budget}`,
-          groups: result.selectedGroups,
-          interests: result.selectedInterests,
-          travelStyleAnswers: result.travelStyleAnswers,
-        });
+        // Only log if it's a significant change
+        const changed = JSON.stringify(prev) !== JSON.stringify(result);
+        if (changed) {
+          console.log('📊 VERCEL AUDIT: Significant form change detected');
+        }
         return result;
       });
     } else {
-      console.log('📝 VERCEL AUDIT: Form data updated (direct):', newFormData);
-      console.log('📊 VERCEL AUDIT: Key form fields:', {
-        location: newFormData.location,
-        dates: `${newFormData.departDate} → ${newFormData.returnDate}`,
-        travelers: `${newFormData.adults} adults, ${newFormData.children} children`,
-        budget: `${newFormData.currency} ${newFormData.budget}`,
-        groups: newFormData.selectedGroups,
-        interests: newFormData.selectedInterests,
-        travelStyleAnswers: newFormData.travelStyleAnswers,
-      });
+      console.log('📊 VERCEL AUDIT: Direct form update with keys:', Object.keys(newFormData));
       setFormData(newFormData);
     }
   };
@@ -82,22 +73,24 @@ function App() {
   const [generationError, setGenerationError] = useState<string>('');
   const itineraryRef = useRef<HTMLDivElement>(null);
 
-  // 🔍 PHASE 3 AUDIT: Monitor form data changes
+  // 🔍 PHASE 3 AUDIT: Monitor form data changes (only when not generating to avoid spam)
   useEffect(() => {
-    console.log('📝 Form data updated:', {
-      location: formData.location,
-      dates: { departDate: formData.departDate, returnDate: formData.returnDate },
-      travelers: { adults: formData.adults, children: formData.children },
-      budget: {
-        amount: formData.budget,
-        currency: formData.currency,
-        flexible: formData.flexibleBudget,
-      },
-      groups: formData.selectedGroups,
-      interests: formData.selectedInterests,
-      travelStyleAnswers: formData.travelStyleAnswers,
-    });
-  }, [formData]);
+    if (!isGenerating) {
+      console.log('📝 Form data updated:', {
+        location: formData.location,
+        dates: { departDate: formData.departDate, returnDate: formData.returnDate },
+        travelers: { adults: formData.adults, children: formData.children },
+        budget: {
+          amount: formData.budget,
+          currency: formData.currency,
+          flexible: formData.flexibleBudget,
+        },
+        groups: formData.selectedGroups,
+        interests: formData.selectedInterests,
+        travelStyleAnswers: formData.travelStyleAnswers,
+      });
+    }
+  }, [formData, isGenerating]);
 
   // Test API endpoints on app load
   useEffect(() => {
