@@ -1,34 +1,4 @@
 {
-  "functions": {
-    "api/itinerary/generate.ts": {
-      "maxDuration": 30,
-      "runtime": "edge"
-    },
-    "api/itinerary/progress/[workflowId].ts": {
-      "maxDuration": 300,
-      "runtime": "edge"
-    },
-    "api/itinerary/[itineraryId].ts": {
-      "maxDuration": 10,
-      "runtime": "edge"
-    },
-    "api/itinerary/status/[workflowId].ts": {
-      "maxDuration": 5,
-      "runtime": "edge"
-    },
-    "api/inngest/webhook.ts": {
-      "maxDuration": 60,
-      "runtime": "edge"
-    },
-    "api/health.ts": {
-      "maxDuration": 5,
-      "runtime": "edge"
-    },
-    "api/validate-env.ts": {
-      "maxDuration": 10,
-      "runtime": "edge"
-    }
-  },
   "build": {
     "env": {
       "ENABLE_EXPERIMENTAL_COREPACK": "1"
