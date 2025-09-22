@@ -137,10 +137,18 @@ export const TravelFormDataSchema = z
   .object({
     // Trip Details
     location: z.string().min(2).max(100),
-    departDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid departure date'),
+    departDate: z.string().refine((date) => {
+      // Allow empty string for flexible dates - will be handled by cross-validation
+      if (date === '') return true;
+      return !isNaN(Date.parse(date));
+    }, 'Invalid departure date'),
     returnDate: z
       .string()
-      .refine((date) => !isNaN(Date.parse(date)), 'Invalid return date')
+      .refine((date) => {
+        // Allow empty string for flexible dates or optional return
+        if (!date || date === '') return true;
+        return !isNaN(Date.parse(date));
+      }, 'Invalid return date')
       .optional(),
     flexibleDates: z.boolean(),
     plannedDays: z.number().int().min(1).max(365).optional(),
@@ -184,8 +192,16 @@ export const TravelFormDataSchema = z
   })
   .refine(
     (data) => {
-      // Validate return date is after depart date
-      if (data.returnDate) {
+      // Skip date validation if flexible dates are enabled
+      if (data.flexibleDates) return true;
+
+      // For fixed dates, require valid departure date
+      if (!data.departDate || data.departDate === '') {
+        return false;
+      }
+
+      // Validate return date is after depart date (only for fixed dates with both dates)
+      if (data.returnDate && data.returnDate !== '') {
         const depart = new Date(data.departDate);
         const returnD = new Date(data.returnDate);
         return returnD > depart;
@@ -193,8 +209,9 @@ export const TravelFormDataSchema = z
       return true;
     },
     {
-      message: 'Return date must be after departure date',
-      path: ['returnDate'],
+      message:
+        'For fixed dates, valid departure date is required, and return date must be after departure date',
+      path: ['departDate'],
     }
   )
   .refine(
@@ -212,8 +229,19 @@ export const TravelFormDataSchema = z
   )
   .refine(
     (data) => {
+      // Skip planned days calculation for flexible dates with empty date fields
+      if (data.flexibleDates && (!data.departDate || data.departDate === '')) {
+        return true;
+      }
+
       // Cross-field validation: if planned days is not provided, calculate from dates
-      if (!data.plannedDays && data.returnDate) {
+      if (
+        !data.plannedDays &&
+        data.returnDate &&
+        data.returnDate !== '' &&
+        data.departDate &&
+        data.departDate !== ''
+      ) {
         const depart = new Date(data.departDate);
         const returnD = new Date(data.returnDate);
         const calculatedDays = Math.ceil(

@@ -11,11 +11,11 @@ function App() {
     departDate: '',
     returnDate: '',
     flexibleDates: false,
-    adults: 2,
-    children: 0,
+    adults: 0, // Removed default value of 2
+    children: 0, // Keep 0 as default (no children by default is reasonable)
     childrenAges: [],
-    budget: 5000,
-    currency: 'USD',
+    budget: 0, // Removed default value of 5000
+    currency: 'USD', // Required by Currency type, but budget is 0
     flexibleBudget: false,
     budgetMode: 'total', // Add the missing budgetMode property
     travelStyleChoice: 'not-selected',
@@ -161,6 +161,13 @@ function App() {
 
       const validationResult = validateTravelFormData(transformedData);
       console.log('🔍 Validation Result:', validationResult);
+      console.log('🔍 VERCEL AUDIT: Validation details:', {
+        success: validationResult.success,
+        flexibleDates: transformedData.flexibleDates,
+        departDate: transformedData.departDate,
+        returnDate: transformedData.returnDate,
+        hasErrors: !validationResult.success ? validationResult.error.errors : 'none',
+      });
 
       if (validationResult.success) {
         console.log('✅ Validation passed! Data is valid for AI workflow');
