@@ -1,4 +1,30 @@
 {
+  "functions": {
+    "api/itinerary/generate.ts": {
+      "maxDuration": 30,
+      "runtime": "edge"
+    },
+    "api/itinerary/progress/[workflowId].ts": {
+      "maxDuration": 300,
+      "runtime": "edge"
+    },
+    "api/itinerary/[itineraryId].ts": {
+      "maxDuration": 10,
+      "runtime": "edge"
+    },
+    "api/itinerary/status/[workflowId].ts": {
+      "maxDuration": 5,
+      "runtime": "edge"
+    },
+    "api/inngest/webhook.ts": {
+      "maxDuration": 60,
+      "runtime": "edge"
+    },
+    "api/health.ts": {
+      "maxDuration": 5,
+      "runtime": "edge"
+    }
+  },
   "env": {
     "GROQ_API_KEY": "your-groq-api-key-here",
     "GROQ_API_KEY_2": "your-groq-api-key-here",
@@ -15,7 +41,18 @@
     "HEALTH_CHECK_INTERVAL": "300000",
     "PROVIDER_CACHE_TTL": "300000",
     "MAX_RETRIES": "3",
-    "FALLBACK_TIMEOUT": "10000"
+    "FALLBACK_TIMEOUT": "10000",
+    "XAI_API_KEY": "@xai-api-key",
+    "INNGEST_EVENT_KEY": "@inngest-signing-key",
+    "INNGEST_SIGNING_KEY": "@inngest-signing-key",
+    "UPSTASH_REDIS_REST_URL": "@upstash-redis-url",
+    "UPSTASH_REDIS_REST_TOKEN": "@upstash-redis-token",
+    "UPSTASH_VECTOR_REST_URL": "@upstash-vector-url",
+    "UPSTASH_VECTOR_REST_TOKEN": "@upstash-vector-token",
+    "TAVILY_API_KEY": "@tavily-api-key",
+    "EXA_API_KEY": "@exa-api-key",
+    "SERP_API_KEY": "@serp-api-key",
+    "NEXT_PUBLIC_WS_URL": "@websocket-url"
   },
   "build": {
     "env": {

@@ -1,135 +1,66 @@
-# HYLO Travel AI Platform Constitution
+<!--
+Sync Impact Report:
+- Version change: none → 1.0.0 (initial constitution creation)
+- New constitution with 5 core principles
+- Added sections: Vercel Edge Compatibility, Code->Deploy->Debug Workflow
+- Templates requiring updates: plan-template.md, spec-template.md, tasks-template.md (pending)
+- Follow-up TODOs: None
+-->
+
+# Hylo Travel AI Constitution
 
 ## Core Principles
 
-### I. Edge-First Architecture
+### I. Edge-First Architecture (NON-NEGOTIABLE)
 
-All API endpoints run on Vercel Edge Runtime for global distribution; No client-side API keys - all secrets managed server-side; Edge functions handle LLM routing, health monitoring, and RAG operations; Progressive enhancement with graceful degradation
+All functionality MUST be compatible with Vercel Edge Runtime. No Node.js-specific APIs, no file system access, no synchronous blocking operations. Edge functions use Web APIs only. TypeScript strict mode enforced. All API endpoints export `{ runtime: 'edge' }` config and use standardized error handling with structured logging.
 
-### II. Multi-Agent AI Orchestration
+**Rationale**: Ensures global performance, cost efficiency, and deployment reliability while maintaining maximum compatibility with Vercel's infrastructure.
 
-Multi-agent pipeline for itinerary generation (Data Gatherer → Information Gatherer → Planning Strategist → Content Compiler); Intelligent LLM provider routing based on complexity analysis; Fallback chains ensure resilience (Cerebras → Gemini → Groq); Real-time web search integration for current information
+### II. Component Composition Pattern
 
-### III. Test-First Development (NON-NEGOTIABLE)
+React components follow strict composition pattern: BaseFormProps interface for all forms, shared types in centralized types.ts, validation through useFormValidation hook. Components are modular, reusable, and maintain single responsibility. Form state flows unidirectionally through parent components using onFormChange pattern.
 
-TDD mandatory: Tests written → Review → Tests fail → Then implement; Minimum 80% code coverage requirement; Contract tests for all API endpoints; Integration tests for multi-agent workflows; Component tests with React Testing Library
+**Rationale**: Maintains code consistency, enables rapid development through reusable patterns, and ensures predictable data flow for complex form interactions.
 
-### IV. Observable AI Operations
+### III. User Experience Consistency
 
-Comprehensive tracing via LangSmith integration; Cost tracking per LLM operation with budget alerts; Performance metrics (latency, tokens, throughput); Structured logging at all service boundaries; Health monitoring dashboard for system visibility
+All form components use identical design tokens: `bg-form-box (#ece8de)` background, `rounded-[36px]` corners, `border-3 border-gray-200`, consistent padding and typography. Tailwind CSS classes enforce design system. No deviation from established visual patterns without justification.
 
-### V. Type-Safe Development
+**Rationale**: Creates cohesive user experience, maintains brand consistency, and reduces cognitive load through predictable interface patterns.
 
-TypeScript strict mode throughout frontend and backend; Zod schemas for runtime validation matching compile-time types; Shared type definitions between client and server; API contracts validated at build time
+### IV. Code-Deploy-Debug Implementation Flow
 
-### VI. Component-Based Architecture
+Development follows rapid implementation cycle: CODE (implement feature) → DEPLOY (Vercel deployment) → DEBUG (test in production). No traditional TDD - instead validate through deployment testing. Phase-based implementation with immediate deployment feedback. Real-world validation over isolated testing.
 
-React 18+ with functional components and hooks; Form optimization with React Hook Form + Zod validation; Tailwind CSS for utility-first styling; Reusable UI components with clear separation of concerns
+**Rationale**: Optimized for existing codebase evolution, reduces development overhead, and provides immediate production feedback for faster iteration.
 
-### VII. Cost-Conscious Design
+### V. Type-Safe Development with Zod Validation
 
-Daily budget limits enforced ($10/day default); Token usage optimization in LLM operations; Provider selection based on cost/performance trade-offs; Caching strategies to reduce redundant API calls
+All data structures use TypeScript with strict typing. Zod schemas for runtime validation at API boundaries. FormData interfaces centralized and comprehensive. React Hook Form integration with type-safe validation. No any types except for verified third-party integrations.
 
-## Technical Standards
+**Rationale**: Prevents runtime errors, enables confident refactoring, and provides excellent developer experience with autocompletion and type checking.
 
-### Frontend Stack
+## Vercel Edge Compatibility Requirements
 
-- **Framework**: React 18+ with TypeScript 5.x
-- **Build Tool**: Vite for fast HMR and optimized builds
-- **Styling**: Tailwind CSS with custom design tokens
-- **Forms**: React Hook Form with Zod validation
-- **State**: Local state with useState/useReducer
-- **Icons**: Lucide React for consistent iconography
-- **Testing**: Vitest + React Testing Library
+All code MUST comply with Vercel Edge Runtime limitations: No Node.js built-ins, no file system access, no native modules, streaming responses for large data. API endpoints use standardized error handling, CORS configuration, and request/response patterns. Environment variables accessed through secure patterns.
 
-### Backend Stack
+**Technology Stack Constraints**: React 18.3.1 + TypeScript 5.5.3 + Vite for frontend. Vercel Edge Functions for all API endpoints. Inngest 3.41.0 for async workflows. All dependencies must be Edge Runtime compatible.
 
-- **Runtime**: Vercel Edge Functions (Edge Runtime)
-- **LLM Providers**: Cerebras, Google Gemini, Groq
-- **Observability**: LangSmith for tracing
-- **Validation**: Zod schemas for all endpoints
-- **Search**: Web search service integration
-- **RAG**: Vector storage with Qdrant (future)
+## Code-Deploy-Debug Workflow Standards
 
-### API Design
+**Implementation Phases**: 1) Implement (rapid feature development), 2) Debug (deployment testing), 3) Test (production validation). No isolated unit testing requirements - focus on integration testing through real deployment scenarios.
 
-- RESTful endpoints under `/api` namespace
-- Streaming responses for real-time generation
-- Health endpoints for monitoring
-- Rate limiting and quota management
-- CORS configuration for edge functions
+**Quality Gates**: Deployment must succeed, basic functionality verified in staging, error boundaries handle edge cases. Performance monitoring through Edge Runtime observability. User feedback incorporated through rapid iteration cycles.
 
-### Development Workflow
-
-#### Code Quality Gates
-
-1. TypeScript compilation must succeed
-2. ESLint passes with no errors
-3. All tests pass (unit, integration, E2E)
-4. Zod schema validation coverage
-5. Bundle size within limits (<200KB warning)
-
-## Infrastructure Requirements
-
-### Deployment Platform
-
-- **Hosting**: Vercel with automatic deployments
-- **Edge Functions**: Global distribution
-- **Environment**: Development, Preview, Production
-- **DNS**: Verification and readiness checks
-- **Monitoring**: Real-time health dashboards
-
-### Performance Standards
-
-- API response time: <2s p95 for simple queries
-- Streaming latency: <500ms to first token
-- Frontend FCP: <1.5s on 3G networks
-- Bundle size: <200KB for initial load
-- Error rate: <1% for production
-
-### Security & Compliance
-
-- Environment variables for all secrets
-- Input sanitization on all endpoints
-- Rate limiting per IP/session
-- CORS properly configured
-- No PII in logs or traces
-
-## Project-Specific Conventions
-
-### File Organization
-
-```
-api/              # Edge functions
-src/
-  ├── components/ # React components
-  ├── services/   # Business logic
-  ├── api/        # API client code
-  ├── types/      # TypeScript types
-  ├── hooks/      # Custom React hooks
-  └── utils/      # Utilities
-tests/            # Test files
-.specify/         # Project management
-```
-
-### Naming Conventions
-
-- Components: PascalCase (e.g., TripDetailsForm)
-- Services: camelCase with 'Service' suffix
-- Types: PascalCase with descriptive names
-- API routes: kebab-case endpoints
-- Test files: _.test.ts or _.spec.ts
-
-### AI Agent Conventions
-
-- Each agent has single responsibility
-- Agents communicate via structured data
-- Token limits enforced per agent
-- Costs tracked per agent operation
-- Fallback strategies documented
+**Progressive Enhancement**: Features work with basic functionality first, enhanced experience for modern browsers, graceful degradation for edge cases. All forms functional without JavaScript as baseline.
 
 ## Governance
 
-Constitution supersedes all development practices; Amendments require team consensus and testing; All PRs must verify constitutional compliance via checks; Complexity violations must be justified in PR description; Use CLAUDE.md for AI-assisted development guidance
+This constitution supersedes all other development practices and architectural decisions. All feature implementations, code reviews, and architectural changes must verify compliance with these principles.
 
-**Version**: 2.0.0 | **Ratified**: 2025-01-20 | **Last Amended**: 2025-01-20
+**Amendment Process**: Requires documentation of breaking changes, migration plan for existing code, and approval through formal review process. Version increments follow semantic versioning for constitutional changes.
+
+**Enforcement**: All pull requests must pass constitutional compliance check. Complexity additions require explicit justification against simplicity principle. Use `.specify/templates/` for runtime development guidance and ensure all generated artifacts align with constitutional requirements.
+
+**Version**: 1.0.0 | **Ratified**: 2025-09-23 | **Last Amended**: 2025-09-23

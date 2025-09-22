@@ -45,7 +45,14 @@
       "@/types/*": ["src/types/*"],
       "@/hooks/*": ["src/hooks/*"],
       "@/utils/*": ["src/utils/*"],
-      "@/tests/*": ["tests/*"]
+      "@/tests/*": ["tests/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/lib/ai-clients/*": ["src/lib/ai-clients/*"],
+      "@/lib/ai-agents/*": ["src/lib/ai-agents/*"],
+      "@/lib/workflows/*": ["src/lib/workflows/*"],
+      "@/lib/inngest/*": ["src/lib/inngest/*"],
+      "@/lib/config/*": ["src/lib/config/*"],
+      "@/schemas/*": ["src/schemas/*"]
     }
   },
   "include": ["src", "tests/**/*"]
