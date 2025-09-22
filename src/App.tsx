@@ -36,6 +36,39 @@ function App() {
   const [tripNickname, setTripNickname] = useState<string>('');
   const [contactInfo, setContactInfo] = useState({});
 
+  // 🔍 HARD-CODED CONSOLE LOGS FOR VERCEL DEPLOYMENT
+  const loggedSetFormData = (newFormData: FormData | ((prev: FormData) => FormData)) => {
+    console.log('🔥 VERCEL AUDIT: Form data changing...');
+    if (typeof newFormData === 'function') {
+      setFormData((prev) => {
+        const result = newFormData(prev);
+        console.log('📝 VERCEL AUDIT: Form data updated (functional):', result);
+        console.log('📊 VERCEL AUDIT: Key form fields:', {
+          location: result.location,
+          dates: `${result.departDate} → ${result.returnDate}`,
+          travelers: `${result.adults} adults, ${result.children} children`,
+          budget: `${result.currency} ${result.budget}`,
+          groups: result.selectedGroups,
+          interests: result.selectedInterests,
+          travelStyleAnswers: result.travelStyleAnswers,
+        });
+        return result;
+      });
+    } else {
+      console.log('📝 VERCEL AUDIT: Form data updated (direct):', newFormData);
+      console.log('📊 VERCEL AUDIT: Key form fields:', {
+        location: newFormData.location,
+        dates: `${newFormData.departDate} → ${newFormData.returnDate}`,
+        travelers: `${newFormData.adults} adults, ${newFormData.children} children`,
+        budget: `${newFormData.currency} ${newFormData.budget}`,
+        groups: newFormData.selectedGroups,
+        interests: newFormData.selectedInterests,
+        travelStyleAnswers: newFormData.travelStyleAnswers,
+      });
+      setFormData(newFormData);
+    }
+  };
+
   // Travel style choice state management
   const [travelStyleChoice, setTravelStyleChoice] = useState<TravelStyleChoice>(
     TravelStyleChoice.NOT_SELECTED
@@ -48,6 +81,23 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string>('');
   const itineraryRef = useRef<HTMLDivElement>(null);
+
+  // 🔍 PHASE 3 AUDIT: Monitor form data changes
+  useEffect(() => {
+    console.log('📝 Form data updated:', {
+      location: formData.location,
+      dates: { departDate: formData.departDate, returnDate: formData.returnDate },
+      travelers: { adults: formData.adults, children: formData.children },
+      budget: {
+        amount: formData.budget,
+        currency: formData.currency,
+        flexible: formData.flexibleBudget,
+      },
+      groups: formData.selectedGroups,
+      interests: formData.selectedInterests,
+      travelStyleAnswers: formData.travelStyleAnswers,
+    });
+  }, [formData]);
 
   // Test API endpoints on app load
   useEffect(() => {
@@ -83,6 +133,46 @@ function App() {
     setIsGenerating(true);
     setGenerationError('');
     setGeneratedItinerary(''); // Clear previous itinerary
+
+    // 🔍 PHASE 3 AUDIT: Log existing form data structure
+    console.group('📋 PHASE 3 AUDIT: Form Data Analysis');
+    console.log('📊 Raw FormData from state:', formData);
+    console.log('🎯 Travel Style Choice:', travelStyleChoice);
+    console.log('🎪 Additional State:', {
+      selectedExperience,
+      selectedVibes,
+      selectedSampleDays,
+      dinnerChoices,
+      tripNickname,
+      contactInfo,
+      customVibesText,
+    });
+
+    // Test our transformation functions
+    try {
+      const { transformExistingFormDataToWorkflow, transformFormDataForWorkflow } = await import(
+        './utils/workflow-transforms'
+      );
+      const { validateTravelFormData } = await import('./schemas/ai-workflow-schemas');
+
+      console.log('🔄 Testing form data transformation...');
+      const transformedData = transformExistingFormDataToWorkflow(formData);
+      console.log('✅ Transformed TravelFormData:', transformedData);
+
+      const validationResult = validateTravelFormData(transformedData);
+      console.log('🔍 Validation Result:', validationResult);
+
+      if (validationResult.success) {
+        console.log('✅ Validation passed! Data is valid for AI workflow');
+        const workflowData = transformFormDataForWorkflow(transformedData);
+        console.log('🚀 Final AI Workflow Data:', workflowData);
+      } else {
+        console.error('❌ Validation failed:', validationResult.error);
+      }
+    } catch (error) {
+      console.error('❌ Transformation error:', error);
+    }
+    console.groupEnd();
 
     try {
       // Instead of calling AI/LLM, display the gathered form data organized by form sections
@@ -245,14 +335,18 @@ ${JSON.stringify(organizedFormData, null, 2)}
           </div>
 
           {/* Trip Details Form - Unified with all form components */}
-          <TripDetails formData={formData} onFormChange={setFormData} showAdditionalForms={true} />
+          <TripDetails
+            formData={formData}
+            onFormChange={loggedSetFormData}
+            showAdditionalForms={true}
+          />
 
           {/* ConditionalTravelStyle - Handles choice-based travel style display */}
           <ConditionalTravelStyle
             choice={travelStyleChoice}
             onChoiceChange={handleTravelStyleChoice}
             formData={formData}
-            onFormChange={setFormData}
+            onFormChange={loggedSetFormData}
             selectedExperience={selectedExperience}
             onExperienceChange={setSelectedExperience}
             selectedVibes={selectedVibes}
