@@ -41,111 +41,112 @@ export default defineConfig(({ mode }) => {
       'process.env.VERCEL_DEPLOYMENT_ID': JSON.stringify(env.VERCEL_DEPLOYMENT_ID),
     },
     optimizeDeps: {
-    exclude: ['lucide-react'],
-    include: [
-      // Pre-bundle AI SDK packages for better performance
-      '@ai-sdk/xai',
-      '@ai-sdk/groq',
-      'inngest',
-      '@upstash/redis',
-      '@upstash/vector',
-      'tavily',
-      'exa-js',
-      'serpapi',
-    ],
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@/components': path.resolve(__dirname, './src/components'),
-      '@/services': path.resolve(__dirname, './src/services'),
-      '@/types': path.resolve(__dirname, './src/types'),
-      '@/hooks': path.resolve(__dirname, './src/hooks'),
-      '@/utils': path.resolve(__dirname, './src/utils'),
-      '@/tests': path.resolve(__dirname, './tests'),
-      '@/lib': path.resolve(__dirname, './src/lib'),
-      '@/lib/ai-clients': path.resolve(__dirname, './src/lib/ai-clients'),
-      '@/lib/ai-agents': path.resolve(__dirname, './src/lib/ai-agents'),
-      '@/lib/workflows': path.resolve(__dirname, './src/lib/workflows'),
-      '@/lib/inngest': path.resolve(__dirname, './src/lib/inngest'),
-      '@/lib/config': path.resolve(__dirname, './src/lib/config'),
-      '@/schemas': path.resolve(__dirname, './src/schemas'),
-    },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/utils/test-helpers.tsx'],
-    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', '.git', '.cache'],
-    coverage: {
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/utils/test-helpers.ts',
-        '**/*.d.ts',
-        '**/*.config.{js,ts}',
-        'dist/',
+      exclude: ['lucide-react'],
+      include: [
+        // Pre-bundle AI SDK packages for better performance
+        '@ai-sdk/xai',
+        '@ai-sdk/groq',
+        'inngest',
+        '@upstash/redis',
+        '@upstash/vector',
+        'tavily',
+        'exa-js',
+        'serpapi',
       ],
     },
-  },
-  server: {
-    port: 5173,
-    host: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false,
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (_proxyReq, req, _res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+        '@/components': path.resolve(__dirname, './src/components'),
+        '@/services': path.resolve(__dirname, './src/services'),
+        '@/types': path.resolve(__dirname, './src/types'),
+        '@/hooks': path.resolve(__dirname, './src/hooks'),
+        '@/utils': path.resolve(__dirname, './src/utils'),
+        '@/tests': path.resolve(__dirname, './tests'),
+        '@/lib': path.resolve(__dirname, './src/lib'),
+        '@/lib/ai-clients': path.resolve(__dirname, './src/lib/ai-clients'),
+        '@/lib/ai-agents': path.resolve(__dirname, './src/lib/ai-agents'),
+        '@/lib/workflows': path.resolve(__dirname, './src/lib/workflows'),
+        '@/lib/inngest': path.resolve(__dirname, './src/lib/inngest'),
+        '@/lib/config': path.resolve(__dirname, './src/lib/config'),
+        '@/schemas': path.resolve(__dirname, './src/schemas'),
+      },
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./src/utils/test-helpers.tsx'],
+      include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+      exclude: ['node_modules', 'dist', '.git', '.cache'],
+      coverage: {
+        reporter: ['text', 'json', 'html'],
+        exclude: [
+          'node_modules/',
+          'src/utils/test-helpers.ts',
+          '**/*.d.ts',
+          '**/*.config.{js,ts}',
+          'dist/',
+        ],
+      },
+    },
+    server: {
+      port: 5173,
+      host: true,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          secure: false,
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log('proxy error', err);
+            });
+            proxy.on('proxyReq', (_proxyReq, req, _res) => {
+              console.log('Sending Request to the Target:', req.method, req.url);
+            });
+            proxy.on('proxyRes', (proxyRes, req, _res) => {
+              console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+            });
+          },
         },
       },
     },
-  },
-  build: {
-    // Optimize for Edge Runtime compatibility
-    target: 'esnext',
-    minify: 'terser',
-    rollupOptions: {
-      external: [
-        // Don't bundle Node.js built-ins (they're not available in Edge Runtime anyway)
-        'fs',
-        'path',
-        'os',
-        'crypto',
-        'http',
-        'https',
-        'stream',
-        'buffer',
-        'child_process',
-        'cluster',
-        'events',
-        'util',
-        'zlib',
-      ],
-      output: {
-        manualChunks: {
-          // Separate AI SDK packages into their own chunks
-          'ai-providers': ['@ai-sdk/xai', '@ai-sdk/groq'],
-          workflow: ['inngest'],
-          storage: ['@upstash/redis', '@upstash/vector'],
-          search: ['tavily', 'exa-js', 'serpapi'],
-          // Keep existing chunks
-          vendor: ['react', 'react-dom'],
-          lucide: ['lucide-react'],
+    build: {
+      // Optimize for Edge Runtime compatibility
+      target: 'esnext',
+      minify: 'terser',
+      rollupOptions: {
+        external: [
+          // Don't bundle Node.js built-ins (they're not available in Edge Runtime anyway)
+          'fs',
+          'path',
+          'os',
+          'crypto',
+          'http',
+          'https',
+          'stream',
+          'buffer',
+          'child_process',
+          'cluster',
+          'events',
+          'util',
+          'zlib',
+        ],
+        output: {
+          manualChunks: {
+            // Separate AI SDK packages into their own chunks
+            'ai-providers': ['@ai-sdk/xai', '@ai-sdk/groq'],
+            workflow: ['inngest'],
+            storage: ['@upstash/redis', '@upstash/vector'],
+            search: ['tavily', 'exa-js', 'serpapi'],
+            // Keep existing chunks
+            vendor: ['react', 'react-dom'],
+            lucide: ['lucide-react'],
+          },
         },
       },
+      // Ensure smaller bundles for faster Edge Function cold starts
+      chunkSizeWarningLimit: 1000, // Increased for AI packages
     },
-    // Ensure smaller bundles for faster Edge Function cold starts
-    chunkSizeWarningLimit: 1000, // Increased for AI packages
-  },
+  };
 });
