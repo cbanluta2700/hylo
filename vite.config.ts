@@ -20,8 +20,7 @@ export default defineConfig(({ mode }) => {
       // GROQ API Keys (primary + backup)
       'process.env.GROQ_API_KEY': JSON.stringify(env.GROQ_API_KEY),
       'process.env.GROQ_API_KEY_2': JSON.stringify(env.GROQ_API_KEY_2),
-      // Other AI providers
-      'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY),
+      // Search Provider APIs
       'process.env.TAVILY_API_KEY': JSON.stringify(env.TAVILY_API_KEY),
       'process.env.EXA_API_KEY': JSON.stringify(env.EXA_API_KEY),
       'process.env.SERP_API_KEY': JSON.stringify(env.SERP_API_KEY),
@@ -37,7 +36,6 @@ export default defineConfig(({ mode }) => {
       'process.env.KV_REST_API_TOKEN': JSON.stringify(env.KV_REST_API_TOKEN),
       'process.env.INNGEST_EVENT_KEY': JSON.stringify(env.INNGEST_EVENT_KEY),
       'process.env.INNGEST_SIGNING_KEY': JSON.stringify(env.INNGEST_SIGNING_KEY),
-      'process.env.NEXTAUTH_SECRET': JSON.stringify(env.NEXTAUTH_SECRET),
       'process.env.NEXT_PUBLIC_API_URL': JSON.stringify(env.NEXT_PUBLIC_API_URL),
       'process.env.NEXT_PUBLIC_WS_URL': JSON.stringify(env.NEXT_PUBLIC_WS_URL),
       'process.env.NEXT_PUBLIC_API_URL_DEV': JSON.stringify(env.NEXT_PUBLIC_API_URL_DEV),

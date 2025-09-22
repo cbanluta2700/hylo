@@ -314,13 +314,11 @@ function testAdditionalEnvVars(): ValidationResult[] {
     // AI Provider backup keys
     { name: 'XAI Grok (Backup)', key: 'XAI_API_KEY_2' },
     { name: 'Groq (Backup)', key: 'GROQ_API_KEY_2' },
-    { name: 'OpenAI', key: 'OPENAI_API_KEY' },
     // Your specific Redis/KV configuration
     { name: 'KV REST API URL', key: 'KV_REST_API_URL' },
     { name: 'KV URL', key: 'KV_URL' },
     { name: 'Redis URL', key: 'REDIS_URL' },
-    // NextAuth and public URLs
-    { name: 'NextAuth Secret', key: 'NEXTAUTH_SECRET' },
+    // Public URLs
     { name: 'Public API URL', key: 'NEXT_PUBLIC_API_URL' },
     { name: 'Public WebSocket URL', key: 'NEXT_PUBLIC_WS_URL' },
   ];
