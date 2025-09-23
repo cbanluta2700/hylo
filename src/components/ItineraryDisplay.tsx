@@ -96,6 +96,7 @@ const useAIItinerary = (workflowId?: string) => {
   const [aiItinerary, setAiItinerary] = useState<any>(null);
   const [isPolling, setIsPolling] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
+  const [aiProgress, setAiProgress] = useState<any>(null);
 
   useEffect(() => {
     if (!workflowId) return;
@@ -113,20 +114,16 @@ const useAIItinerary = (workflowId?: string) => {
           workflowId
         );
 
-        // First, test if the endpoint exists with a simple test
-        if (pollAttempts === 1) {
-          try {
-            const testResponse = await fetch('/api/itinerary/test-routing');
-            const testResult = await testResponse.json();
-            console.log('🧪 [AI-Display] Test routing result:', testResult);
-          } catch (testError) {
-            console.error('🧪 [AI-Display] Test routing failed:', testError);
-          }
+        // Test route first
+        try {
+          const testResponse = await fetch('/api/itinerary/test-routing');
+          console.log('🧪 [AI-Display] Test routing response:', await testResponse.text());
+        } catch (testError) {
+          console.log('🧪 [AI-Display] Test routing failed:', testError);
         }
 
         const response = await fetch(`/api/itinerary/get-itinerary?workflowId=${workflowId}`);
-
-        console.log(`📊 [AI-Display] Response status: ${response.status} ${response.statusText}`);
+        console.log('📊 [AI-Display] Response status:', response.status);
 
         if (response.status === 404) {
           console.error('❌ [AI-Display] 404 Error - Endpoint not found');
@@ -144,11 +141,20 @@ const useAIItinerary = (workflowId?: string) => {
         }
 
         if (response.ok) {
-          const result = (await response.json()) as { success?: boolean; itinerary?: any };
+          const result = (await response.json()) as {
+            success?: boolean;
+            itinerary?: any;
+            aiProgress?: any;
+            completed?: boolean;
+          };
           console.log('📊 [AI-Display] Polling result:', result);
 
-          if (result.success && result.itinerary) {
-            console.log('✅ [AI-Display] Itinerary received!');
+          // Update AI progress information
+          if (result.aiProgress) {
+            setAiProgress(result.aiProgress);
+          }
+
+          if (result.success && result.completed && result.itinerary) {
             setAiItinerary(result.itinerary);
             setIsPolling(false);
             return;
@@ -157,18 +163,15 @@ const useAIItinerary = (workflowId?: string) => {
 
         // Continue polling if we haven't hit max attempts
         if (pollAttempts < maxAttempts) {
-          setTimeout(pollForResults, 3000);
+          setTimeout(pollForResults, 6000); // Poll every 6 seconds
         } else {
           console.error('❌ [AI-Display] Max polling attempts reached');
           setIsPolling(false);
         }
       } catch (error) {
         console.error('❌ [AI-Display] Polling error:', error);
-        setErrorCount((prev) => prev + 1);
-
-        if (pollAttempts < maxAttempts && errorCount < 5) {
-          setTimeout(pollForResults, 5000);
-        } else {
+        setTimeout(pollForResults, 8000);
+        if (pollAttempts >= maxAttempts) {
           setIsPolling(false);
         }
       }
@@ -177,7 +180,7 @@ const useAIItinerary = (workflowId?: string) => {
     pollForResults();
   }, [workflowId, errorCount]);
 
-  return { aiItinerary, isPolling };
+  return { aiItinerary, isPolling, aiProgress };
 };
 
 const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
@@ -187,7 +190,7 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
   workflowId,
   className = '',
 }) => {
-  const { aiItinerary, isPolling } = useAIItinerary(workflowId);
+  const { aiItinerary, isPolling, aiProgress } = useAIItinerary(workflowId);
 
   console.log('🎯 [AI-Display] Component state:', {
     isLoading,
@@ -199,15 +202,56 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
   });
 
   if (isLoading || isPolling) {
+    const progressMessage = aiProgress
+      ? `${aiProgress.description} (${aiProgress.aiModel})`
+      : 'Our AI agents are crafting your perfect travel experience...';
+
+    const stepInfo = aiProgress
+      ? `Step ${
+          aiProgress.stage === 'architect'
+            ? '1'
+            : aiProgress.stage === 'gatherer'
+            ? '2'
+            : aiProgress.stage === 'specialist'
+            ? '3'
+            : '4'
+        }/4: ${aiProgress.step}`
+      : 'Initializing AI workflow...';
+
     return (
-      <ResilientLoading
-        isLoading={true}
-        loadingMessage="Our AI agents are crafting your perfect travel experience..."
-        timeoutMessage="Creating personalized recommendations based on your preferences."
-        timeoutDuration={240000}
-        onTimeout={() => console.log('AI workflow timeout')}
-        className="bg-form-box rounded-[36px] shadow-lg border border-gray-200"
-      />
+      <div className="bg-form-box rounded-[36px] shadow-lg border border-gray-200 p-8">
+        <ResilientLoading
+          isLoading={true}
+          loadingMessage={progressMessage}
+          timeoutMessage={stepInfo}
+          timeoutDuration={240000}
+          onTimeout={() => console.log('AI workflow timeout')}
+          className="mb-6"
+        />
+
+        {aiProgress && (
+          <div className="mt-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">🤖 {aiProgress.aiModel}</span>
+              <span className="text-sm text-gray-500">
+                {Math.round(aiProgress.progress)}% complete
+              </span>
+            </div>
+
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-1000"
+                style={{ width: `${aiProgress.progress}%` }}
+              ></div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-sm text-gray-600">{aiProgress.description}</p>
+              <p className="text-xs text-gray-500 mt-1">Current Stage: {aiProgress.step}</p>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -352,8 +396,15 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
         )) || (
           <div className="col-span-full text-center py-8">
             <p className="text-gray-500 font-raleway">
-              🤖 AI is generating your personalized itinerary...
+              {aiProgress
+                ? `🤖 ${aiProgress.aiModel} is ${aiProgress.description.toLowerCase()}`
+                : '🤖 AI is generating your personalized itinerary...'}
             </p>
+            {aiProgress && (
+              <p className="text-xs text-gray-400 mt-2">
+                Progress: {Math.round(aiProgress.progress)}% • {aiProgress.step}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -373,7 +424,11 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
               <p className="text-gray-700 text-sm font-raleway">{tip}</p>
             </div>
           )) || (
-            <p className="text-gray-500 font-raleway">🤖 AI is generating personalized tips...</p>
+            <p className="text-gray-500 font-raleway">
+              {aiProgress && aiProgress.stage === 'specialist'
+                ? `🤖 ${aiProgress.aiModel} is curating personalized tips...`
+                : '🤖 AI is generating personalized tips...'}
+            </p>
           )}
 
           {aiItinerary?.practicalInfo?.packingTips && (
