@@ -81,7 +81,7 @@ export const generateItineraryFunction = inngest.createFunction(
           completedSteps: ['architect'],
         });
 
-        return result;
+        return result as any;
       });
 
       // Step 3: Information Gathering (Groq)
@@ -111,7 +111,7 @@ export const generateItineraryFunction = inngest.createFunction(
           completedSteps: ['architect', 'gatherer'],
         });
 
-        return result;
+        return result as any;
       });
 
       // Step 4: Information Processing (XAI Grok)
@@ -144,7 +144,7 @@ export const generateItineraryFunction = inngest.createFunction(
           completedSteps: ['architect', 'gatherer', 'specialist'],
         });
 
-        return result;
+        return result as any;
       });
 
       // Step 5: Final Formatting (GPT-OSS/Groq)
@@ -175,7 +175,7 @@ export const generateItineraryFunction = inngest.createFunction(
         });
 
         await sessionManager.completeSession(workflowId);
-        return result;
+        return result as any;
       });
 
       return {
