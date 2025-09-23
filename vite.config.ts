@@ -4,12 +4,16 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  // Load environment variables.
+  // Use `''` as the third parameter to load all env vars, not just VITE_ prefixed ones.
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [react()],
+    // 'define' variables for client-side access
+    // ONLY include environment variables that are needed on the frontend.
+    // In Vite, these must be explicitly defined and will be available as `import.meta.env.*`.
+    // Vercel-specific env vars are automatically handled on the server, so no need to define here.
     define: {
       // Explicitly define all API keys for Vercel compatibility
       // Note: Vercel doesn't use .env files, these are defined in Vercel dashboard
@@ -24,19 +28,13 @@ export default defineConfig(({ mode }) => {
       'process.env.TAVILY_API_KEY': JSON.stringify(env.TAVILY_API_KEY),
       'process.env.EXA_API_KEY': JSON.stringify(env.EXA_API_KEY),
       'process.env.SERP_API_KEY': JSON.stringify(env.SERP_API_KEY),
-
       // Upstash Vector Database
       'process.env.UPSTASH_VECTOR_REST_URL': JSON.stringify(env.UPSTASH_VECTOR_REST_URL),
       'process.env.UPSTASH_VECTOR_REST_TOKEN': JSON.stringify(env.UPSTASH_VECTOR_REST_TOKEN),
-
-      // User's Specific Upstash Redis/KV Configuration
-      // These are your actual Upstash Redis instance variables
+      // Upstash Redis Database (KV Store)
       'process.env.KV_REST_API_URL': JSON.stringify(env.KV_REST_API_URL),
-      'process.env.KV_URL': JSON.stringify(env.KV_URL),
       'process.env.KV_REST_API_TOKEN': JSON.stringify(env.KV_REST_API_TOKEN),
       'process.env.KV_REST_API_READ_ONLY_TOKEN': JSON.stringify(env.KV_REST_API_READ_ONLY_TOKEN),
-      'process.env.REDIS_URL': JSON.stringify(env.REDIS_URL),
-
       // Inngest Workflow Configuration
       'process.env.INNGEST_EVENT_KEY': JSON.stringify(env.INNGEST_EVENT_KEY),
       'process.env.INNGEST_SIGNING_KEY': JSON.stringify(env.INNGEST_SIGNING_KEY),
@@ -51,20 +49,7 @@ export default defineConfig(({ mode }) => {
       'process.env.VERCEL_GIT_COMMIT_SHA': JSON.stringify(env.VERCEL_GIT_COMMIT_SHA),
       'process.env.VERCEL_DEPLOYMENT_ID': JSON.stringify(env.VERCEL_DEPLOYMENT_ID),
     },
-    optimizeDeps: {
-      exclude: ['lucide-react'],
-      include: [
-        // Pre-bundle AI SDK packages for better performance
-        '@ai-sdk/xai',
-        '@ai-sdk/groq',
-        'inngest',
-        '@upstash/redis',
-        '@upstash/vector',
-        'tavily',
-        'exa-js',
-        'serpapi',
-      ],
-    },
+    // Aliases for better import paths
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
@@ -83,12 +68,12 @@ export default defineConfig(({ mode }) => {
         '@/schemas': path.resolve(__dirname, './src/schemas'),
       },
     },
+    // Vitest testing setup (if you are using it)
     test: {
       globals: true,
       environment: 'jsdom',
       setupFiles: ['./src/utils/test-helpers.tsx'],
       include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-      exclude: ['node_modules', 'dist', '.git', '.cache'],
       coverage: {
         reporter: ['text', 'json', 'html'],
         exclude: [
@@ -100,64 +85,24 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
+    // Local development server proxy for API requests
     server: {
-      port: 5173,
       host: true,
+      port: 5173,
       proxy: {
         '/api': {
-          target: 'http://localhost:3001',
+          target: 'http://localhost:3001', // Target the local Vercel dev server (port 3001)
           changeOrigin: true,
           secure: false,
-          configure: (proxy, _options) => {
-            proxy.on('error', (err, _req, _res) => {
-              console.log('proxy error', err);
-            });
-            proxy.on('proxyReq', (_proxyReq, req, _res) => {
-              console.log('Sending Request to the Target:', req.method, req.url);
-            });
-            proxy.on('proxyRes', (proxyRes, req, _res) => {
-              console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-            });
-          },
+          rewrite: (path) => path.replace(/^\/api/, ''), // Rewrite to match Vercel function path
         },
       },
     },
+    // Build optimizations for the Vite frontend
     build: {
-      // Optimize for Edge Runtime compatibility
       target: 'esnext',
+      outDir: 'dist',
       minify: 'terser',
-      rollupOptions: {
-        external: [
-          // Don't bundle Node.js built-ins (they're not available in Edge Runtime anyway)
-          'fs',
-          'path',
-          'os',
-          'crypto',
-          'http',
-          'https',
-          'stream',
-          'buffer',
-          'child_process',
-          'cluster',
-          'events',
-          'util',
-          'zlib',
-        ],
-        output: {
-          manualChunks: {
-            // Separate AI SDK packages into their own chunks
-            'ai-providers': ['@ai-sdk/xai', '@ai-sdk/groq'],
-            workflow: ['inngest'],
-            storage: ['@upstash/redis', '@upstash/vector'],
-            search: ['tavily', 'exa-js', 'serpapi'],
-            // Keep existing chunks
-            vendor: ['react', 'react-dom'],
-            lucide: ['lucide-react'],
-          },
-        },
-      },
-      // Ensure smaller bundles for faster Edge Function cold starts
-      chunkSizeWarningLimit: 1000, // Increased for AI packages
     },
   };
 });

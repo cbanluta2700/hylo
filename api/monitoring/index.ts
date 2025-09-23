@@ -597,7 +597,7 @@ async function handleErrorReporting(request: Request): Promise<Response> {
     );
   } catch (error) {
     console.error('💥 [ERROR-REPORTING] Failed to process error report:', error);
-    
+
     return Response.json(
       {
         status: 'error',
@@ -621,7 +621,7 @@ function sanitizeContext(context: any): any {
   const sanitized = { ...context };
 
   for (const key of Object.keys(sanitized)) {
-    if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
+    if (sensitiveKeys.some((sensitive) => key.toLowerCase().includes(sensitive))) {
       sanitized[key] = '[REDACTED]';
     }
   }
@@ -635,9 +635,10 @@ function sanitizeContext(context: any): any {
 function checkAlertCriteria(error: any): boolean {
   // Alert on critical errors or high-frequency error patterns
   const criticalTypes = ['AI_PROVIDER_FAILURE', 'WORKFLOW_TIMEOUT', 'SYSTEM_ERROR'];
-  
-  return criticalTypes.includes(error.errorType) || 
-         error.message?.includes('timeout') ||
-         error.message?.includes('rate limit');
-}
+
+  return (
+    criticalTypes.includes(error.errorType) ||
+    error.message?.includes('timeout') ||
+    error.message?.includes('rate limit')
+  );
 }
