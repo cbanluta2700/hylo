@@ -1,7 +1,8 @@
 // src/inngest/functions.ts
 import { Inngest } from 'inngest';
 
-export const inngest = new Inngest({ name: 'Hylo Travel AI' });
+// Create a client to send and receive events
+export const inngest = new Inngest({ id: 'hylo-travel-ai' });
 
 export const generateItineraryFunction = inngest.createFunction(
   { id: 'generate-itinerary' },
