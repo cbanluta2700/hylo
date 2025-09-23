@@ -11,13 +11,20 @@
  * Using Inngest "invoking functions directly" pattern from docs
  */
 
-import { sessionManager, generateWorkflowId } from './session-manager';
+import { sessionManager } from './session-manager.js';
 import type { TravelFormData } from '../../types/travel-form.js';
 
 /**
  * Workflow Orchestrator Class
  * Simplified approach using Inngest "invoking functions directly" pattern
  */
+/**
+ * Generate unique workflow ID
+ */
+function generateWorkflowId(): string {
+  return `wf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 export class WorkflowOrchestrator {
   /**
    * Initiate new itinerary generation workflow

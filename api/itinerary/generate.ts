@@ -15,8 +15,8 @@
  */
 
 import { z } from 'zod';
-import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator';
-import { TravelFormDataSchema } from '../../src/schemas/ai-workflow-schemas';
+import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator.js';
+import { TravelFormDataSchema } from '../../src/schemas/ai-workflow-schemas.js';
 
 // Runtime configuration for Vercel Edge
 export const config = {
@@ -123,7 +123,7 @@ export default async function handler(request: Request): Promise<Response> {
     const { sessionId, formData } = validation.data;
 
     console.log('✅ [28] API Generate: Request validated successfully', {
-      sessionId: sessionId.substring(0, 8) + '...',
+      sessionId: String(sessionId).substring(0, 8) + '...',
       location: (formData as any).location,
       travelers: `${(formData as any).adults || 0} adults, ${
         (formData as any).children || 0
