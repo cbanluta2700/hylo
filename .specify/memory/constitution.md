@@ -1,9 +1,8 @@
 <!--
 Sync Impact Report:
-- Version change: none → 1.0.0 (initial constitution creation)
-- New constitution with 5 core principles
-- Added sections: Vercel Edge Compatibility, Code->Deploy->Debug Workflow
-- Templates requiring updates: plan-template.md, spec-template.md, tasks-template.md (pending)
+- Version change: 1.0.0 → 1.1.0 (technology stack update)
+- Modified sections: Technology Stack Constraints (removed Inngest, added AI SDK for LLM integration)
+- Templates requiring updates: ✅ agent-file-template.md updated
 - Follow-up TODOs: None
 -->
 
@@ -63,4 +62,4 @@ This constitution supersedes all other development practices and architectural d
 
 **Enforcement**: All pull requests must pass constitutional compliance check. Complexity additions require explicit justification against simplicity principle. Use `.specify/templates/` for runtime development guidance and ensure all generated artifacts align with constitutional requirements.
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-23 | **Last Amended**: 2025-09-23
+**Version**: 1.1.0 | **Ratified**: 2025-09-23 | **Last Amended**: 2025-09-23

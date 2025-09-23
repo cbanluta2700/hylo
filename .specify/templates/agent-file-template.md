@@ -18,7 +18,7 @@ All development must comply with the Hylo Travel AI Constitution v1.0.0:
 - **Forms**: React Hook Form 7.62.0 + Zod 3.25.76 validation
 - **Icons**: Lucide React 0.344.0
 - **Backend**: Vercel Edge Functions (Edge Runtime only)
-- **Workflows**: Inngest 3.41.0 for async processing
+- **AI Integration**: AI SDK 5.0+ for LLM integration with Edge Runtime compatibility
 - **Testing**: Vitest 3.2.4 + React Testing Library (deployment-focused)
 
 ## Project Structure
