@@ -66,15 +66,7 @@ export const generateItineraryFunction = inngest.createFunction(
 
         const result = await architectAgent.generateArchitecture({
           workflowId,
-          destination: formData.location,
-          duration: formData.plannedDays,
-          budget: formData.budget,
-          travelers: {
-            adults: formData.adults,
-            children: formData.children,
-            childrenAges: formData.childrenAges,
-          },
-          travelStyle: formData.travelStyle,
+          formData,
         });
 
         console.log('✅ [85] Architect Agent: Architecture generation completed', {
