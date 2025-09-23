@@ -3,7 +3,7 @@ import TripDetails from './components/TripDetails';
 import { FormData } from './components/TripDetails/types';
 import ConditionalTravelStyle from './components/ConditionalTravelStyle';
 import { TravelStyleChoice } from './types/travel-style-choice';
-import ItineraryDisplaySimple from './components/ItineraryDisplaySimple';
+import ItineraryDisplay from './components/ItineraryDisplay';
 import type { TravelFormData } from './types/travel-form';
 
 function App() {
@@ -355,7 +355,7 @@ ${error instanceof Error ? error.message : 'Unknown error occurred'}
           {/* Itinerary Results Section - Directly below the travel style */}
           <div ref={itineraryRef}>
             {(isGenerating || generatedItinerary || generationError) && (
-              <ItineraryDisplaySimple
+              <ItineraryDisplay
                 formData={transformedFormData}
                 workflowId={workflowId}
                 isLoading={isGenerating}

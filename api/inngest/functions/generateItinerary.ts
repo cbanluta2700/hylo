@@ -22,7 +22,6 @@
  */
 
 import { inngest } from '../client.js';
-import { simpleSessionManager } from '../../../src/lib/workflows/simple-session-manager.js';
 // Import existing AI agents
 import { architectAgent } from '../../../src/lib/ai-agents/architect-agent.js';
 import { gathererAgent } from '../../../src/lib/ai-agents/gatherer-agent.js';
@@ -34,13 +33,6 @@ import {
   ensureGathererOutput,
   ensureSpecialistOutput,
 } from '../../../src/lib/utils/type-guards.js';
-// Import progress integration
-import {
-  updateWorkflowProgress,
-  handleWorkflowError,
-} from '../../../src/lib/workflows/progress-integration.js';
-// Import enhanced error handling
-import { handleEnhancedWorkflowError } from '../../../src/lib/workflows/enhanced-error-handling.js';
 
 /**
  * Main orchestrator function for AI-powered itinerary generation
@@ -87,11 +79,6 @@ export const generateItinerary = inngest.createFunction(
         },
       });
 
-      // Update Redis for SSE streaming
-      await step.run('update-progress-architect', async () => {
-        await updateWorkflowProgress(workflowId, 'architect', ['architect']);
-      });
-
       // Step 2: Information Gathering (Gatherer Agent)
       const gatheredInfo = await step.run('information-gathering', async () => {
         console.log('🌐 [INNGEST] Step 2: Information gathering started');
@@ -117,11 +104,6 @@ export const generateItinerary = inngest.createFunction(
           stage: 'gathering-complete',
           progress: 50,
         },
-      });
-
-      // Update Session Storage for SSE streaming
-      await step.run('update-progress-gatherer', async () => {
-        await updateWorkflowProgress(workflowId, 'gatherer', ['architect', 'gatherer']);
       });
 
       // Step 3: Specialist Processing (Specialist Agent)
@@ -154,15 +136,6 @@ export const generateItinerary = inngest.createFunction(
         },
       });
 
-      // Update Session Storage for SSE streaming
-      await step.run('update-progress-specialist', async () => {
-        await updateWorkflowProgress(workflowId, 'specialist', [
-          'architect',
-          'gatherer',
-          'specialist',
-        ]);
-      });
-
       // Step 4: Final Formatting (Formatter Agent)
       const finalItinerary = await step.run('final-formatting', async () => {
         console.log('📝 [INNGEST] Step 4: Final formatting started');
@@ -188,16 +161,6 @@ export const generateItinerary = inngest.createFunction(
         },
       });
 
-      // Update session with final result
-      await step.run('update-session', async () => {
-        await updateWorkflowProgress(workflowId, 'complete', [
-          'architect',
-          'gatherer',
-          'specialist',
-          'formatter',
-        ]);
-      });
-
       console.log('🎉 [INNGEST] Main Workflow: Itinerary generation completed successfully', {
         workflowId: workflowId.substring(0, 15) + '...',
       });
@@ -214,13 +177,9 @@ export const generateItinerary = inngest.createFunction(
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 
-      // Handle error and update progress
-      await step.run('handle-workflow-error', async () => {
-        await handleEnhancedWorkflowError(
-          workflowId,
-          'main-workflow',
-          error instanceof Error ? error : new Error('Unknown error')
-        );
+      console.error('💥 [INNGEST] Main Workflow: Error during itinerary generation', {
+        workflowId: workflowId.substring(0, 15) + '...',
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
 
       // Send error event
