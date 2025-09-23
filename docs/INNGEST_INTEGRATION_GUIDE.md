@@ -120,25 +120,6 @@ export default async function handler(request: Request): Promise<Response> {
 }
 ```
 
-#### After (Simple Serve Pattern):
-
-```typescript
-// ✅ Following exact Next.js App Router documentation pattern
-import { serve } from 'inngest/next';
-import { inngest, generateItineraryFunction } from '../../src/inngest/functions.js';
-
-export const config = {
-  runtime: 'edge',
-};
-
-export const { GET, POST, PUT } = serve({
-  client: inngest,
-  functions: [generateItineraryFunction],
-});
-```
-
-**File**: `api/inngest/index.ts`
-
 ### Step 5: Environment Variables Configuration
 
 #### Required Environment Variables:
@@ -261,12 +242,6 @@ POST /api/itinerary/generate
 - Both `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` are required
 - Environment variables must be properly configured in production
 - Local development requires `.env.local` setup
-
-### 3. **Edge Runtime Compatibility**
-
-- Not all Inngest serve handlers work with Edge Runtime
-- `inngest/next` works with Edge Runtime when properly configured
-- Custom handlers often cause compatibility issues
 
 ### 4. **Constitutional Compliance**
 
