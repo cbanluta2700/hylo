@@ -52,30 +52,33 @@ export class WorkflowOrchestrator {
       // Create session first
       await sessionManager.createSession(workflowId, sessionId, formData);
 
-      console.log(
-        '⚠️ [72] Workflow Orchestrator: BYPASSING Inngest events - calling workflow directly'
-      );
-      console.log(
-        '🔧 [72b] Reason: Inngest authentication failing in production - calling functions directly'
-      );
+      console.log('🚀 [72] Workflow Orchestrator: Phase 2 - Triggering Inngest workflow');
+      console.log('🔧 [72b] Status: Sending itinerary/generate event');
 
-      // TEMPORARY: Call the workflow function directly instead of using Inngest events
-      // This bypasses the Inngest authentication issue
-      console.log('🚀 [72c] Starting direct AI workflow execution');
+      try {
+        // Phase 2: Send proper Inngest event to trigger workflow
+        const { inngest } = await import('../../../api/inngest/client.js');
 
-      // Import the workflow function and execute it directly
-      const { executeWorkflowDirectly } = await import('../../../src/inngest/direct-workflow.js');
+        console.log('📡 [72c] Sending Inngest event: itinerary/generate');
 
-      // Execute the workflow in the background (don't await)
-      executeWorkflowDirectly({
-        workflowId,
-        sessionId,
-        formData,
-      }).catch((error: Error) => {
-        console.error('💥 [72d] Direct workflow execution failed:', error);
-      });
+        await inngest.send({
+          name: 'itinerary/generate',
+          data: {
+            workflowId,
+            sessionId,
+            formData,
+          },
+        });
 
-      console.log('✅ [73] Workflow Orchestrator: Direct workflow execution started');
+        console.log('✅ [72d] Inngest event sent successfully');
+      } catch (error) {
+        console.error('💥 [72e] Failed to send Inngest event:', error);
+        throw new Error(
+          `Workflow initiation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+
+      console.log('✅ [73] Workflow Orchestrator: Inngest workflow triggered successfully');
 
       // Estimate completion time
       const estimatedMinutes = this.estimateProcessingTime(formData);
