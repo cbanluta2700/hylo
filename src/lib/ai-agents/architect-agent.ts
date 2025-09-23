@@ -37,8 +37,8 @@
  */
 
 import { generateText } from 'ai';
-import { aiProviders } from '../ai-clients/providers';
-import { TravelFormData } from '../../types/travel-form';
+import { aiProviders } from '../ai-clients/providers.js';
+import { TravelFormData } from '../../types/travel-form.js';
 
 /**
  * Architect agent input interface

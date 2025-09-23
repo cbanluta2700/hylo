@@ -8,7 +8,7 @@
  * Task: T037 - Implement /api/itinerary/get-itinerary endpoint
  */
 
-import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator';
+import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator.js';
 
 // Runtime configuration for Vercel Edge
 export const config = {

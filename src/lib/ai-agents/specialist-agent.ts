@@ -10,9 +10,9 @@
  */
 
 import { generateText } from 'ai';
-import { aiProviders } from '../ai-clients/providers';
-import type { GathererOutput } from './gatherer-agent';
-import type { ArchitectOutput } from './architect-agent';
+import { aiProviders } from '../ai-clients/providers.js';
+import type { GathererOutput } from './gatherer-agent.js';
+import type { ArchitectOutput } from './architect-agent.js';
 
 /**
  * Specialist agent input interface

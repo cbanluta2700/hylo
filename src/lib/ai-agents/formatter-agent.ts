@@ -10,11 +10,11 @@
  */
 
 import { generateText } from 'ai';
-import { aiProviders } from '../ai-clients/providers';
-import type { ArchitectOutput } from './architect-agent';
-import type { GathererOutput } from './gatherer-agent';
-import type { SpecialistOutput } from './specialist-agent';
-import type { TravelFormData } from '../../types/travel-form';
+import { aiProviders } from '../ai-clients/providers.js';
+import type { ArchitectOutput } from './architect-agent.js';
+import type { GathererOutput } from './gatherer-agent.js';
+import type { SpecialistOutput } from './specialist-agent.js';
+import type { TravelFormData } from '../../types/travel-form.js';
 
 /**
  * Formatter agent input interface

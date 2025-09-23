@@ -10,7 +10,7 @@
  */
 
 import { Redis } from '@upstash/redis';
-import { TravelFormData } from '../../types/travel-form';
+import { TravelFormData } from '../../types/travel-form.js';
 
 /**
  * WorkflowSession interface matching data-model.md specification

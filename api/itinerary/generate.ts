@@ -15,8 +15,8 @@
  */
 
 import { z } from 'zod';
-import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator';
-import { TravelFormDataSchema } from '../../src/schemas/ai-workflow-schemas';
+import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator.js';
+import { TravelFormDataSchema } from '../../src/schemas/ai-workflow-schemas.js';
 
 // Runtime configuration for Vercel Edge
 export const config = {
@@ -124,17 +124,21 @@ export default async function handler(request: Request): Promise<Response> {
 
     console.log('✅ [28] API Generate: Request validated successfully', {
       sessionId: sessionId.substring(0, 8) + '...',
-      destination: formData.destination,
-      travelers: `${formData.adults || 0} adults, ${formData.children || 0} children`,
-      dates: `${formData.departDate} to ${formData.returnDate}`,
+      location: (formData as any).location,
+      travelers: `${(formData as any).adults || 0} adults, ${
+        (formData as any).children || 0
+      } children`,
+      dates: `${(formData as any).departDate} to ${(formData as any).returnDate}`,
     });
 
     // Convert string dates to Date objects for TravelFormData compatibility
     const processedFormData = {
-      ...formData,
-      departDate: formData.departDate,
-      returnDate: formData.returnDate,
-      submittedAt: formData.submittedAt ? new Date(formData.submittedAt) : new Date(),
+      ...(formData as any),
+      departDate: (formData as any).departDate,
+      returnDate: (formData as any).returnDate,
+      submittedAt: (formData as any).submittedAt
+        ? new Date((formData as any).submittedAt)
+        : new Date(),
     };
 
     console.log('🔄 [29] API Generate: Form data processed', {

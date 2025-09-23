@@ -9,7 +9,7 @@
  * Task: T038 - Implement /api/itinerary/progress-simple endpoint
  */
 
-import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator';
+import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator.js';
 
 // Runtime configuration for Vercel Edge
 export const config = {

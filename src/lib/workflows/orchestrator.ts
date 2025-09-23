@@ -9,13 +9,13 @@
  * Task: T026-T031 - Main workflow orchestration
  */
 
-import { inngest } from '../inngest/client';
-import { sessionManager, generateWorkflowId } from './session-manager';
-import { architectAgent } from '../ai-agents/architect-agent';
-import { gathererAgent } from '../ai-agents/gatherer-agent';
-import { specialistAgent } from '../ai-agents/specialist-agent';
-import { formatterAgent } from '../ai-agents/formatter-agent';
-import type { TravelFormData } from '../../types/travel-form';
+import { inngest } from '../inngest/client.js';
+import { sessionManager, generateWorkflowId } from './session-manager.js';
+import { architectAgent } from '../ai-agents/architect-agent.js';
+import { gathererAgent } from '../ai-agents/gatherer-agent.js';
+import { specialistAgent } from '../ai-agents/specialist-agent.js';
+import { formatterAgent } from '../ai-agents/formatter-agent.js';
+import type { TravelFormData } from '../../types/travel-form.js';
 
 /**
  * Main itinerary generation workflow

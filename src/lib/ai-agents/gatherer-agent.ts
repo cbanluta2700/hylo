@@ -10,7 +10,7 @@
  */
 
 import { generateText } from 'ai';
-import { aiProviders } from '../ai-clients/providers';
+import { aiProviders } from '../ai-clients/providers.js';
 
 /**
  * Information Gatherer input interface
