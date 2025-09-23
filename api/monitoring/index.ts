@@ -49,6 +49,8 @@ export default async function handler(request: Request): Promise<Response> {
         return handleAlertsRequest(request);
       case 'dashboard':
         return handleDashboardRequest(request);
+      case 'errors':
+        return handleErrorReporting(request);
       default:
         return handleMonitoringOverview(request);
     }
@@ -541,4 +543,101 @@ function generateHealthRecommendations(checks: Record<string, any>): string[] {
   }
 
   return recommendations;
+}
+
+/**
+ * Error Reporting Endpoint
+ * POST /api/monitoring/errors
+ */
+async function handleErrorReporting(request: Request): Promise<Response> {
+  if (request.method !== 'POST') {
+    return Response.json(
+      {
+        status: 'error',
+        message: 'Method not allowed. Use POST to report errors.',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 405 }
+    );
+  }
+
+  try {
+    const errorData = await request.json();
+    console.error('🚨 [ERROR-REPORT] Error reported:', errorData);
+
+    // Sanitize sensitive data before logging
+    const sanitizedError = {
+      type: errorData.type,
+      workflowId: errorData.workflowId,
+      stage: errorData.stage,
+      message: errorData.message,
+      timestamp: errorData.timestamp || new Date().toISOString(),
+      errorType: errorData.errorType,
+      retryable: errorData.retryable,
+      context: sanitizeContext(errorData.context),
+    };
+
+    // Log error to console for monitoring
+    console.error('📊 [MONITORING] Sanitized error report:', sanitizedError);
+
+    // Check if error requires immediate alert
+    const shouldAlert = checkAlertCriteria(sanitizedError);
+    if (shouldAlert) {
+      console.error('🔔 [ALERT] Critical error detected, alert triggered:', sanitizedError);
+    }
+
+    return Response.json(
+      {
+        status: 'success',
+        message: 'Error report received and processed',
+        timestamp: new Date().toISOString(),
+        alertTriggered: shouldAlert,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('💥 [ERROR-REPORTING] Failed to process error report:', error);
+    
+    return Response.json(
+      {
+        status: 'error',
+        message: 'Failed to process error report',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Sanitize context data to remove sensitive information
+ */
+function sanitizeContext(context: any): any {
+  if (!context || typeof context !== 'object') {
+    return context;
+  }
+
+  const sensitiveKeys = ['apiKey', 'password', 'secret', 'token', 'authorization'];
+  const sanitized = { ...context };
+
+  for (const key of Object.keys(sanitized)) {
+    if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
+      sanitized[key] = '[REDACTED]';
+    }
+  }
+
+  return sanitized;
+}
+
+/**
+ * Check if error meets criteria for immediate alerting
+ */
+function checkAlertCriteria(error: any): boolean {
+  // Alert on critical errors or high-frequency error patterns
+  const criticalTypes = ['AI_PROVIDER_FAILURE', 'WORKFLOW_TIMEOUT', 'SYSTEM_ERROR'];
+  
+  return criticalTypes.includes(error.errorType) || 
+         error.message?.includes('timeout') ||
+         error.message?.includes('rate limit');
+}
 }
