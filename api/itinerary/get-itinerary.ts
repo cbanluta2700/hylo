@@ -8,40 +8,40 @@ const getAIProgress = (workflowId: string) => {
   if (minutes < 0.5) {
     return {
       stage: 'architect',
-      aiModel: 'XAI Grok-beta',
+      aiModel: 'XAI Grok-4-fast-reasoning-latest',
       step: 'Architecture Planning',
-      description: '🏗️ Designing your trip structure and timeline',
+      description: '🏗️ Deep reasoning to design your optimal trip structure',
       progress: Math.min(25, (minutes / 0.5) * 25),
     };
   } else if (minutes < 1.5) {
     return {
       stage: 'gatherer',
-      aiModel: 'Groq Llama-3.1-70B',
+      aiModel: 'OpenAI GPT-OSS-120B (Groq)',
       step: 'Information Gathering',
-      description: '🌐 Researching destinations and attractions',
+      description: '🌐 High-speed research of destinations and attractions',
       progress: 25 + Math.min(25, ((minutes - 0.5) / 1.0) * 25),
     };
   } else if (minutes < 2.5) {
     return {
       stage: 'specialist',
-      aiModel: 'XAI Grok-beta',
+      aiModel: 'OpenAI GPT-OSS-120B (Groq)',
       step: 'Specialist Processing',
-      description: '👨‍💼 Curating personalized recommendations',
+      description: '👨‍💼 Lightning-fast curation of personalized recommendations',
       progress: 50 + Math.min(25, ((minutes - 1.5) / 1.0) * 25),
     };
   } else if (minutes < 3.5) {
     return {
       stage: 'formatter',
-      aiModel: 'Groq Llama-3.1-70B',
+      aiModel: 'XAI Grok-4-fast-non-reasoning-latest',
       step: 'Final Formatting',
-      description: '✨ Creating your beautiful itinerary',
+      description: '✨ Rapid creation of your beautiful itinerary',
       progress: 75 + Math.min(25, ((minutes - 2.5) / 1.0) * 25),
     };
   } else {
     // Mock completion for demonstration
     return {
       stage: 'completed',
-      aiModel: 'All AI Agents',
+      aiModel: 'Multi-AI Pipeline Complete',
       step: 'Generation Complete',
       description: '🎉 Your personalized itinerary is ready!',
       progress: 100,
@@ -92,7 +92,7 @@ export default async function handler(request: Request): Promise<Response> {
           },
         ],
         tips: ['Learn basic Japanese phrases', 'Get a JR Pass', 'Try local street food'],
-        generatedBy: 'Hylo AI Agents (XAI Grok + Groq Llama)',
+        generatedBy: 'Hylo Multi-AI Pipeline (XAI Grok-4 + OpenAI GPT-OSS-120B)',
         completedAt: new Date().toISOString(),
       },
     });
