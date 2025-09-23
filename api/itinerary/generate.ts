@@ -1,87 +1,31 @@
-/**
- * Pure Inngest Itinerary Generation API
- *
- * Simple approach:
- * 1. Receive form data
- * 2. Trigger Inngest workflow
- * 3. Return immediately with workflow ID
- * 4. Let Inngest handle everything else
- *
- * NO polling, NO sessions, NO Redis complexity!
- */
-
-import { Inngest } from 'inngest';
-import { inngest } from '../inngest/client';
-
-// Backup Inngest client in case import fails
-const backupInngest = new Inngest({
-  id: 'hylo-travel-ai-backup',
-});
-
-export const config = {
-  runtime: 'edge',
-};
+export const config = { runtime: 'edge' };
 
 export default async function handler(request: Request): Promise<Response> {
-  console.log('🚀 [GENERATE-SIMPLE] Pure Inngest generation started');
-
-  // Debug: Check if inngest client is available
-  console.log('🔍 [GENERATE-DEBUG] Inngest client check:', {
-    inngestExists: !!inngest,
-    backupExists: !!backupInngest,
-    inngestId: inngest?.id || 'undefined',
-  });
+  console.log('?? [GENERATE] Direct AI workflow - no Inngest');
 
   if (request.method !== 'POST') {
-    return Response.json({ success: false, error: 'Method not allowed' }, { status: 405 });
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
 
   try {
-    const body = await request.json();
-    const formData = body as any; // Simple casting - Inngest will handle validation
+    const formData = await request.json();
+    console.log('?? [GENERATE] Calling AI workflow directly...');
 
-    console.log('📝 [GENERATE-SIMPLE] Form data received:', {
-      location: formData?.location || 'Unknown',
-      travelers: `${formData?.adults || 0} adults, ${formData?.children || 0} children`,
-    }); // Generate simple workflow ID
-    const workflowId = `wf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Call AI workflow endpoint directly  
+    const workflowUrl = new URL(request.url);
+    workflowUrl.pathname = '/api/itinerary/ai-workflow';
 
-    console.log('🔧 [GENERATE-DEBUG] About to call inngest.send with:', {
-      name: 'itinerary/generate',
-      workflowId,
-      formDataLocation: formData.location,
+    const response = await fetch(workflowUrl.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
     });
 
-    // Trigger Inngest workflow - let Inngest handle everything!
-    const inngestResult = await inngest.send({
-      name: 'itinerary/generate',
-      data: {
-        workflowId,
-        sessionId: workflowId, // Use same ID for compatibility
-        formData,
-      },
-    });
-
-    console.log('🔧 [GENERATE-DEBUG] Inngest.send result:', inngestResult);
-    console.log('✅ [GENERATE-SIMPLE] Inngest workflow triggered:', workflowId);
-
-    // Return immediately - no polling needed!
-    return Response.json({
-      success: true,
-      workflowId,
-      status: 'processing',
-      message: 'AI itinerary generation started. Please wait...',
-      estimatedTime: '2-3 minutes',
-    });
+    const result = await response.json();
+    console.log('? [GENERATE] AI workflow completed!');
+    
+    return Response.json(result);
   } catch (error) {
-    console.error('💥 [GENERATE-SIMPLE] Error:', error);
-    return Response.json(
-      {
-        success: false,
-        error: 'Failed to start itinerary generation',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return Response.json({ success: false, error: 'AI workflow failed' }, { status: 500 });
   }
 }
