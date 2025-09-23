@@ -10,7 +10,7 @@
  * Connects Inngest workflow errors with the existing error handling infrastructure
  */
 
-import { sessionManager } from '../workflows/session-manager.js';
+import { simpleSessionManager } from './simple-session-manager.js';
 
 /**
  * Workflow error categories
@@ -140,7 +140,7 @@ export async function handleEnhancedWorkflowError(
 
   try {
     // Update session with detailed error information
-    await sessionManager.updateProgress(workflowId, {
+    await simpleSessionManager.updateProgress(workflowId, {
       status: 'failed',
       errorMessage: workflowError.userMessage,
     });

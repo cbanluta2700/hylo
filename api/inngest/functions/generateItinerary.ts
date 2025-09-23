@@ -11,7 +11,7 @@
  */
 
 import { inngest } from '../client.js';
-import { sessionManager } from '../../../src/lib/workflows/session-manager.js';
+import { simpleSessionManager } from '../../../src/lib/workflows/simple-session-manager.js';
 // Import existing AI agents
 import { architectAgent } from '../../../src/lib/ai-agents/architect-agent.js';
 import { gathererAgent } from '../../../src/lib/ai-agents/gatherer-agent.js';
