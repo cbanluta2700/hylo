@@ -33,8 +33,14 @@ export default async function handler(request: Request): Promise<Response> {
     }); // Generate simple workflow ID
     const workflowId = `wf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    console.log('🔧 [GENERATE-DEBUG] About to call inngest.send with:', {
+      name: 'itinerary/generate',
+      workflowId,
+      formDataLocation: formData.location,
+    });
+
     // Trigger Inngest workflow - let Inngest handle everything!
-    await inngest.send({
+    const inngestResult = await inngest.send({
       name: 'itinerary/generate',
       data: {
         workflowId,
@@ -43,6 +49,7 @@ export default async function handler(request: Request): Promise<Response> {
       },
     });
 
+    console.log('🔧 [GENERATE-DEBUG] Inngest.send result:', inngestResult);
     console.log('✅ [GENERATE-SIMPLE] Inngest workflow triggered:', workflowId);
 
     // Return immediately - no polling needed!
