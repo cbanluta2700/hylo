@@ -10,7 +10,13 @@
  * NO polling, NO sessions, NO Redis complexity!
  */
 
-import { inngest } from '../inngest/client.js';
+import { Inngest } from 'inngest';
+import { inngest } from '../inngest/client';
+
+// Backup Inngest client in case import fails
+const backupInngest = new Inngest({
+  id: 'hylo-travel-ai-backup',
+});
 
 export const config = {
   runtime: 'edge',
@@ -18,6 +24,13 @@ export const config = {
 
 export default async function handler(request: Request): Promise<Response> {
   console.log('🚀 [GENERATE-SIMPLE] Pure Inngest generation started');
+
+  // Debug: Check if inngest client is available
+  console.log('🔍 [GENERATE-DEBUG] Inngest client check:', {
+    inngestExists: !!inngest,
+    backupExists: !!backupInngest,
+    inngestId: inngest?.id || 'undefined',
+  });
 
   if (request.method !== 'POST') {
     return Response.json({ success: false, error: 'Method not allowed' }, { status: 405 });
