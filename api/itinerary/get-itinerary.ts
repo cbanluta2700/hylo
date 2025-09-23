@@ -2,7 +2,7 @@
  * Get Itinerary Results API Endpoint
  * Enhanced with comprehensive logging and error handling
  */
-import { sessionManager } from '../../src/lib/workflows/session-manager.js';
+import { simpleSessionManager } from '../../src/lib/workflows/simple-session-manager.js';
 
 export const config = {
   runtime: 'edge',
@@ -44,11 +44,11 @@ export default async function handler(request: Request): Promise<Response> {
 
     console.log(`🔍 [Get-Itinerary] Checking status for workflow: ${workflowId}`);
 
-    // Test if sessionManager is accessible
+    // Test if simpleSessionManager is accessible
     try {
-      console.log('🧪 [Get-Itinerary] Testing sessionManager availability...');
-      const session = await sessionManager.getSession(workflowId);
-      console.log('🧪 [Get-Itinerary] SessionManager test result:', {
+      console.log('🧪 [Get-Itinerary] Testing simpleSessionManager availability...');
+      const session = await simpleSessionManager.getSession(workflowId);
+      console.log('🧪 [Get-Itinerary] SimpleSessionManager test result:', {
         sessionFound: !!session,
         sessionStatus: session?.status || 'not-found',
       });
@@ -130,7 +130,7 @@ export default async function handler(request: Request): Promise<Response> {
         processingTime: Date.now() - startTime,
       });
     } catch (sessionError) {
-      console.error('💥 [Get-Itinerary] SessionManager error:', sessionError);
+      console.error('💥 [Get-Itinerary] SimpleSessionManager error:', sessionError);
       return Response.json(
         {
           success: false,
