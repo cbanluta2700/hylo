@@ -2,15 +2,14 @@
  * Main Workflow Orchestrator
  *
  * Constitutional Requirements:
- * - Edge Runtime compatibility
+ * - Edge Runtime compatibility (CONSTITUTIONAL PRINCIPLE I - NON-NEGOTIABLE)
  * - AI SDK 5.0+ for LLM integration (Constitution v1.1.0)
  * - Type-safe development
- * - Direct AI workflow execution (no complex Inngest setup)
+ * - Direct AI workflow execution (Edge-First Architecture)
  *
  * Task: T026-T031 - Main workflow orchestration
  */
 
-import { WorkflowKit } from '@inngest/workflow-kit';
 import { sessionManager, generateWorkflowId } from './session-manager.js';
 import { architectAgent } from '../ai-agents/architect-agent.js';
 import { gathererAgent } from '../ai-agents/gatherer-agent.js';
