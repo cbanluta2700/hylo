@@ -3,30 +3,26 @@
  *
  * Constitutional Requirements:
  * - Edge Runtime compatibility
- * - Standard inngest/express serve handler (not inngest/vercel)
+ * - Vercel-specific serve handler for proper deployment
  * - Proper function registration
  *
  * Following architecture structure from migration plan
  */
 
 import { serve } from 'inngest/express';
-import { inngest } from './client.js';
+import { inngest } from './client';
 
 // Import all functions
-import { generateItinerary } from './functions/generateItinerary.js';
-import { architectAgent } from './functions/architectAgent.js';
-import { gathererAgent } from './functions/gathererAgent.js';
-import { specialistAgent } from './functions/specialistAgent.js';
-import { formatterAgent } from './functions/formatterAgent.js';
+import { generateItinerary } from './functions/generateItinerary';
+import { architectAgent } from './functions/architectAgent';
+import { gathererAgent } from './functions/gathererAgent';
+import { specialistAgent } from './functions/specialistAgent';
+import { formatterAgent } from './functions/formatterAgent';
 
-/**
- * Serve all Inngest functions via Vercel Serverless Function
- * Available at /api/inngest endpoint
- */
+// That's it! Vercel handles the rest automatically
 export default serve({
   client: inngest,
   functions: [
-    // Main workflow orchestrator
     generateItinerary,
 
     // Individual agent functions
