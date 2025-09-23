@@ -2,7 +2,7 @@
 // Constitutional compliance: Edge-compatible, type-safe, observable
 
 import { z } from 'zod';
-import { Currency, BudgetMode } from '../../types/form-ui-enhancements';
+import { Currency, BudgetMode } from '../../components/TripDetails/types';
 
 // Budget value schema
 export const BudgetValueSchema = z

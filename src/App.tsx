@@ -160,12 +160,16 @@ function App() {
           });
 
           if (!apiResponse.ok) {
-            const errorData = await apiResponse.json();
+            const errorData = (await apiResponse.json()) as { error?: string };
             console.error('❌ [8] App: API error response', errorData);
             throw new Error(`API Error: ${errorData.error || 'Unknown error'}`);
           }
 
-          const result = await apiResponse.json();
+          const result = (await apiResponse.json()) as {
+            workflowId: string;
+            estimatedCompletionTime: number;
+            message: string;
+          };
           console.log('✅ [9] App: AI workflow initiated successfully', result);
 
           // Store the workflow ID for polling
@@ -271,7 +275,7 @@ ${error instanceof Error ? error.message : 'Unknown error occurred'}
                     console.log('🧪 Manual API test...');
                     try {
                       const response = await fetch('/api/health');
-                      const data = await response.json();
+                      const data = (await response.json()) as { status?: string };
                       console.log('🏥 Health check result:', data);
                       alert(`Health check: ${data.status} - Check console for details`);
                     } catch (error) {
@@ -288,7 +292,7 @@ ${error instanceof Error ? error.message : 'Unknown error occurred'}
                     console.log('🧪 Manual env validation test...');
                     try {
                       const response = await fetch('/api/validate-env');
-                      const data = await response.json();
+                      const data = (await response.json()) as { success?: boolean };
                       console.log('🔧 Environment validation result:', data);
                       alert(
                         `Env validation: ${data.success ? 'Success' : 'Failed'} - Check console`

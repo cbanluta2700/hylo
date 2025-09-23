@@ -144,7 +144,7 @@ const useAIItinerary = (workflowId?: string) => {
         }
 
         if (response.ok) {
-          const result = await response.json();
+          const result = (await response.json()) as { success?: boolean; itinerary?: any };
           console.log('📊 [AI-Display] Polling result:', result);
 
           if (result.success && result.itinerary) {

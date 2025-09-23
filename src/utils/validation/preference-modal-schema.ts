@@ -2,7 +2,16 @@
 // Constitutional compliance: Edge-compatible, type-safe, observable
 
 import { z } from 'zod';
-import { InclusionType } from '../../types/form-ui-enhancements';
+
+// Define InclusionType locally since the original type file is missing
+export type InclusionType =
+  | 'flights'
+  | 'accommodations'
+  | 'rental-car'
+  | 'activities'
+  | 'dining'
+  | 'entertainment'
+  | 'train-tickets';
 
 // Inclusion type schema
 export const InclusionTypeSchema = z.enum([

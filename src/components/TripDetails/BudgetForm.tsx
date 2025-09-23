@@ -11,7 +11,7 @@ import {
 
 const BudgetForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
   const [budgetRange, setBudgetRange] = useState(formData.budget || 5000);
-  
+
   // T016: Connect budgetMode to FormData for proper state management
   const budgetMode = formData.budgetMode || 'total';
 
@@ -28,10 +28,13 @@ const BudgetForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
   );
 
   // T016: Enhanced budget mode handler with FormData sync
-  const handleBudgetModeChange = useCallback((checked: boolean) => {
-    const newMode: BudgetMode = checked ? 'per-person' : 'total';
-    onFormChange({ budgetMode: newMode });
-  }, [onFormChange]);
+  const handleBudgetModeChange = useCallback(
+    (checked: boolean) => {
+      const newMode: BudgetMode = checked ? 'per-person' : 'total';
+      onFormChange({ budgetMode: newMode });
+    },
+    [onFormChange]
+  );
 
   const getCurrencySymbol = useCallback(() => {
     return currencySymbols[formData.currency || 'USD'];
@@ -40,19 +43,19 @@ const BudgetForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
   // T016: Enhanced budget display with per-person calculations
   const getBudgetDisplay = useCallback(() => {
     const symbol = getCurrencySymbol();
-    const totalTravelers = (formData.adults || 1) + (formData.children || 0);
-    
+    const totalTravelers = Number(formData.adults || 1) + Number(formData.children || 0);
+
     if (budgetMode === 'per-person' && totalTravelers > 0) {
       // Show the same amount as total budget, not divided by travelers
-      if (budgetRange >= MAX_BUDGET) {
+      if (Number(budgetRange) >= MAX_BUDGET) {
         return `${symbol}10,000+`;
       }
-      return `${symbol}${budgetRange.toLocaleString()}`;
+      return `${symbol}${Number(budgetRange).toLocaleString()}`;
     } else {
-      if (budgetRange >= MAX_BUDGET) {
+      if (Number(budgetRange) >= MAX_BUDGET) {
         return `${symbol}10,000+`;
       }
-      return `${symbol}${budgetRange.toLocaleString()}`;
+      return `${symbol}${Number(budgetRange).toLocaleString()}`;
     }
   }, [budgetRange, getCurrencySymbol, budgetMode, formData.adults, formData.children]);
 
@@ -105,14 +108,14 @@ const BudgetForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
                 min="0"
                 max={MAX_BUDGET}
                 step={BUDGET_STEP}
-                value={budgetRange}
+                value={Number(budgetRange)}
                 onChange={(e) => handleBudgetChange(parseInt(e.target.value))}
                 onInput={(e) => handleBudgetChange(parseInt((e.target as HTMLInputElement).value))}
                 className="w-full slider-primary"
                 aria-label="Budget range"
                 aria-valuemin={0}
                 aria-valuemax={MAX_BUDGET}
-                aria-valuenow={budgetRange}
+                aria-valuenow={Number(budgetRange)}
               />
             </div>
             <div
@@ -157,7 +160,7 @@ const BudgetForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
 
           {/* Budget Mode Switch */}
           <div className="flex items-center space-x-4">
-            <span 
+            <span
               className="text-primary font-bold font-raleway text-sm"
               aria-current={budgetMode === 'total' ? 'true' : 'false'}
             >
@@ -175,7 +178,7 @@ const BudgetForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
                 className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:rounded-full after:h-5 after:w-5 after:transition-all peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 bg-[#ece8de] border-primary border-2 after:bg-primary after:border-[#ece8de] after:border-2`}
               ></div>
             </label>
-            <span 
+            <span
               className="text-primary font-bold font-raleway text-sm"
               aria-current={budgetMode === 'per-person' ? 'true' : 'false'}
             >

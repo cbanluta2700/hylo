@@ -5,21 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "node dev-server.mjs",
-    "dev:full": "concurrently \"npm run dev:api\" \"npm run dev\"",
     "build": "tsc -b && vite build",
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "deploy": "vercel",
-    "deploy:prod": "vercel --prod",
+    "deploy": "vercel --prod",
     "lint": "eslint .",
     "preview": "vite preview",
     "vercel:dev": "vercel dev",
     "inngest:dev": "inngest-cli@latest dev -u http://localhost:3000/api/inngest",
-    "dev:all": "concurrently \"npm run vercel:dev\" \"npm run inngest:dev\""
+    "dev:all": "concurrently \"npm run vercel:dev\" \"npm run inngest:dev\"",
+    "build:clean": "rimraf dist dist-api && npm run build"
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.20",
@@ -66,6 +64,7 @@
     "autoprefixer": "^10.4.18",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
@@ -77,12 +76,14 @@
     "msw": "^2.11.2",
     "playwright": "^1.55.0",
     "postcss": "^8.4.35",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.1",
     "terser": "^5.44.0",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
     "vercel": "^35.0.0",
     "vite": "^5.4.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "zod": "^3.25.76"
   }
 }

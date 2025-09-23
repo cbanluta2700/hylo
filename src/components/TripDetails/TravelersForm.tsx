@@ -16,7 +16,8 @@ const TravelersForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
 
   const adjustAdults = useCallback(
     (increment: boolean) => {
-      const newAdults = increment ? adults + 1 : Math.max(MIN_ADULTS, adults - 1);
+      const currentAdults = Number(adults);
+      const newAdults = increment ? currentAdults + 1 : Math.max(MIN_ADULTS, currentAdults - 1);
       setAdults(newAdults);
       onFormChange({ adults: newAdults });
     },
@@ -25,7 +26,10 @@ const TravelersForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
 
   const adjustChildren = useCallback(
     (increment: boolean) => {
-      const newChildren = increment ? children + 1 : Math.max(MIN_CHILDREN, children - 1);
+      const currentChildren = Number(children);
+      const newChildren = increment
+        ? currentChildren + 1
+        : Math.max(MIN_CHILDREN, currentChildren - 1);
       setChildren(newChildren);
 
       const newAges = [...childrenAges];
@@ -54,12 +58,15 @@ const TravelersForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
     [childrenAges, onFormChange]
   );
 
-  const totalTravelers = adults + children;
-  
+  const totalTravelers = Number(adults) + Number(children);
+
   // Check if any child age is unselected
-  const hasUnselectedAges = children > 0 && 
-    (childrenAges.length < children || 
-     childrenAges.slice(0, children).some((age) => age === UNSELECTED_AGE || age === undefined));
+  const hasUnselectedAges =
+    Number(children) > 0 &&
+    (childrenAges.length < Number(children) ||
+      childrenAges
+        .slice(0, Number(children))
+        .some((age) => age === UNSELECTED_AGE || age === undefined));
 
   return (
     <div className="bg-form-box rounded-[36px] p-6 border-3 border-gray-200">
@@ -73,7 +80,7 @@ const TravelersForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => adjustAdults(false)}
-              disabled={adults <= MIN_ADULTS}
+              disabled={Number(adults) <= MIN_ADULTS}
               className="w-8 h-8 rounded-full border-3 border-primary bg-white hover:bg-primary/10 text-primary flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Decrease adults"
             >
@@ -101,7 +108,7 @@ const TravelersForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => adjustChildren(false)}
-              disabled={children <= MIN_CHILDREN}
+              disabled={Number(children) <= MIN_CHILDREN}
               className="w-8 h-8 rounded-full border-3 border-primary bg-white hover:bg-primary/10 text-primary flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Decrease children"
             >
@@ -127,9 +134,9 @@ const TravelersForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) => {
       </div>
 
       {/* Children Ages */}
-      {children > 0 && (
+      {Number(children) > 0 && (
         <div className="mt-4 space-y-3">
-          {Array.from({ length: children }, (_, index) => (
+          {Array.from({ length: Number(children) }, (_, index) => (
             <div key={index} className="flex items-center justify-between">
               <span className="text-primary font-bold font-raleway text-lg">Child {index + 1}</span>
               <div className="relative">

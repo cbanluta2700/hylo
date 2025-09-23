@@ -1,5 +1,5 @@
-import { TravelFormData, FormAggregationResult, FormValidationState } from '@/types/travel-form';
-import { validateTravelFormData, formatValidationErrors } from '@/schemas/ai-workflow-schemas';
+import { TravelFormData, FormAggregationResult, FormValidationState } from '../types/travel-form';
+import { validateTravelFormData, formatValidationErrors } from '../schemas/ai-workflow-schemas';
 
 /**
  * Aggregates data from all form components into a unified TravelFormData object

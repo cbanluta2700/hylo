@@ -1,5 +1,5 @@
-import { TravelFormData } from '@/types/travel-form';
-import { FormData } from '@/components/TripDetails/types';
+import { TravelFormData } from '../types/travel-form';
+import { FormData } from '../components/TripDetails/types';
 
 // Helper functions to map form text values to enum values
 function mapTravelExperienceToEnum(
@@ -147,8 +147,8 @@ export function transformFormDataForWorkflow(formData: TravelFormData) {
   const currency = formData.budget.currency || 'USD';
 
   // Sanitize interests and avoidances
-  const interests = formData.interests.map((i) => i.trim()).filter(Boolean);
-  const avoidances = formData.avoidances.map((a) => a.trim()).filter(Boolean);
+  const interests = formData.interests.map((i: string) => i.trim()).filter(Boolean);
+  const avoidances = formData.avoidances.map((a: string) => a.trim()).filter(Boolean);
 
   // Calculate trip duration if not provided
   let plannedDays = formData.plannedDays;

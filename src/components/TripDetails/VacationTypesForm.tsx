@@ -16,7 +16,8 @@ const VacationTypesForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) 
 
   const adjustAdults = useCallback(
     (increment: boolean) => {
-      const newAdults = increment ? adults + 1 : Math.max(MIN_ADULTS, adults - 1);
+      const currentAdults = Number(adults);
+      const newAdults = increment ? currentAdults + 1 : Math.max(MIN_ADULTS, currentAdults - 1);
       setAdults(newAdults);
       onFormChange({ adults: newAdults });
     },
@@ -25,7 +26,10 @@ const VacationTypesForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) 
 
   const adjustChildren = useCallback(
     (increment: boolean) => {
-      const newChildren = increment ? children + 1 : Math.max(MIN_CHILDREN, children - 1);
+      const currentChildren = Number(children);
+      const newChildren = increment
+        ? currentChildren + 1
+        : Math.max(MIN_CHILDREN, currentChildren - 1);
       setChildren(newChildren);
 
       const newAges = [...childrenAges];
@@ -54,7 +58,7 @@ const VacationTypesForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) 
     [childrenAges, onFormChange]
   );
 
-  const totalTravelers = adults + children;
+  const totalTravelers = Number(adults) + Number(children);
 
   return (
     <div className="bg-form-box rounded-[36px] p-6 border-3 border-gray-200">
@@ -70,7 +74,7 @@ const VacationTypesForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) 
           <div className="flex items-center space-x-3">
             <button
               onClick={() => adjustAdults(false)}
-              disabled={adults <= MIN_ADULTS}
+              disabled={Number(adults) <= MIN_ADULTS}
               className="w-8 h-8 rounded-full border-3 border-primary bg-white hover:bg-primary/10 text-primary flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Decrease adults"
             >
@@ -98,7 +102,7 @@ const VacationTypesForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) 
           <div className="flex items-center space-x-3">
             <button
               onClick={() => adjustChildren(false)}
-              disabled={children <= MIN_CHILDREN}
+              disabled={Number(children) <= MIN_CHILDREN}
               className="w-8 h-8 rounded-full border-3 border-primary bg-white hover:bg-primary/10 text-primary flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Decrease children"
             >
@@ -121,17 +125,21 @@ const VacationTypesForm: React.FC<BaseFormProps> = ({ formData, onFormChange }) 
         <div className="pt-3 border-t-3 border-primary">
           <div className="flex justify-center items-center">
             <div className="w-10 h-10 rounded-full border-3 border-[#406170] bg-white flex items-center justify-center mr-3">
-              <span className="text-xl font-bold text-[#406170] font-raleway">{totalTravelers}</span>
+              <span className="text-xl font-bold text-[#406170] font-raleway">
+                {totalTravelers}
+              </span>
             </div>
-            <span className="text-primary font-bold font-raleway text-base">Total travelers: {totalTravelers}</span>
+            <span className="text-primary font-bold font-raleway text-base">
+              Total travelers: {totalTravelers}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Children Ages */}
-      {children > 0 && (
+      {Number(children) > 0 && (
         <div className="mt-4 space-y-3">
-          {Array.from({ length: children }, (_, index) => (
+          {Array.from({ length: Number(children) }, (_, index) => (
             <div key={index} className="flex items-center justify-between">
               <span className="text-primary font-bold font-raleway text-lg">Child {index + 1}</span>
               <div className="relative">

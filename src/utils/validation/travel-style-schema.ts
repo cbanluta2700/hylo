@@ -2,7 +2,7 @@
 // Constitutional compliance: Edge-compatible, type-safe, observable
 
 import { z } from 'zod';
-import { TravelStyleChoice } from '../../types/form-ui-enhancements';
+import { TravelStyleChoice } from '../../types/travel-style-choice';
 
 // Travel style choice schema
 export const TravelStyleChoiceSchema = z.enum(['answer-questions', 'skip-ahead', 'not-selected']);

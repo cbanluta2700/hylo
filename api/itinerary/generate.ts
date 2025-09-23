@@ -79,7 +79,7 @@ export default async function handler(request: Request): Promise<Response> {
 
   try {
     // Parse request body
-    const body = await request.json().catch(() => null);
+    const body = (await request.json().catch(() => null)) as any;
 
     console.log('📝 [24] API Generate: Request body parsed', {
       hasBody: !!body,
@@ -103,8 +103,8 @@ export default async function handler(request: Request): Promise<Response> {
 
     console.log('🔍 [26] API Generate: Request validation', {
       success: validation.success,
-      hasSessionId: !!body.sessionId,
-      hasFormData: !!body.formData,
+      hasSessionId: !!(body as any)?.sessionId,
+      hasFormData: !!(body as any)?.formData,
     });
 
     if (!validation.success) {

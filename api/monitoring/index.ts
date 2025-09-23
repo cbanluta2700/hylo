@@ -562,19 +562,19 @@ async function handleErrorReporting(request: Request): Promise<Response> {
   }
 
   try {
-    const errorData = await request.json();
+    const errorData = (await request.json()) as any;
     console.error('🚨 [ERROR-REPORT] Error reported:', errorData);
 
     // Sanitize sensitive data before logging
     const sanitizedError = {
-      type: errorData.type,
-      workflowId: errorData.workflowId,
-      stage: errorData.stage,
-      message: errorData.message,
-      timestamp: errorData.timestamp || new Date().toISOString(),
-      errorType: errorData.errorType,
-      retryable: errorData.retryable,
-      context: sanitizeContext(errorData.context),
+      type: errorData?.type,
+      workflowId: errorData?.workflowId,
+      stage: errorData?.stage,
+      message: errorData?.message,
+      timestamp: errorData?.timestamp || new Date().toISOString(),
+      errorType: errorData?.errorType,
+      retryable: errorData?.retryable,
+      context: sanitizeContext(errorData?.context),
     };
 
     // Log error to console for monitoring

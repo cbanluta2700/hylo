@@ -1,11 +1,5 @@
 /**
- * Mainimport { inngest } from '../client.js';
-import { sessionManager } from '../../../src/lib/workflows/session-manager.js';
-// Import existing AI agents
-import { architectAgent } from '../../../src/lib/ai-agents/architect-agent.js';
-import { gathererAgent } from '../../../src/lib/ai-agents/gatherer-agent.js';
-import { specialistAgent } from '../../../src/lib/ai-agents/specialist-agent.js';
-import { formatterAgent } from '../../../src/lib/ai-agents/formatter-agent.js';ry Generation Function
+ * Main Itinerary Generation Function
  *
  * Constitutional Requirements:
  * - Edge Runtime compatibility
@@ -23,6 +17,12 @@ import { architectAgent } from '../../../src/lib/ai-agents/architect-agent.js';
 import { gathererAgent } from '../../../src/lib/ai-agents/gatherer-agent.js';
 import { specialistAgent } from '../../../src/lib/ai-agents/specialist-agent.js';
 import { formatterAgent } from '../../../src/lib/ai-agents/formatter-agent.js';
+// Import type guards for serialized data
+import {
+  ensureArchitectOutput,
+  ensureGathererOutput,
+  ensureSpecialistOutput,
+} from '../../../src/lib/utils/type-guards.js';
 // Import progress integration
 import {
   updateWorkflowProgress,
@@ -88,7 +88,7 @@ export const generateItinerary = inngest.createFunction(
         const result = await gathererAgent.gatherInformation({
           workflowId,
           destination: formData.location,
-          itineraryStructure: architecture.itineraryStructure,
+          itineraryStructure: ensureArchitectOutput(architecture).itineraryStructure,
           interests: formData.interests || [],
           budget: formData.budget,
           travelStyle: formData.travelStyle,
@@ -119,8 +119,8 @@ export const generateItinerary = inngest.createFunction(
 
         const result = await specialistAgent.processRecommendations({
           workflowId,
-          architecture,
-          gatheredInfo,
+          architecture: ensureArchitectOutput(architecture),
+          gatheredInfo: ensureGathererOutput(gatheredInfo),
           userPreferences: {
             interests: formData.interests || [],
             avoidances: [], // Will be added to form in future
@@ -159,9 +159,9 @@ export const generateItinerary = inngest.createFunction(
         const result = await formatterAgent.formatItinerary({
           workflowId,
           formData,
-          architecture,
-          gatheredInfo,
-          processedRecommendations: filteredRecommendations,
+          architecture: ensureArchitectOutput(architecture),
+          gatheredInfo: ensureGathererOutput(gatheredInfo),
+          processedRecommendations: ensureSpecialistOutput(filteredRecommendations),
         });
 
         console.log('✅ [INNGEST] Step 4: Final formatting completed');
