@@ -12,18 +12,6 @@
     "api/health.ts": { "maxDuration": 10 },
     "api/validate-env.ts": { "maxDuration": 15 }
   },
-  "env": {
-    "INNGEST_SIGNING_KEY": "@INNGEST_SIGNING_KEY",
-    "INNGEST_EVENT_KEY": "@INNGEST_EVENT_KEY",
-    "XAI_API_KEY": "@xai-api-key",
-    "GROQ_API_KEY": "@groq-api-key",
-    "TAVILY_API_KEY": "@tavily-api-key",
-    "EXA_API_KEY": "@exa-api-key",
-    "KV_REST_API_URL": "@kv-rest-api-url",
-    "KV_REST_API_TOKEN": "@kv-rest-api-token",
-    "UPSTASH_VECTOR_REST_URL": "@upstash-vector-rest-url",
-    "UPSTASH_VECTOR_REST_TOKEN": "@upstash-vector-rest-token"
-  },
   "headers": [
     {
       "source": "/api/(.*)",
