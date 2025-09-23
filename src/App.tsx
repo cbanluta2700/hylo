@@ -4,6 +4,7 @@ import { FormData } from './components/TripDetails/types';
 import ConditionalTravelStyle from './components/ConditionalTravelStyle';
 import { TravelStyleChoice } from './types/travel-style-choice';
 import ItineraryDisplay from './components/ItineraryDisplay';
+import type { TravelFormData } from './types/travel-form';
 
 function App() {
   const [formData, setFormData] = useState<FormData>({
@@ -35,6 +36,7 @@ function App() {
   const [dinnerChoices, setDinnerChoices] = useState<string[]>([]);
   const [tripNickname, setTripNickname] = useState<string>('');
   const [contactInfo, setContactInfo] = useState({});
+  const [transformedFormData, setTransformedFormData] = useState<TravelFormData | null>(null);
 
   // Clean form data setter without logging (logs only on Generate button click)
   const loggedSetFormData = (newFormData: FormData | ((prev: FormData) => FormData)) => {
@@ -127,6 +129,9 @@ function App() {
         returnDate: transformedData.returnDate,
         hasErrors: !validationResult.success ? validationResult.error.errors : 'none',
       });
+
+      // Store transformed data for ItineraryDisplay component
+      setTransformedFormData(transformedData);
 
       if (validationResult.success) {
         console.log('✅ Validation passed! Data is valid for AI workflow');
@@ -343,7 +348,7 @@ ${error instanceof Error ? error.message : 'Unknown error occurred'}
           <div ref={itineraryRef}>
             {(isGenerating || generatedItinerary || generationError) && (
               <ItineraryDisplay
-                itinerary={generatedItinerary}
+                formData={transformedFormData}
                 isLoading={isGenerating}
                 error={generationError}
               />

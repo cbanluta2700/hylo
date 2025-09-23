@@ -5,19 +5,23 @@
 ### 🔥 **500 Internal Server Error**
 
 #### Symptoms:
+
 ```javascript
 POST /api/itinerary/generate 500 (Internal Server Error)
 SyntaxError: Unexpected token 'A', "A server e"... is not valid JSON
 ```
 
 #### Solutions:
+
 1. **Check Inngest Client Configuration**:
+
    ```typescript
    ✅ export const inngest = new Inngest({ id: "your-app-id" });
    ❌ export const inngest = new Inngest({ name: "your-app-name" });
    ```
 
 2. **Verify API Route Handler**:
+
    ```typescript
    // api/inngest/index.ts
    ✅ export const { GET, POST, PUT } = serve({ client, functions });
@@ -33,12 +37,15 @@ SyntaxError: Unexpected token 'A', "A server e"... is not valid JSON
 ### 🔥 **503 Service Unavailable**
 
 #### Symptoms:
+
 ```javascript
 POST /api/itinerary/generate 503 (Service Unavailable)
 ```
 
 #### Solutions:
+
 1. **Verify Inngest Function Registration**:
+
    ```typescript
    // Make sure function is exported and included in serve()
    export const { GET, POST, PUT } = serve({
@@ -48,23 +55,29 @@ POST /api/itinerary/generate 503 (Service Unavailable)
    ```
 
 2. **Check Function Event Names**:
+
    ```typescript
    // Function definition
-   { event: 'itinerary/generate' }
-   
+   {
+     event: 'itinerary/generate';
+   }
+
    // Event sending
-   inngest.send({ name: 'itinerary/generate' }) // ← Must match exactly
+   inngest.send({ name: 'itinerary/generate' }); // ← Must match exactly
    ```
 
 ### 🔥 **Edge Runtime Compatibility Issues**
 
 #### Symptoms:
+
 ```
 Error: Module not compatible with Edge Runtime
 ```
 
 #### Solutions:
+
 1. **Use Correct Inngest Import**:
+
    ```typescript
    ✅ import { serve } from "inngest/next";
    ❌ import { serve } from "inngest/express";
@@ -80,12 +93,15 @@ Error: Module not compatible with Edge Runtime
 ### 🔥 **Environment Variable Issues**
 
 #### Symptoms:
+
 ```
 Error: Missing required environment variable
 ```
 
 #### Solutions:
+
 1. **Local Development** (`.env.local`):
+
    ```bash
    INNGEST_EVENT_KEY="your-development-key"
    INNGEST_SIGNING_KEY="your-signing-key"
@@ -99,25 +115,31 @@ Error: Missing required environment variable
 ### 🔥 **Function Not Triggering**
 
 #### Symptoms:
+
 ```
 Event sent but function doesn't execute
 ```
 
 #### Solutions:
+
 1. **Check Event Name Matching**:
+
    ```typescript
    // Function listens for
-   { event: 'my/event' }
-   
+   {
+     event: 'my/event';
+   }
+
    // Send event with exact same name
-   inngest.send({ name: 'my/event' })
+   inngest.send({ name: 'my/event' });
    ```
 
 2. **Verify Function Export**:
+
    ```typescript
    // Must export the function
    export const myFunction = inngest.createFunction(...)
-   
+
    // And include in serve
    serve({ client, functions: [myFunction] })
    ```
@@ -125,6 +147,7 @@ Event sent but function doesn't execute
 ## Quick Diagnostic Checklist
 
 ### ✅ **Before Deployment**
+
 - [ ] Inngest client uses `{ id: "app-name" }`
 - [ ] Function event names match exactly
 - [ ] API route exports `{ GET, POST, PUT }`
@@ -132,6 +155,7 @@ Event sent but function doesn't execute
 - [ ] TypeScript compilation passes (`npm run type-check`)
 
 ### ✅ **After Deployment**
+
 - [ ] Environment variables added to hosting platform
 - [ ] API route accessible at `/api/inngest`
 - [ ] Function appears in Inngest dashboard
@@ -140,6 +164,7 @@ Event sent but function doesn't execute
 ## Debug Commands
 
 ### Local Testing:
+
 ```bash
 # Start Inngest dev server
 npx inngest-cli@latest dev
@@ -152,6 +177,7 @@ curl -X GET http://localhost:3000/api/inngest
 ```
 
 ### Production Testing:
+
 ```bash
 # Test API endpoint
 curl -X GET https://your-app.vercel.app/api/inngest
@@ -163,6 +189,7 @@ curl -X POST https://your-app.vercel.app/api/inngest -H "Content-Type: applicati
 ## Success Indicators
 
 ### ✅ **Working Setup**:
+
 ```javascript
 // API Response (202 Accepted)
 {
@@ -174,6 +201,7 @@ curl -X POST https://your-app.vercel.app/api/inngest -H "Content-Type: applicati
 ```
 
 ### ✅ **Console Logs**:
+
 ```
 🚀 [70] Workflow Orchestrator: Starting itinerary generation
 📁 [71] Workflow Orchestrator: Initializing session
@@ -184,6 +212,7 @@ curl -X POST https://your-app.vercel.app/api/inngest -H "Content-Type: applicati
 ## Emergency Fixes
 
 ### 🚨 **Quick Fix for 500 Errors**:
+
 1. Revert to basic Inngest setup
 2. Use exact documentation patterns
 3. Remove custom handlers
@@ -191,10 +220,12 @@ curl -X POST https://your-app.vercel.app/api/inngest -H "Content-Type: applicati
 5. Redeploy
 
 ### 🚨 **Quick Fix for Missing Events**:
+
 1. Check event name spelling
 2. Verify function is in serve() array
 3. Confirm environment variables exist
 4. Test with simple function first
 
 ---
-*Last Updated: September 23, 2025*
+
+_Last Updated: September 23, 2025_

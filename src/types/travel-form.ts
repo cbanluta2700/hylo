@@ -1,3 +1,4 @@
+
 /**
  * Travel Form Data Types for AI Workflow Integration
  *
