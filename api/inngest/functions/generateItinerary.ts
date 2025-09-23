@@ -56,10 +56,54 @@ export const generateItinerary = inngest.createFunction(
     });
 
     try {
-      // Step 1: Architecture Planning (Architect Agent)
+      // Step 1: Architecture Planning (Architect Agent with Real AI Streaming)
       const architecture = await step.run('architect-planning', async () => {
         console.log('🏗️ [INNGEST] Step 1: Architecture planning started');
+        console.log('🤖 [INNGEST] Using XAI Grok-4-fast-reasoning-latest for deep planning');
 
+        // Call your streaming AI endpoint for real AI processing
+        try {
+          const streamResponse = await fetch(
+            `${process.env.VERCEL_URL || 'https://hylo00.vercel.app'}/api/ai-stream`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                workflowId,
+                step: 'Architecture Planning',
+                model: 'grok-4-fast-reasoning-latest',
+                prompt: `Create detailed travel itinerary architecture for ${
+                  formData.location
+                }. Duration: ${formData.plannedDays} days. Travelers: ${
+                  formData.adults
+                } adults. Budget: $${formData.budget.total}. Interests: ${formData.interests?.join(
+                  ', '
+                )}.`,
+              }),
+            }
+          );
+
+          if (streamResponse.ok) {
+            const aiResult = await streamResponse.text();
+            console.log(
+              '✅ [INNGEST] Step 1: Real AI architecture completed:',
+              aiResult.slice(0, 100) + '...'
+            );
+
+            return {
+              itineraryStructure: aiResult,
+              timeline: `Generated for ${formData.plannedDays} days`,
+              logisticsFramework: 'AI-generated logistics',
+              processingTime: Date.now(),
+            };
+          } else {
+            console.log('⚠️ [INNGEST] Step 1: Falling back to agent method');
+          }
+        } catch (error) {
+          console.log('⚠️ [INNGEST] Step 1: Streaming failed, using agent:', error);
+        }
+
+        // Fallback to original agent method
         const result = await architectAgent.generateArchitecture({
           workflowId,
           formData,

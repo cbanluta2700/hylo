@@ -6,6 +6,7 @@ export const config = {
   runtime: 'edge',
 };
 
+// Using EXPRESS pattern as explicitly requested
 export default serve({
   client: inngest,
   functions: [generateItinerary],
