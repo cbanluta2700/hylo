@@ -13,6 +13,17 @@ export const config = {
 };
 
 /**
+ * API endpoint health status
+ */
+interface ApiEndpointHealth {
+  endpoint: string;
+  status: 'healthy' | 'unhealthy' | 'not-tested';
+  responseTime?: number;
+  statusCode?: number;
+  error?: string;
+}
+
+/**
  * Health check response interface
  */
 interface HealthCheckResponse {
@@ -26,10 +37,127 @@ interface HealthCheckResponse {
     aiProviders: boolean;
     stateManagement: boolean;
     searchProviders: boolean;
+    apiEndpoints: boolean;
   };
+  apiEndpoints?: ApiEndpointHealth[];
   details?: {
     missingVars?: string[];
     errors?: string[];
+  };
+}
+
+/**
+ * Test API endpoint health
+ */
+async function testApiEndpoint(
+  baseUrl: string,
+  endpoint: string,
+  testMethod: 'GET' | 'POST' = 'GET',
+  testData?: any
+): Promise<ApiEndpointHealth> {
+  const startTime = Date.now();
+  const fullUrl = `${baseUrl}${endpoint}`;
+
+  try {
+    const options: RequestInit = {
+      method: testMethod,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    if (testMethod === 'POST' && testData) {
+      options.body = JSON.stringify(testData);
+    }
+
+    const response = await fetch(fullUrl, options);
+    const responseTime = Date.now() - startTime;
+
+    return {
+      endpoint,
+      status: response.status < 400 ? 'healthy' : 'unhealthy',
+      responseTime,
+      statusCode: response.status,
+    };
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    return {
+      endpoint,
+      status: 'unhealthy',
+      responseTime,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Check all API endpoints health
+ */
+async function checkApiEndpoints(
+  baseUrl: string
+): Promise<{ success: boolean; endpoints: ApiEndpointHealth[] }> {
+  console.log('🔍 Testing API endpoints health...');
+
+  const endpoints: ApiEndpointHealth[] = [];
+
+  // Test basic endpoints
+  const basicEndpoints = [
+    { path: '/api/validate-env', method: 'GET' as const },
+    { path: '/api/inngest', method: 'GET' as const },
+  ];
+
+  for (const { path, method } of basicEndpoints) {
+    console.log(`📡 Testing ${method} ${path}...`);
+    const result = await testApiEndpoint(baseUrl, path, method);
+    endpoints.push(result);
+    console.log(
+      `${result.status === 'healthy' ? '✅' : '❌'} ${path}: ${result.statusCode} (${
+        result.responseTime
+      }ms)`
+    );
+  }
+
+  // Test itinerary endpoints with proper test data
+  const itineraryEndpoints = [
+    {
+      path: '/api/itinerary/generate',
+      method: 'POST' as const,
+      testData: {
+        location: 'test-location',
+        departDate: '2025-10-01',
+        returnDate: '2025-10-05',
+        budget: 1000,
+        adults: 2,
+        flexibleDates: false,
+      },
+    },
+    { path: '/api/itinerary/get-itinerary?workflowId=test-id', method: 'GET' as const },
+    { path: '/api/itinerary/progress-simple', method: 'GET' as const },
+  ];
+
+  for (const { path, method, testData } of itineraryEndpoints) {
+    console.log(`📡 Testing ${method} ${path}...`);
+    const result = await testApiEndpoint(baseUrl, path, method, testData);
+    endpoints.push(result);
+    console.log(
+      `${result.status === 'healthy' ? '✅' : '❌'} ${path}: ${result.statusCode || 'ERROR'} (${
+        result.responseTime
+      }ms)${result.error ? ` - ${result.error}` : ''}`
+    );
+  }
+
+  const allHealthy = endpoints.every((ep) => ep.status === 'healthy');
+
+  console.log(`🎯 API endpoints health: ${allHealthy ? '✅ ALL HEALTHY' : '❌ SOME UNHEALTHY'}`);
+  console.log(
+    `📊 Summary: ${endpoints.filter((ep) => ep.status === 'healthy').length}/${
+      endpoints.length
+    } endpoints healthy`
+  );
+
+  return {
+    success: allHealthy,
+    endpoints,
   };
 }
 
@@ -116,6 +244,10 @@ export default async function handler(req: Request): Promise<Response> {
     userAgent: req.headers.get('user-agent')?.substring(0, 50) + '...',
   });
 
+  // Extract base URL for API endpoint testing
+  const url = new URL(req.url);
+  const baseUrl = `${url.protocol}//${url.host}`;
+
   try {
     console.log('🔍 Starting health checks...');
 
@@ -161,13 +293,19 @@ export default async function handler(req: Request): Promise<Response> {
       serpKey: process.env.SERP_API_KEY ? 'SET' : 'MISSING',
     });
 
+    // API endpoints health check
+    console.log('🔍 Starting API endpoints health check...');
+    const apiEndpointsCheck = await checkApiEndpoints(baseUrl);
+    console.log('📡 API endpoints check:', apiEndpointsCheck.success ? '✅ PASS' : '❌ FAIL');
+
     // Overall health status
     const allChecksPass =
       edgeRuntimeCheck &&
       envCheck.success &&
       aiProvidersCheck &&
       stateManagementCheck &&
-      searchProvidersCheck;
+      searchProvidersCheck &&
+      apiEndpointsCheck.success;
 
     console.log('🎯 Overall health status:', allChecksPass ? '✅ HEALTHY' : '❌ UNHEALTHY');
 
@@ -182,7 +320,9 @@ export default async function handler(req: Request): Promise<Response> {
         aiProviders: aiProvidersCheck,
         stateManagement: stateManagementCheck,
         searchProviders: searchProvidersCheck,
+        apiEndpoints: apiEndpointsCheck.success,
       },
+      apiEndpoints: apiEndpointsCheck.endpoints,
     };
 
     // Add details if there are issues
@@ -208,6 +348,13 @@ export default async function handler(req: Request): Promise<Response> {
       if (!searchProvidersCheck) {
         response.details.errors?.push('Search provider API keys missing');
         console.log('❌ Search provider keys missing');
+      }
+      if (!apiEndpointsCheck.success) {
+        const unhealthyEndpoints = apiEndpointsCheck.endpoints
+          .filter((ep) => ep.status === 'unhealthy')
+          .map((ep) => ep.endpoint);
+        response.details.errors?.push(`Unhealthy API endpoints: ${unhealthyEndpoints.join(', ')}`);
+        console.log('❌ API endpoints unhealthy:', unhealthyEndpoints);
       }
     } else {
       console.log('🎉 All health checks PASSED!');
@@ -247,6 +394,7 @@ export default async function handler(req: Request): Promise<Response> {
         aiProviders: false,
         stateManagement: false,
         searchProviders: false,
+        apiEndpoints: false,
       },
       details: {
         errors: [`Health check error: ${error instanceof Error ? error.message : 'Unknown error'}`],
