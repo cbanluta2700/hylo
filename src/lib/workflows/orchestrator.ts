@@ -11,7 +11,7 @@
  * Using Inngest "invoking functions directly" pattern from docs
  */
 
-import { sessionManager } from './session-manager.js';
+import { simpleSessionManager } from './simple-session-manager.js';
 import type { TravelFormData } from '../../types/travel-form.js';
 
 /**
@@ -50,7 +50,7 @@ export class WorkflowOrchestrator {
       console.log('📁 [71] Workflow Orchestrator: Initializing session');
 
       // Create session first
-      await sessionManager.createSession(workflowId, sessionId, formData);
+      await simpleSessionManager.createSession(workflowId, sessionId, formData);
 
       console.log('🚀 [72] Workflow Orchestrator: Phase 2 - Triggering Inngest workflow');
       console.log('🔧 [72b] Status: Sending itinerary/generate event');
@@ -110,7 +110,7 @@ export class WorkflowOrchestrator {
    * Get workflow status and progress
    */
   static async getWorkflowStatus(workflowId: string) {
-    return await sessionManager.getSession(workflowId);
+    return await simpleSessionManager.getSession(workflowId);
   }
 
   /**
@@ -118,7 +118,7 @@ export class WorkflowOrchestrator {
    */
   static async cancelWorkflow(workflowId: string): Promise<boolean> {
     try {
-      await sessionManager.updateProgress(workflowId, {
+      await simpleSessionManager.updateProgress(workflowId, {
         status: 'failed',
         errorMessage: 'Workflow cancelled by user',
       });

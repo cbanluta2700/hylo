@@ -101,20 +101,20 @@ async function handleHealthCheck(request: Request): Promise<Response> {
     };
   }
 
-  // Check 2: Redis/KV Storage Health
-  console.log('🗄️ [HEALTH-CHECK] Testing Redis/KV storage...');
+  // Check 2: Session Storage Health
+  console.log('🗄️ [HEALTH-CHECK] Testing session storage...');
   try {
-    const redisHealth = await checkRedisHealth();
-    healthChecks.checks['redis'] = {
-      status: redisHealth.healthy ? 'healthy' : 'down',
-      message: redisHealth.message,
-      responseTime: redisHealth.responseTime,
+    const sessionHealth = await checkSessionHealth();
+    healthChecks.checks['session'] = {
+      status: sessionHealth.healthy ? 'healthy' : 'down',
+      message: sessionHealth.message,
+      responseTime: sessionHealth.responseTime,
     };
-  } catch (redisError) {
-    healthChecks.checks['redis'] = {
+  } catch (sessionError) {
+    healthChecks.checks['session'] = {
       status: 'down',
-      message: 'Redis health check failed',
-      error: redisError instanceof Error ? redisError.message : 'Unknown Redis error',
+      message: 'Session storage health check failed',
+      error: sessionError instanceof Error ? sessionError.message : 'Unknown session error',
     };
   }
 
@@ -417,41 +417,14 @@ async function checkAIProvidersHealth() {
   return { providers, allHealthy };
 }
 
-async function checkRedisHealth() {
-  if (!process.env['KV_REST_API_URL'] || !process.env['KV_REST_API_TOKEN']) {
-    return {
-      healthy: false,
-      message: 'Redis credentials not configured',
-      responseTime: 0,
-    };
-  }
-
-  try {
-    const startTime = Date.now();
-    const { Redis } = await import('@upstash/redis');
-
-    const redis = new Redis({
-      url: process.env['KV_REST_API_URL']!,
-      token: process.env['KV_REST_API_TOKEN']!,
-    });
-
-    await redis.ping();
-    const responseTime = Date.now() - startTime;
-
-    return {
-      healthy: true,
-      message: 'Redis connection successful',
-      responseTime,
-    };
-  } catch (error) {
-    return {
-      healthy: false,
-      message: `Redis connection failed: ${
-        error instanceof Error ? error.message : 'Unknown error'
-      }`,
-      responseTime: 0,
-    };
-  }
+async function checkSessionHealth() {
+  // Since we're using in-memory session management, it's always available
+  return {
+    healthy: true,
+    message: 'In-memory session management active',
+    responseTime: 1,
+    type: 'in-memory',
+  };
 }
 
 async function checkInngestHealth() {

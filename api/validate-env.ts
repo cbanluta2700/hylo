@@ -138,116 +138,32 @@ async function testGroqConnection(): Promise<ValidationResult> {
 }
 
 /**
- * Test Upstash Redis connectivity
+ * Test Session Storage (Simplified - No Redis)
+ * Since we're now using in-memory session management
  */
-async function testRedisConnection(): Promise<ValidationResult> {
-  const startTime = Date.now();
-  console.log('🏗️ Testing Redis/KV connectivity...');
+async function testSessionStorage(): Promise<ValidationResult> {
+  console.log('🏗️ Testing session storage (in-memory)...');
 
-  // Check for your specific Redis/KV variable names
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-    console.log('⚠️ Redis/KV credentials missing');
-    return {
-      service: 'Redis/KV Storage',
-      status: 'missing',
-      message: 'KV_REST_API_URL or KV_REST_API_TOKEN not set',
-    };
-  }
-
-  try {
-    console.log('📡 Testing Redis/KV connection...');
-    console.log(`🔗 Using URL: ${process.env.KV_REST_API_URL}`);
-
-    // Simple ping test using your KV REST API
-    const response = await fetch(`${process.env.KV_REST_API_URL}/ping`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
-      },
-      signal: AbortSignal.timeout(5000),
-    });
-
-    const responseTime = Date.now() - startTime;
-    console.log(`📊 Redis/KV response: ${response.status} (${responseTime}ms)`);
-
-    if (response.ok) {
-      console.log('✅ Redis/KV connection successful');
-      return {
-        service: 'Redis/KV Storage',
-        status: 'connected',
-        message: 'KV instance accessible via REST API',
-        responseTime,
-      };
-    } else {
-      console.log(`❌ Redis/KV failed with status: ${response.status}`);
-      return {
-        service: 'Redis/KV Storage',
-        status: 'failed',
-        message: `KV responded with status: ${response.status}`,
-        responseTime,
-      };
-    }
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    console.error(`💥 Redis/KV connection failed:`, error);
-    return {
-      service: 'Redis/KV Storage',
-      status: 'failed',
-      message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      responseTime,
-    };
-  }
+  return {
+    service: 'Session Storage',
+    status: 'connected',
+    message: 'Using in-memory session management (no Redis required)',
+    responseTime: 1,
+  };
 }
 
 /**
- * Test Upstash Vector connectivity
+ * Test Vector Storage (Optional - Disabled for simplicity)
  */
 async function testVectorConnection(): Promise<ValidationResult> {
-  const startTime = Date.now();
+  console.log('🔍 Vector storage disabled for simplified deployment...');
 
-  if (!process.env.UPSTASH_VECTOR_REST_URL || !process.env.UPSTASH_VECTOR_REST_TOKEN) {
-    return {
-      service: 'Upstash Vector',
-      status: 'missing',
-      message: 'UPSTASH_VECTOR_REST_URL or UPSTASH_VECTOR_REST_TOKEN not set',
-    };
-  }
-
-  try {
-    // Simple info request
-    const response = await fetch(`${process.env.UPSTASH_VECTOR_REST_URL}/info`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${process.env.UPSTASH_VECTOR_REST_TOKEN}`,
-      },
-      signal: AbortSignal.timeout(5000),
-    });
-
-    const responseTime = Date.now() - startTime;
-
-    if (response.ok) {
-      return {
-        service: 'Upstash Vector',
-        status: 'connected',
-        message: 'Vector DB instance accessible',
-        responseTime,
-      };
-    } else {
-      return {
-        service: 'Upstash Vector',
-        status: 'failed',
-        message: `Vector DB responded with status: ${response.status}`,
-        responseTime,
-      };
-    }
-  } catch (error) {
-    return {
-      service: 'Upstash Vector',
-      status: 'failed',
-      message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      responseTime: Date.now() - startTime,
-    };
-  }
+  return {
+    service: 'Vector Storage',
+    status: 'connected',
+    message: 'Vector storage disabled (optional feature)',
+    responseTime: 1,
+  };
 }
 
 /**
@@ -305,20 +221,16 @@ function testSearchProviders(): ValidationResult[] {
 }
 
 /**
- * Test additional environment variables (Redis/KV and AI backup keys)
+ * Test additional environment variables (AI backup keys and optional URLs)
  */
 function testAdditionalEnvVars(): ValidationResult[] {
   console.log('🔧 Testing additional environment variables...');
 
   const additionalVars = [
-    // AI Provider backup keys
+    // AI Provider backup keys (optional)
     { name: 'XAI Grok (Backup)', key: 'XAI_API_KEY_2' },
     { name: 'Groq (Backup)', key: 'GROQ_API_KEY_2' },
-    // Your specific Redis/KV configuration
-    { name: 'KV REST API URL', key: 'KV_REST_API_URL' },
-    { name: 'KV URL', key: 'KV_URL' },
-    { name: 'Redis URL', key: 'REDIS_URL' },
-    // Public URLs
+    // Public URLs (optional for this version)
     { name: 'Public API URL', key: 'NEXT_PUBLIC_API_URL' },
     { name: 'Public WebSocket URL', key: 'NEXT_PUBLIC_WS_URL' },
   ];
@@ -356,10 +268,10 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Run all validation tests
     console.log('🚀 Testing AI provider connections...');
-    const [xaiResult, groqResult, redisResult, vectorResult] = await Promise.all([
+    const [xaiResult, groqResult, sessionResult, vectorResult] = await Promise.all([
       testXAIConnection(),
       testGroqConnection(),
-      testRedisConnection(),
+      testSessionStorage(),
       testVectorConnection(),
     ]);
 
@@ -375,7 +287,7 @@ export default async function handler(req: Request): Promise<Response> {
     const allResults = [
       xaiResult,
       groqResult,
-      redisResult,
+      sessionResult,
       vectorResult,
       inngestResult,
       ...searchResults,

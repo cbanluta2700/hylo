@@ -269,18 +269,11 @@ export default async function handler(req: Request): Promise<Response> {
       groqKey: process.env.GROQ_API_KEY ? 'SET' : 'MISSING',
     });
 
-    // State management check (Redis/Vector URLs exist)
-    const stateManagementCheck = Boolean(
-      process.env.KV_REST_API_URL &&
-        process.env.KV_REST_API_TOKEN &&
-        process.env.UPSTASH_VECTOR_REST_URL &&
-        process.env.UPSTASH_VECTOR_REST_TOKEN
-    );
-    console.log('🗄️ State management check:', stateManagementCheck ? '✅ PASS' : '❌ FAIL', {
-      kvUrl: process.env.KV_REST_API_URL ? 'SET' : 'MISSING',
-      kvToken: process.env.KV_REST_API_TOKEN ? 'SET' : 'MISSING',
-      vectorUrl: process.env.UPSTASH_VECTOR_REST_URL ? 'SET' : 'MISSING',
-      vectorToken: process.env.UPSTASH_VECTOR_REST_TOKEN ? 'SET' : 'MISSING',
+    // Session management check (simplified - no external dependencies)
+    const sessionManagementCheck = true; // Always true with in-memory sessions
+    console.log('🗄️ Session management check:', sessionManagementCheck ? '✅ PASS' : '❌ FAIL', {
+      type: 'in-memory',
+      status: 'always-available',
     });
 
     // Search providers check (API keys exist)
@@ -303,7 +296,7 @@ export default async function handler(req: Request): Promise<Response> {
       edgeRuntimeCheck &&
       envCheck.success &&
       aiProvidersCheck &&
-      stateManagementCheck &&
+      sessionManagementCheck &&
       searchProvidersCheck &&
       apiEndpointsCheck.success;
 
@@ -318,7 +311,7 @@ export default async function handler(req: Request): Promise<Response> {
         edgeRuntime: edgeRuntimeCheck,
         environmentVariables: envCheck.success,
         aiProviders: aiProvidersCheck,
-        stateManagement: stateManagementCheck,
+        stateManagement: sessionManagementCheck,
         searchProviders: searchProvidersCheck,
         apiEndpoints: apiEndpointsCheck.success,
       },
@@ -341,9 +334,9 @@ export default async function handler(req: Request): Promise<Response> {
         response.details.errors?.push('AI provider API keys missing');
         console.log('❌ AI provider keys missing');
       }
-      if (!stateManagementCheck) {
-        response.details.errors?.push('State management configuration incomplete');
-        console.log('❌ State management config incomplete');
+      if (!sessionManagementCheck) {
+        response.details.errors?.push('Session management configuration incomplete');
+        console.log('❌ Session management config incomplete');
       }
       if (!searchProvidersCheck) {
         response.details.errors?.push('Search provider API keys missing');

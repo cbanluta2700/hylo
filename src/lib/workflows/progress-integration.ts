@@ -9,7 +9,7 @@
  * Connects Inngest workflow events with the existing progress system
  */
 
-import { sessionManager } from '../workflows/session-manager.js';
+import { simpleSessionManager } from './simple-session-manager.js';
 
 /**
  * Standard progress stages mapping
@@ -41,7 +41,7 @@ export async function updateWorkflowProgress(
   });
 
   try {
-    await sessionManager.updateProgress(workflowId, {
+    await simpleSessionManager.updateProgress(workflowId, {
       currentStage: stage,
       progress: stageInfo.progress,
       ...(stage === 'complete' && { status: 'completed' }),
@@ -72,7 +72,7 @@ export async function handleWorkflowError(
   });
 
   try {
-    await sessionManager.updateProgress(workflowId, {
+    await simpleSessionManager.updateProgress(workflowId, {
       status: 'failed',
       errorMessage,
     });
