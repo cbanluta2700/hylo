@@ -15,8 +15,8 @@
  */
 
 import { z } from 'zod';
-import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator.js';
-import { TravelFormDataSchema } from '../../src/schemas/ai-workflow-schemas.js';
+import { WorkflowOrchestrator } from '../../src/lib/workflows/orchestrator';
+import { TravelFormDataSchema } from '../../src/schemas/ai-workflow-schemas';
 
 // Runtime configuration for Vercel Edge
 export const config = {

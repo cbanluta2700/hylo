@@ -11,7 +11,7 @@
  * Using Inngest "invoking functions directly" pattern from docs
  */
 
-import { sessionManager, generateWorkflowId } from './session-manager.js';
+import { sessionManager, generateWorkflowId } from './session-manager';
 import type { TravelFormData } from '../../types/travel-form.js';
 
 /**
@@ -48,7 +48,7 @@ export class WorkflowOrchestrator {
       console.log('📡 [72] Workflow Orchestrator: Invoking Inngest function directly');
 
       // Import and invoke the Inngest function directly (following docs pattern)
-      const { inngest } = await import('../../inngest/functions.js');
+      const { inngest } = await import('../../inngest/functions');
 
       // Send event to trigger the Inngest function
       await inngest.send({
