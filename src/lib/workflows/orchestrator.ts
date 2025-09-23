@@ -45,29 +45,38 @@ export class WorkflowOrchestrator {
       // Create session first
       await sessionManager.createSession(workflowId, sessionId, formData);
 
-      console.log('📡 [72] Workflow Orchestrator: Invoking Inngest function directly');
+      console.log(
+        '⚠️ [72] Workflow Orchestrator: BYPASSING Inngest events - calling workflow directly'
+      );
+      console.log(
+        '🔧 [72b] Reason: Inngest authentication failing in production - calling functions directly'
+      );
 
-      // Import and invoke the Inngest function directly (following docs pattern)
-      const { inngest } = await import('../../inngest/functions');
+      // TEMPORARY: Call the workflow function directly instead of using Inngest events
+      // This bypasses the Inngest authentication issue
+      console.log('🚀 [72c] Starting direct AI workflow execution');
 
-      // Send event to trigger the Inngest function
-      await inngest.send({
-        name: 'itinerary/generate',
-        data: {
-          workflowId,
-          sessionId,
-          formData,
-        },
+      // Import the workflow function and execute it directly
+      const { executeWorkflowDirectly } = await import('../../inngest/direct-workflow');
+
+      // Execute the workflow in the background (don't await)
+      executeWorkflowDirectly({
+        workflowId,
+        sessionId,
+        formData,
+      }).catch((error: Error) => {
+        console.error('💥 [72d] Direct workflow execution failed:', error);
       });
 
-      console.log('✅ [73] Workflow Orchestrator: Inngest function invoked successfully');
+      console.log('✅ [73] Workflow Orchestrator: Direct workflow execution started');
 
       // Estimate completion time
       const estimatedMinutes = this.estimateProcessingTime(formData);
 
-      console.log('✅ [77] Workflow Orchestrator: Workflow initiated', {
+      console.log('✅ [77] Workflow Orchestrator: Workflow initiated directly', {
         workflowId,
         estimatedMinutes,
+        method: 'direct-execution',
       });
 
       return {
