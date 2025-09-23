@@ -95,15 +95,54 @@ const getDynamicColumns = (dayCount: number): string => {
 const useAIItinerary = (workflowId?: string) => {
   const [aiItinerary, setAiItinerary] = useState<any>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
 
   useEffect(() => {
     if (!workflowId) return;
 
+    let pollAttempts = 0;
+    const maxAttempts = 20; // Maximum polling attempts
+
     const pollForResults = async () => {
       setIsPolling(true);
+      pollAttempts++;
+
       try {
-        console.log('🔍 [AI-Display] Polling for results:', workflowId);
+        console.log(
+          `🔍 [AI-Display] Polling attempt ${pollAttempts}/${maxAttempts} for results:`,
+          workflowId
+        );
+
+        // First, test if the endpoint exists with a simple test
+        if (pollAttempts === 1) {
+          try {
+            const testResponse = await fetch('/api/itinerary/test-routing');
+            const testResult = await testResponse.json();
+            console.log('🧪 [AI-Display] Test routing result:', testResult);
+          } catch (testError) {
+            console.error('🧪 [AI-Display] Test routing failed:', testError);
+          }
+        }
+
         const response = await fetch(`/api/itinerary/get-itinerary?workflowId=${workflowId}`);
+
+        console.log(`📊 [AI-Display] Response status: ${response.status} ${response.statusText}`);
+
+        if (response.status === 404) {
+          console.error('❌ [AI-Display] 404 Error - Endpoint not found');
+          setErrorCount((prev) => prev + 1);
+
+          // After 3 consecutive 404s, stop polling
+          if (errorCount >= 3) {
+            console.error('❌ [AI-Display] Too many 404 errors, stopping polling');
+            setIsPolling(false);
+            return;
+          }
+
+          setTimeout(pollForResults, 5000);
+          return;
+        }
+
         if (response.ok) {
           const result = await response.json();
           console.log('📊 [AI-Display] Polling result:', result);
@@ -116,15 +155,27 @@ const useAIItinerary = (workflowId?: string) => {
           }
         }
 
-        setTimeout(pollForResults, 3000);
+        // Continue polling if we haven't hit max attempts
+        if (pollAttempts < maxAttempts) {
+          setTimeout(pollForResults, 3000);
+        } else {
+          console.error('❌ [AI-Display] Max polling attempts reached');
+          setIsPolling(false);
+        }
       } catch (error) {
         console.error('❌ [AI-Display] Polling error:', error);
-        setTimeout(pollForResults, 5000);
+        setErrorCount((prev) => prev + 1);
+
+        if (pollAttempts < maxAttempts && errorCount < 5) {
+          setTimeout(pollForResults, 5000);
+        } else {
+          setIsPolling(false);
+        }
       }
     };
 
     pollForResults();
-  }, [workflowId]);
+  }, [workflowId, errorCount]);
 
   return { aiItinerary, isPolling };
 };
