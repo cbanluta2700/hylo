@@ -11,6 +11,7 @@
 
 import { EventSchemas, Inngest } from 'inngest';
 import type { TravelFormData } from '../../src/types/travel-form.js';
+import { createDebugMiddleware } from './middleware/debug';
 
 /**
  * Comprehensive event schema for the 4-agent AI workflow
@@ -120,6 +121,7 @@ export const inngest = new Inngest({
   id: 'hylo-travel-ai',
   name: 'Hylo Travel AI Workflow',
   schemas: new EventSchemas().fromRecord<WorkflowEvents>(),
+  middleware: [createDebugMiddleware()], // Add debug middleware
 });
 
 /**
