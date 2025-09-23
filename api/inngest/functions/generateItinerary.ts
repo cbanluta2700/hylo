@@ -1,7 +1,18 @@
 /**
  * Main Itinerary Generation Function
  *
- * Constitutional Requirements:
+ * Constitutional Re      // Progress Update: Architect Complete
+      await step.sendEvent('progress-architect', {
+        name: 'workflow/progress',
+        data: {
+          workflowId,
+          stage: 'architect-complete',
+          progress: 25,
+        },
+      });
+
+      // Update Session Storage for SSE streaming
+      await step.run('update-progress-architect', async () => {
  * - Edge Runtime compatibility
  * - Step-based architecture for reliability
  * - Proper event handling and progress updates
@@ -108,7 +119,7 @@ export const generateItinerary = inngest.createFunction(
         },
       });
 
-      // Update Redis for SSE streaming
+      // Update Session Storage for SSE streaming
       await step.run('update-progress-gatherer', async () => {
         await updateWorkflowProgress(workflowId, 'gatherer', ['architect', 'gatherer']);
       });
@@ -143,7 +154,7 @@ export const generateItinerary = inngest.createFunction(
         },
       });
 
-      // Update Redis for SSE streaming
+      // Update Session Storage for SSE streaming
       await step.run('update-progress-specialist', async () => {
         await updateWorkflowProgress(workflowId, 'specialist', [
           'architect',

@@ -21,7 +21,7 @@ interface MonitoringMetrics {
     groq: 'healthy' | 'degraded' | 'down';
   };
   systemHealth: {
-    redis: 'healthy' | 'degraded' | 'down';
+    session: 'healthy' | 'degraded' | 'down';
     inngest: 'healthy' | 'degraded' | 'down';
   };
 }
@@ -189,9 +189,9 @@ async function handleHealthCheck(request: Request): Promise<Response> {
 async function handleMetricsRequest(request: Request): Promise<Response> {
   console.log('📈 [METRICS] Generating production metrics...');
 
-  // In a real implementation, these would come from Redis, database, or monitoring service
+  // In a real implementation, these would come from session manager, database, or monitoring service
   const mockMetrics: MonitoringMetrics = {
-    workflowCount: 0, // Would be retrieved from Redis/analytics
+    workflowCount: 0, // Would be retrieved from session manager analytics
     successRate: 0, // Calculated from session manager data
     averageExecutionTime: 0, // From Inngest execution logs
     errorRate: 0, // From error tracking
@@ -200,7 +200,7 @@ async function handleMetricsRequest(request: Request): Promise<Response> {
       groq: process.env['GROQ_API_KEY'] ? 'healthy' : 'down',
     },
     systemHealth: {
-      redis: process.env['KV_REST_API_URL'] ? 'healthy' : 'down',
+      session: 'healthy', // Always healthy with in-memory storage
       inngest: process.env['INNGEST_SIGNING_KEY'] ? 'healthy' : 'down',
     },
   };
@@ -210,7 +210,7 @@ async function handleMetricsRequest(request: Request): Promise<Response> {
     timestamp: new Date().toISOString(),
     metrics: mockMetrics,
     period: '24 hours',
-    dataSource: 'Redis sessions + Inngest logs + error tracking',
+    dataSource: 'Session manager + Inngest logs + error tracking',
     realTimeUpdates: 'Available via SSE at /api/monitoring/stream',
   });
 }
@@ -265,10 +265,10 @@ async function handleDashboardRequest(request: Request): Promise<Response> {
   const dashboardData = {
     timestamp: new Date().toISOString(),
     overview: {
-      totalWorkflows: 0, // From Redis session count
-      activeWorkflows: 0, // From Redis active sessions
-      completedWorkflows: 0, // From Redis completed sessions
-      failedWorkflows: 0, // From Redis failed sessions
+      totalWorkflows: 0, // From session manager count
+      activeWorkflows: 0, // From session manager active sessions
+      completedWorkflows: 0, // From session manager completed sessions
+      failedWorkflows: 0, // From session manager failed sessions
     },
     performance: {
       averageExecutionTime: 0, // From Inngest logs
@@ -291,11 +291,11 @@ async function handleDashboardRequest(request: Request): Promise<Response> {
       },
     },
     infrastructure: {
-      redis: {
-        status: process.env['KV_REST_API_URL'] ? 'healthy' : 'down',
-        connectionCount: 0, // From Redis INFO
-        memoryUsage: 0, // From Redis INFO
-        hitRate: 0, // Cache hit rate
+      sessions: {
+        status: 'healthy', // Always healthy with in-memory storage
+        totalSessions: 0, // From session manager stats
+        memoryUsage: 0, // From session manager stats
+        cleanupRate: 0, // Cleanup frequency
       },
       inngest: {
         status: process.env['INNGEST_SIGNING_KEY'] ? 'healthy' : 'down',
@@ -343,7 +343,7 @@ async function handleMonitoringOverview(request: Request): Promise<Response> {
     ],
     integrations: [
       'Vercel Analytics',
-      'Upstash Redis metrics',
+      'Session manager metrics',
       'Inngest execution logs',
       'XAI and Groq API monitoring',
       'Custom error tracking',
@@ -493,8 +493,8 @@ function generateHealthRecommendations(checks: Record<string, any>): string[] {
         case 'aiProviders':
           recommendations.push('Check AI provider API keys and network connectivity');
           break;
-        case 'redis':
-          recommendations.push('Verify Redis/KV storage credentials and network access');
+        case 'sessions':
+          recommendations.push('Check session manager memory usage and cleanup processes');
           break;
         case 'inngest':
           recommendations.push('Check Inngest signing key and function registration');

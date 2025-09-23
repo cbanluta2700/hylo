@@ -29,8 +29,6 @@
     "@langchain/google-genai": "^0.2.18",
     "@langchain/groq": "^0.2.4",
     "@upstash/qstash": "^2.8.3",
-    "@upstash/redis": "^1.35.4",
-    "@upstash/vector": "^1.2.2",
     "ai": "^5.0.48",
     "dotenv": "^17.2.2",
     "exa-js": "^1.9.3",

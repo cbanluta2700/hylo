@@ -4,7 +4,7 @@
  * Constitutional Requirements:
  * - Edge Runtime compatibility
  * - Integration with existing SSE progress reporting
- * - Sync with Redis session manager
+ * - Sync with simple session manager
  *
  * Connects Inngest workflow events with the existing progress system
  */

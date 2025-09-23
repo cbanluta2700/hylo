@@ -73,49 +73,30 @@ export default async function handler(request: Request): Promise<Response> {
         progress: session.progress,
       });
 
-      // If completed, try to get the itinerary result
+      // If completed, get the itinerary result from session
       if (session.status === 'completed') {
         console.log(`🎉 [Get-Itinerary] Workflow completed - retrieving results`);
 
-        try {
-          const { Redis } = await import('@upstash/redis');
-          const redis = new Redis({
-            url: process.env['KV_REST_API_URL']!,
-            token: process.env['KV_REST_API_TOKEN']!,
-          });
+        // Get itinerary from session's itineraryResult field
+        const itinerary = session.itineraryResult || {
+          message: 'AI itinerary generation completed successfully!',
+          destination: session.formData?.location || 'Unknown',
+          status: 'Your personalized travel itinerary has been generated.',
+        };
 
-          const itineraryData = await redis.get(`itinerary:${workflowId}`);
-          const itinerary = itineraryData ? JSON.parse(itineraryData as string) : null;
+        console.log(`✅ [Get-Itinerary] Workflow completed for: ${workflowId}`, {
+          hasItineraryData: !!session.itineraryResult,
+          sessionStatus: session.status,
+        });
 
-          console.log(`✅ [Get-Itinerary] Workflow completed for: ${workflowId}`, {
-            hasItineraryData: !!itineraryData,
-            itinerarySize: itineraryData ? (itineraryData as string).length : 0,
-          });
-
-          return Response.json({
-            success: true,
-            workflowId,
-            status: 'completed',
-            progress: 100,
-            itinerary: itinerary || {
-              message: 'AI itinerary generation completed successfully!',
-              destination: session.formData?.location || 'Unknown',
-              status: 'Your personalized travel itinerary has been generated.',
-            },
-            processingTime: Date.now() - startTime,
-          });
-        } catch (error) {
-          console.error(`💥 [Get-Itinerary] Error retrieving itinerary:`, error);
-          return Response.json(
-            {
-              success: false,
-              error: 'Failed to retrieve completed itinerary',
-              debug: error instanceof Error ? error.message : 'Redis access error',
-              workflowId,
-            },
-            { status: 500 }
-          );
-        }
+        return Response.json({
+          success: true,
+          workflowId,
+          status: 'completed',
+          progress: 100,
+          itinerary,
+          processingTime: Date.now() - startTime,
+        });
       }
 
       // If still processing or other status

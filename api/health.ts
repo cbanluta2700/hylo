@@ -169,12 +169,7 @@ function checkEnvironmentVariables(): { success: boolean; missing: string[] } {
     'XAI_API_KEY',
     'GROQ_API_KEY',
     'INNGEST_EVENT_KEY',
-    // User's specific Upstash Redis/KV configuration
-    'KV_REST_API_URL',
-    'KV_REST_API_TOKEN',
-    // Upstash Vector Database
-    'UPSTASH_VECTOR_REST_URL',
-    'UPSTASH_VECTOR_REST_TOKEN',
+    // Search API Keys
     'TAVILY_API_KEY',
     'EXA_API_KEY',
     'SERP_API_KEY',
