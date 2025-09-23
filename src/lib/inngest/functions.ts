@@ -94,7 +94,7 @@ export const generateItineraryFunction = inngest.createFunction(
         const result = await gathererAgent.gatherInformation({
           workflowId,
           destination: formData.location,
-          itineraryStructure: architecture.itineraryStructure,
+          itineraryStructure: architecture.itineraryStructure as any,
           interests: formData.interests,
           budget: formData.budget,
           travelStyle: formData.travelStyle,
@@ -123,8 +123,8 @@ export const generateItineraryFunction = inngest.createFunction(
 
         const result = await specialistAgent.processRecommendations({
           workflowId,
-          architecture,
-          gatheredInfo,
+          architecture: architecture as any,
+          gatheredInfo: gatheredInfo as any,
           userPreferences: {
             interests: formData.interests,
             avoidances: formData.avoidances,
@@ -157,9 +157,9 @@ export const generateItineraryFunction = inngest.createFunction(
         const result = await formatterAgent.formatItinerary({
           workflowId,
           formData,
-          architecture,
-          gatheredInfo,
-          processedRecommendations,
+          architecture: architecture as any,
+          gatheredInfo: gatheredInfo as any,
+          processedRecommendations: processedRecommendations as any,
         });
 
         console.log('✅ [103] Formatter Agent: Itinerary formatting completed', {

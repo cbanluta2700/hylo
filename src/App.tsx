@@ -12,13 +12,13 @@ function App() {
     departDate: '',
     returnDate: '',
     flexibleDates: false,
-    adults: '', // Empty string instead of number
-    children: '', // Empty string instead of number
+    adults: 2, // Empty string instead of number
+    children: 0, // Empty string instead of number
     childrenAges: [],
-    budget: '', // Empty string instead of number
-    currency: '', // Empty string instead of Currency type
+    budget: 5000, // Empty string instead of number
+    currency: 'USD', // Empty string instead of Currency type
     flexibleBudget: false,
-    budgetMode: '', // Empty string instead of BudgetMode type
+    budgetMode: 'total', // Empty string instead of BudgetMode type
     travelStyleChoice: 'not-selected',
     travelStyleAnswers: {},
     // Additional fields for new components
