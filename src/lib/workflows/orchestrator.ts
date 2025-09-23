@@ -57,7 +57,7 @@ export class WorkflowOrchestrator {
       console.log('🚀 [72c] Starting direct AI workflow execution');
 
       // Import the workflow function and execute it directly
-      const { executeWorkflowDirectly } = await import('../../../src/inngest/direct-workflow');
+      const { executeWorkflowDirectly } = await import('../../../src/inngest/direct-workflow.js');
 
       // Execute the workflow in the background (don't await)
       executeWorkflowDirectly({

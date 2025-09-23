@@ -10,12 +10,12 @@
  */
 
 import { Inngest } from 'inngest';
-import { sessionManager } from '../lib/workflows/session-manager';
-import { architectAgent } from '../lib/ai-agents/architect-agent';
-import { gathererAgent } from '../lib/ai-agents/gatherer-agent';
-import { specialistAgent } from '../lib/ai-agents/specialist-agent';
-import { formatterAgent } from '../lib/ai-agents/formatter-agent';
-import type { TravelFormData } from '../types/travel-form';
+import { sessionManager } from '../lib/workflows/session-manager.js';
+import { architectAgent } from '../lib/ai-agents/architect-agent.js';
+import { gathererAgent } from '../lib/ai-agents/gatherer-agent.js';
+import { specialistAgent } from '../lib/ai-agents/specialist-agent.js';
+import { formatterAgent } from '../lib/ai-agents/formatter-agent.js';
+import type { TravelFormData } from '../types/travel-form.js';
 
 // Create Inngest client instance
 export const inngest = new Inngest({
