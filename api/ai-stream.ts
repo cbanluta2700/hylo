@@ -10,7 +10,14 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   try {
-    const { workflowId, step, prompt, model } = await request.json();
+    const body = (await request.json()) as {
+      workflowId: string;
+      step: string;
+      prompt: string;
+      model: string;
+    };
+
+    const { workflowId, step, prompt, model } = body;
 
     console.log(`🔄 [AI-STREAM] Starting ${step} with ${model}`);
 
@@ -34,18 +41,10 @@ export default async function handler(request: Request): Promise<Response> {
       temperature: 0.7,
     });
 
-    // Return streaming response
-    return result.toDataStreamResponse({
-      onStart: () => {
-        console.log(`🚀 [AI-STREAM] ${model} started for ${step}`);
-      },
-      onToken: (token) => {
-        console.log(`📝 [AI-STREAM] ${model}: ${token}`);
-      },
-      onCompletion: (completion) => {
-        console.log(`✅ [AI-STREAM] ${model} completed ${step}:`, completion.slice(0, 100) + '...');
-      },
-    });
+    console.log(`🚀 [AI-STREAM] ${model} started for ${step}`);
+
+    // Return the streaming response directly
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('❌ [AI-STREAM] Error:', error);
     return Response.json(
