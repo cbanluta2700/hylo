@@ -7,18 +7,19 @@
 
 ```
 1. Load plan.md from feature directory
-   → Tech stack: React 18.3.1 + TypeScript 5.5.3 + Vite + Inngest 3.41.0
+   → Tech stack: React 18.3.1 + TypeScript 5.5.3 + Vite + Upstash QStash/Workflow 2.7.9
    → Backend: Vercel Edge Functions (max 10 functions)
    → AI: Multi-LLM (XAI Grok + Groq + GPT-OSS) with 4-agent workflow
+   → Search: Upstash Search for destination data + vector similarity
 2. Load design documents:
    → data-model.md: 8 entities (WorkflowSession, TravelFormData, etc.)
    → contracts/: 6 API endpoints with Edge Runtime config
-   → research.md: AI providers, Redis + SSE pattern, search integrations
+   → research.md: AI providers, Redis + QStash pattern, Upstash Search integration
 3. Generate tasks by 5-phase implementation plan:
    → Phase 1: Dependencies & Environment Setup
    → Phase 2: Vite Configuration & Deployment
    → Phase 3: Form Data Integration
-   → Phase 4: Inngest AI Workflow Implementation
+   → Phase 4: Upstash QStash AI Workflow Implementation
    → Phase 5: Itinerary Display Components
 4. Apply constitutional requirements:
    → Edge Runtime compatibility (no Node.js built-ins)
@@ -36,11 +37,11 @@
 
 - **[1-5]** Form Aggregation & Validation (Phase 3 → Phase 4 bridge)
 - **[21-39]** API Request Processing (`/api/itinerary/generate`)
-- **[40-49]** Infrastructure Initialization (Inngest, Redis, AI Providers)
+- **[40-49]** Infrastructure Initialization (QStash, Redis, Search, AI Providers)
 - **[50-69]** AI Provider Setup & Management
-- **[70-79]** Workflow Orchestration & Progress
+- **[70-79]** QStash Workflow Orchestration & Progress
 - **[80-99]** AI Agent Execution (Architect, Gatherer, Specialist, Formatter)
-- **[100-150]** Supporting Systems (Vector, Search, Monitoring, API endpoints)
+- **[100-150]** Supporting Systems (Vector, Upstash Search, Monitoring, API endpoints)
 
 **Usage**: These numbers appear in console.log statements to track data flow from form submission through AI workflow completion.
 
@@ -61,16 +62,16 @@
   npm install @ai-sdk/xai@2.0.20 @ai-sdk/groq@2.0.20
 ````
 
-- [x] T002 [P] Install Inngest workflow orchestration package
+- [x] T002 [P] Install Upstash QStash workflow orchestration package
 
   ```bash
-  npm install inngest@3.41.0
+  npm install @upstash/qstash@2.7.9
   ```
 
-- [x] T003 [P] Install Upstash Redis and Vector clients for state management
+- [x] T003 [P] Install Upstash Redis, Vector, and Search clients for state management
 
   ```bash
-  npm install @upstash/redis @upstash/vector
+  npm install @upstash/redis @upstash/vector @upstash/search
   ```
 
 - [x] T004 [P] Install search provider integrations
@@ -82,10 +83,11 @@
 - [x] T005 [P] Configure environment variables in `src/lib/config/env.ts`
 
   - XAI_API_KEY, GROQ_API_KEY for AI providers
-  - INNGEST_EVENT_KEY for workflow orchestration
+  - QSTASH_URL, QSTASH_TOKEN for workflow orchestration
   - UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN for state storage
   - UPSTASH_VECTOR_REST_URL, UPSTASH_VECTOR_REST_TOKEN for embeddings
-  - TAVILY_API_KEY, EXA_API_KEY, SERP_API_KEY for search
+  - UPSTASH_SEARCH_REST_URL, UPSTASH_SEARCH_REST_TOKEN for destination search
+  - TAVILY_API_KEY, EXA_API_KEY, SERP_API_KEY for external search
 
 - [x] T006 [P] Update TypeScript config for strict mode compliance in `tsconfig.json`
 
@@ -167,85 +169,87 @@
   - Verify cross-field validation rules
   - Test edge cases and malformed data handling
 
-## Phase 4: Inngest AI Workflow Implementation
+## Phase 4: Upstash QStash AI Workflow Implementation
 
 ### T019-T031: 4-Agent Workflow System
 
-- [x] T019 [P] Create Inngest client configuration in `src/lib/inngest/client.ts` **[40-44]**
+- [ ] T019 [P] Create QStash client configuration in `src/lib/qstash/client.ts` **[40-44]**
 
-  - Initialize Inngest with proper event signing
+  - Initialize QStash Client with URL and token
   - Configure Edge Runtime compatibility
   - Set up development/production environment handling
 
-- [x] T020 [P] Implement WorkflowSession Redis management in `src/lib/workflows/session-manager.ts` **[45-48]**
+- [ ] T020 [P] Implement WorkflowSession Redis management in `src/lib/workflows/session-manager.ts` **[45-48]**
 
   - Create, update, and retrieve workflow state from Redis
   - Handle session expiration and cleanup
   - Implement progress tracking with atomic updates
 
-- [x] T021 [P] Create AI provider client setup in `src/lib/ai-clients/providers.ts` **[50-61]**
+- [ ] T021 [P] Create AI provider client setup in `src/lib/ai-clients/providers.ts` **[50-61]**
 
   - Initialize XAI Grok client for reasoning tasks
   - Set up Groq client for information gathering
   - Configure GPT-OSS client for form processing
   - Add error handling and retry logic
 
-- [x] T022 [P] Implement Itinerary Architect agent in `src/lib/ai-agents/architect-agent.ts` **[80-86]**
+- [ ] T022 [P] Implement Itinerary Architect agent in `src/lib/ai-agents/architect-agent.ts` **[80-86]**
 
   - Create trip structure and framework planning
   - Use XAI Grok-4-Fast-Reasoning model
   - Generate daily schedule templates and budget allocation
 
-- [x] T023 [P] Implement Web Information Gatherer agent in `src/lib/ai-agents/gatherer-agent.ts` **[87-93]**
+- [ ] T023 [P] Implement Web Information Gatherer agent with Upstash Search in `src/lib/ai-agents/gatherer-agent.ts` **[87-93]**
 
   - Search and collect destination data using Tavily/Exa/SERP
+  - Use Upstash Search for cached destination information
   - Use Groq Compound model for fast information processing
-  - Gather activity, restaurant, and accommodation data
+  - Store results in Upstash Search for future queries
 
-- [x] T024 [P] Implement Information Specialist agent in `src/lib/ai-agents/specialist-agent.ts` **[94-99]**
+- [ ] T024 [P] Implement Information Specialist agent in `src/lib/ai-agents/specialist-agent.ts` **[94-99]**
 
   - Process and refine gathered travel data
   - Use XAI Grok-4-Fast-Reasoning for data analysis
   - Filter and rank recommendations based on user preferences
 
-- [x] T025 [P] Implement Form Putter agent in `src/lib/ai-agents/formatter-agent.ts` **[100-105]**
+- [ ] T025 [P] Implement Form Putter agent in `src/lib/ai-agents/formatter-agent.ts` **[100-105]**
 
   - Format final itinerary output using GPT-OSS-20B
   - Structure data according to GeneratedItinerary interface
   - Ensure proper budget calculations and feasibility
 
-- [x] T026 [P] Create main workflow orchestration in `src/lib/workflows/orchestrator.ts` **[70-79]**
+- [ ] T026 [P] Create main QStash workflow orchestration in `src/lib/workflows/orchestrator.ts` **[70-79]**
 
-  - Coordinate all 4 AI agents in sequence
+  - Coordinate all 4 AI agents using QStash HTTP calls
   - Update Redis state at each step
   - Handle agent failures with retry logic
   - Emit progress events for real-time updates
 
-- [x] T027 [P] Implement Server-Sent Events for progress updates in `api/itinerary/progress-simple.ts` **[106-110]**
+- [ ] T027 [P] Implement Server-Sent Events for progress updates in `api/itinerary/progress-simple.ts` **[106-110]**
 
   - Stream workflow progress to frontend
   - Connect Redis state changes to SSE events
   - Handle client disconnections gracefully
 
-- [x] T028 [P] Create workflow error handling in `src/lib/workflows/orchestrator.ts` **[75-79]**
+- [ ] T028 [P] Create workflow error handling in `src/lib/workflows/orchestrator.ts` **[75-79]**
 
   - Comprehensive error boundaries for AI failures
   - Retry logic for transient service issues
   - Graceful degradation strategies
 
-- [x] T029 [P] Implement search provider integration in `src/lib/ai-agents/gatherer-agent.ts` **[88-92]**
+- [ ] T029 [P] Implement Upstash Search integration in `src/lib/search/destination-search.ts` **[88-92]**
 
-  - Tavily client for travel-specific searches
-  - Exa client for semantic travel queries
-  - SERP client as fallback for general information
+  - Store destination data in Upstash Search index
+  - Enable semantic similarity search for recommendations
+  - Cache frequently searched destinations
+  - Integrate with external search providers as fallback
 
-- [x] T030 [P] Create vector storage for embeddings in `src/lib/vector/VectorStorageManager.ts` **[111-115]**
+- [ ] T030 [P] Create vector storage for embeddings in `src/lib/vector/VectorStorageManager.ts` **[111-115]**
 
   - Store and retrieve travel destination embeddings
   - Enable similarity search for recommendations
   - Optimize for fast retrieval during AI processing
 
-- [x] T031 [P] Implement workflow monitoring and logging in `src/lib/workflows/orchestrator.ts` **[76-79]**
+- [ ] T031 [P] Implement workflow monitoring and logging in `src/lib/workflows/orchestrator.ts` **[76-79]**
   - Track AI agent performance metrics
   - Log token usage and costs
   - Monitor workflow success rates
@@ -254,52 +258,52 @@
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
-- [x] T032 [P] Contract test POST /api/itinerary/generate in `tests/contract/generate-itinerary.test.ts` **[116-120]**
+- [ ] T032 [P] Contract test POST /api/itinerary/generate in `tests/contract/generate-itinerary.test.ts` **[116-120]**
 
   - Test request/response schema validation
-  - Verify workflow initiation logic
+  - Verify QStash workflow initiation logic
   - Ensure proper error handling for invalid inputs
 
-- [x] T033 [P] Contract test GET /api/itinerary/progress/:workflowId in `tests/contract/progress-stream.test.ts` **[121-125]**
+- [ ] T033 [P] Contract test GET /api/itinerary/progress/:workflowId in `tests/contract/progress-stream.test.ts` **[121-125]**
 
   - Test Server-Sent Events stream format
   - Verify progress update broadcasting
   - Ensure proper connection handling
 
-- [x] T034 [P] Contract test GET /api/itinerary/:itineraryId in `tests/contract/get-itinerary.test.ts` **[126-130]**
+- [ ] T034 [P] Contract test GET /api/itinerary/:itineraryId in `tests/contract/get-itinerary.test.ts` **[126-130]**
 
   - Test itinerary retrieval and formatting
   - Verify data structure compliance
   - Ensure proper 404 handling for missing itineraries
 
-- [x] T035 [P] Integration test complete workflow in `tests/contract/end-to-end-workflow.test.ts` **[131-135]**
+- [ ] T035 [P] Integration test complete QStash workflow in `tests/contract/end-to-end-workflow.test.ts` **[131-135]**
   - Test full form submission to itinerary generation
-  - Verify all 4 AI agents execute correctly
+  - Verify all 4 AI agents execute correctly via QStash
   - Validate real-time progress updates
 
 ### T036-T039: Core API Implementation (ONLY after tests are failing)
 
-- [x] T036 Implement POST /api/itinerary/generate endpoint in `api/itinerary/generate.ts` **[21-37]**
+- [ ] T036 Implement POST /api/itinerary/generate endpoint in `api/itinerary/generate.ts` **[21-37]**
 
   - Validate TravelFormData using Zod schemas
   - Create WorkflowSession in Redis
-  - Trigger Inngest workflow with form data
+  - Trigger QStash workflow with form data
   - Export Edge Runtime configuration
 
-- [x] T037 Implement GET /api/itinerary/progress/[workflowId].ts for SSE streaming **[136-140]**
+- [ ] T037 Implement GET /api/itinerary/progress/[workflowId].ts for SSE streaming **[136-140]**
 
   - Stream workflow progress updates from Redis
   - Handle client connections and disconnections
   - Ensure proper SSE headers and formatting
 
-- [x] T038 Implement GET /api/itinerary/get-itinerary.ts for result retrieval **[141-145]**
+- [ ] T038 Implement GET /api/itinerary/get-itinerary.ts for result retrieval **[141-145]**
 
   - Retrieve completed itinerary from Redis/storage
   - Format according to GeneratedItinerary interface
   - Handle expiration and not-found cases
 
-- [x] T039 Implement Inngest webhook endpoint in `api/inngest/webhook.ts` **[146-150]**
-  - Handle Inngest workflow execution callbacks
+- [ ] T039 Implement QStash webhook endpoint for workflow callbacks in `api/qstash/webhook.ts` **[146-150]**
+  - Handle QStash workflow execution callbacks
   - Ensure proper authentication and validation
   - Export Edge Runtime configuration
 
