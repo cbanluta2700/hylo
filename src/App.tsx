@@ -58,6 +58,7 @@ function App() {
   const [generatedItinerary, setGeneratedItinerary] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string>('');
+  const [workflowId, setWorkflowId] = useState<string>('');
   const itineraryRef = useRef<HTMLDivElement>(null);
 
   // Test API endpoints on app load
@@ -166,6 +167,9 @@ function App() {
 
           const result = await apiResponse.json();
           console.log('✅ [9] App: AI workflow initiated successfully', result);
+
+          // Store the workflow ID for polling
+          setWorkflowId(result.workflowId);
 
           setGeneratedItinerary(`
 # 🎉 AI Itinerary Generation Started!
@@ -349,6 +353,7 @@ ${error instanceof Error ? error.message : 'Unknown error occurred'}
             {(isGenerating || generatedItinerary || generationError) && (
               <ItineraryDisplay
                 formData={transformedFormData}
+                workflowId={workflowId}
                 isLoading={isGenerating}
                 error={generationError}
               />
