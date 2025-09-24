@@ -31,100 +31,112 @@ export default async function handler(request: Request): Promise<Response> {
     });
 
     // Step 1: Architecture Planning with XAI Grok-4
-    console.log('🏗️ [AI-WORKFLOW] Step 1: Architecture planning with XAI Grok-4');
-
-    const architectureResult = await streamText({
-      model: xai('grok-4-fast-reasoning-latest'),
-      system: 'You are a travel architecture planner. Create a detailed travel plan structure.',
-      prompt: `Create a ${formData.plannedDays}-day travel itinerary architecture for ${
-        formData.location
-      }. 
-               Travelers: ${formData.adults} adults, ${formData.children || 0} children.
-               Budget: $${formData.budget?.total || 1000}
-               Interests: ${formData.interests?.join(', ') || 'general sightseeing'}
-               
-               Provide a structured daily plan with themes, timing, and logistics.`,
-      temperature: 0.7,
-    });
-
-    const architecture = await architectureResult.text;
-    console.log('✅ [AI-WORKFLOW] Step 1 completed');
+    let architecture = '';
+    let architectureResult: any = null;
+    try {
+      const architecturePrompt =
+        "Create a " + formData.plannedDays + "-day travel itinerary architecture for " + formData.location + ". " +
+        "Travelers: " + formData.adults + " adults, " + (formData.children || 0) + " children. " +
+        "Budget: $" + (formData.budget?.total || 1000) + ". " +
+        "Interests: " + (formData.interests?.join(', ') || 'general sightseeing') + ". " +
+        "Provide a structured daily plan with themes, timing, and logistics.";
+      architectureResult = await streamText({
+        model: xai('grok-4-fast-reasoning-latest'),
+        system: 'You are a travel architecture planner. Create a detailed travel plan structure.',
+        prompt: architecturePrompt,
+        temperature: 0.7,
+      });
+      architecture = await architectureResult.text;
+      console.log('✅ [AI-WORKFLOW] Step 1 completed:', architecture?.slice(0, 200));
+    } catch (err) {
+      console.error('❌ [AI-WORKFLOW] Step 1 AI SDK error:', err, architectureResult);
+      return Response.json({ success: false, error: 'AI workflow failed', details: 'Step 1 (architecture) failed', sdkError: String(err), sdkResponse: architectureResult }, { status: 500 });
+    }
 
     // Step 2: Information Gathering with OpenAI GPT-OSS-120B
-    console.log('🌐 [AI-WORKFLOW] Step 2: Information gathering with OpenAI GPT-OSS-120B');
-
-    const gatheringResult = await streamText({
-      model: openai('gpt-oss-120b'),
-      system: 'You are a travel research specialist. Find specific attractions and activities.',
-      prompt: `Based on this architecture: ${architecture.slice(0, 500)}...
-               
-               Research and find specific:
-               - Attractions and landmarks in ${formData.location}
-               - Restaurants and local cuisine
-               - Transportation options
-               - Cultural activities
-               - Practical travel tips
-               
-               Focus on ${formData.interests?.join(', ') || 'popular attractions'}.`,
-      temperature: 0.6,
-    });
-
-    const gatheredInfo = await gatheringResult.text;
-    console.log('✅ [AI-WORKFLOW] Step 2 completed');
+    let gatheredInfo = '';
+    let gatheringResult: any = null;
+    try {
+      const gatheringPrompt =
+        "Based on this architecture: " + architecture.slice(0, 500) + "... " +
+        "Research and find specific: " +
+        "- Attractions and landmarks in " + formData.location + " " +
+        "- Restaurants and local cuisine " +
+        "- Transportation options " +
+        "- Cultural activities " +
+        "- Practical travel tips " +
+        "Focus on " + (formData.interests?.join(', ') || 'popular attractions') + ".";
+      gatheringResult = await streamText({
+        model: openai('gpt-oss-120b'),
+        system: 'You are a travel research specialist. Find specific attractions and activities.',
+        prompt: gatheringPrompt,
+        temperature: 0.6,
+      });
+      gatheredInfo = await gatheringResult.text;
+      console.log('✅ [AI-WORKFLOW] Step 2 completed:', gatheredInfo?.slice(0, 200));
+    } catch (err) {
+      console.error('❌ [AI-WORKFLOW] Step 2 AI SDK error:', err, gatheringResult);
+      return Response.json({ success: false, error: 'AI workflow failed', details: 'Step 2 (gathering) failed', sdkError: String(err), sdkResponse: gatheringResult }, { status: 500 });
+    }
 
     // Step 3: Specialist Processing with OpenAI GPT-OSS-120B
-    console.log('👨‍💼 [AI-WORKFLOW] Step 3: Specialist curation with OpenAI GPT-OSS-120B');
-
-    const specialistResult = await streamText({
-      model: openai('gpt-oss-120b'),
-      system: 'You are a travel specialist. Curate personalized recommendations.',
-      prompt: `Architecture: ${architecture.slice(0, 300)}...
-               Research: ${gatheredInfo.slice(0, 500)}...
-               
-               Curate the best recommendations for:
-               - ${formData.adults} adults traveling to ${formData.location}
-               - Budget: $${formData.budget?.total || 1000}
-               - Interests: ${formData.interests?.join(', ') || 'general'}
-               
-               Select the most suitable activities, restaurants, and experiences.`,
-      temperature: 0.5,
-    });
-
-    const curatedRecommendations = await specialistResult.text;
-    console.log('✅ [AI-WORKFLOW] Step 3 completed');
+    let curatedRecommendations = '';
+    let specialistResult: any = null;
+    try {
+      const specialistPrompt =
+        "Architecture: " + architecture.slice(0, 300) + "... " +
+        "Research: " + gatheredInfo.slice(0, 500) + "... " +
+        "Curate the best recommendations for: " +
+        "- " + formData.adults + " adults traveling to " + formData.location + " " +
+        "- Budget: $" + (formData.budget?.total || 1000) + " " +
+        "- Interests: " + (formData.interests?.join(', ') || 'general') + " " +
+        "Select the most suitable activities, restaurants, and experiences.";
+      specialistResult = await streamText({
+        model: openai('gpt-oss-120b'),
+        system: 'You are a travel specialist. Curate personalized recommendations.',
+        prompt: specialistPrompt,
+        temperature: 0.5,
+      });
+      curatedRecommendations = await specialistResult.text;
+      console.log('✅ [AI-WORKFLOW] Step 3 completed:', curatedRecommendations?.slice(0, 200));
+    } catch (err) {
+      console.error('❌ [AI-WORKFLOW] Step 3 AI SDK error:', err, specialistResult);
+      return Response.json({ success: false, error: 'AI workflow failed', details: 'Step 3 (specialist) failed', sdkError: String(err), sdkResponse: specialistResult }, { status: 500 });
+    }
 
     // Step 4: Final Formatting with XAI Grok-4 (non-reasoning)
-    console.log('✨ [AI-WORKFLOW] Step 4: Final formatting with XAI Grok-4');
-
-    const formattingResult = await streamText({
-      model: xai('grok-4-fast-non-reasoning-latest'),
-      system: 'You are a travel itinerary formatter. Create beautiful, structured itineraries.',
-      prompt: `Create a final, beautifully formatted travel itinerary:
-               
-               Architecture: ${architecture.slice(0, 200)}...
-               Research: ${gatheredInfo.slice(0, 200)}...  
-               Recommendations: ${curatedRecommendations.slice(0, 300)}...
-               
-               Format as a complete itinerary with:
-               - Trip title and summary
-               - Day-by-day schedule with times
-               - Restaurant recommendations
-               - Transportation tips
-               - Total estimated costs
-               - Packing suggestions
-               
-               Location: ${formData.location}
-               Duration: ${formData.plannedDays} days
-               Travelers: ${formData.adults} adults`,
-      temperature: 0.3,
-    });
-
-    const finalItinerary = await formattingResult.text;
-    console.log('✅ [AI-WORKFLOW] Step 4 completed');
+    let finalItinerary = '';
+    let formattingResult: any = null;
+    try {
+      const formattingPrompt =
+        "Create a final, beautifully formatted travel itinerary: " +
+        "Architecture: " + architecture.slice(0, 200) + "... " +
+        "Research: " + gatheredInfo.slice(0, 200) + "... " +
+        "Recommendations: " + curatedRecommendations.slice(0, 300) + "... " +
+        "Format as a complete itinerary with: " +
+        "- Trip title and summary " +
+        "- Day-by-day schedule with times " +
+        "- Restaurant recommendations " +
+        "- Transportation tips " +
+        "- Total estimated costs " +
+        "- Packing suggestions " +
+        "Location: " + formData.location + " " +
+        "Duration: " + formData.plannedDays + " days " +
+        "Travelers: " + formData.adults + " adults.";
+      formattingResult = await streamText({
+        model: xai('grok-4-fast-non-reasoning-latest'),
+        system: 'You are a travel itinerary formatter. Create beautiful, structured itineraries.',
+        prompt: formattingPrompt,
+        temperature: 0.3,
+      });
+      finalItinerary = await formattingResult.text;
+      console.log('✅ [AI-WORKFLOW] Step 4 completed:', finalItinerary?.slice(0, 200));
+    } catch (err) {
+      console.error('❌ [AI-WORKFLOW] Step 4 AI SDK error:', err, formattingResult);
+      return Response.json({ success: false, error: 'AI workflow failed', details: 'Step 4 (formatting) failed', sdkError: String(err), sdkResponse: formattingResult }, { status: 500 });
+    }
 
     // Return the complete itinerary
-    console.log('🎉 [AI-WORKFLOW] Multi-AI workflow completed successfully!');
-
     return Response.json({
       success: true,
       workflowId,
