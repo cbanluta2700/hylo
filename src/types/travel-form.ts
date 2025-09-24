@@ -56,6 +56,7 @@ export interface TravelFormData {
   travelExperience: 'first-time' | 'experienced' | 'expert';
   dinnerChoice: 'fine-dining' | 'local-spots' | 'street-food' | 'mixed';
   nickname?: string;
+  name?: string;
 
   // Additional Services
   additionalServices: {

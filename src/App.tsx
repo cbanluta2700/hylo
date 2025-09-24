@@ -119,7 +119,24 @@ function App() {
       const { validateTravelFormData } = await import('./schemas/ai-workflow-schemas');
 
       console.log('🔄 Testing form data transformation...');
-      const transformedData = transformExistingFormDataToWorkflow(formData);
+      
+      // Enhanced form data with trip nickname and contact info
+      const enhancedFormData = {
+        ...formData,
+        tripNickname,
+        contactInfo,
+        travelStyleAnswers: {
+          ...formData.travelStyleAnswers,
+          tripNickname: [tripNickname],
+          contactInfo: [contactInfo],
+          experience: selectedExperience,
+          vibes: selectedVibes,
+          sampleDays: selectedSampleDays,
+          dinnerChoices: dinnerChoices,
+        }
+      };
+      
+      const transformedData = transformExistingFormDataToWorkflow(enhancedFormData);
       console.log('✅ Transformed TravelFormData:', transformedData);
       console.log('🔍 CRITICAL: Planned days calculation:', {
         originalPlannedDays: formData.plannedDays,

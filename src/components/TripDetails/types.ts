@@ -47,6 +47,7 @@ export type FormData = Omit<
 
   // Simplified Contact Information (T001)
   tripNickname?: string;
+  contactInfo?: any;
   contactName?: string;
   contactEmail?: string;
 };
