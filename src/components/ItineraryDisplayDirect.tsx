@@ -340,7 +340,7 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
       setTipsError('');
       
       try {
-        console.log('🎯 [TIPS] Generating personalized travel tips...');
+        console.log('🎯 [TIPS] Checking if tips need generation...');
         
         const response = await fetch('/api/itinerary/generate-tips', {
           method: 'POST',
@@ -354,8 +354,12 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
         const result = await response.json() as any;
         
         if (result.success) {
-          setTips(result.tips);
-          console.log('✅ [TIPS] Personalized tips generated');
+          if (result.skipped) {
+            console.log('✅ [TIPS] Tips already included in itinerary - using extracted tips');
+          } else {
+            setTips(result.tips);
+            console.log('✅ [TIPS] Personalized tips generated');
+          }
         } else {
           setTipsError('Failed to generate tips');
           console.error('❌ [TIPS] Generation failed:', result.error);

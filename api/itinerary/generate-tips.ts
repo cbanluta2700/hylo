@@ -16,12 +16,24 @@ export default async function handler(request: Request): Promise<Response> {
   try {
     const { formData, aiItinerary } = await request.json() as any;
 
-    console.log('🎯 [TIPS-API] Starting personalized tips generation:', {
+    console.log('🎯 [TIPS-API] Checking if tips already included in itinerary:', {
       location: formData?.location,
       duration: aiItinerary?.duration,
-      travelers: formData?.adults,
-      budget: formData?.budget?.total,
+      contentLength: aiItinerary?.content?.length,
+      hasGeneralTips: aiItinerary?.content?.includes('General Tips'),
     });
+
+    // Check if tips are already included in the itinerary
+    if (aiItinerary?.content?.includes('General Tips') || aiItinerary?.content?.includes('Final Tips')) {
+      console.log('✅ [TIPS-API] Tips already included in itinerary - skipping generation');
+      return Response.json({
+        success: true,
+        tips: 'Tips already included in main itinerary',
+        generatedBy: 'Extracted from main itinerary (2-phase generation)',
+        generatedAt: new Date().toISOString(),
+        skipped: true,
+      });
+    }
 
     // Initialize XAI client
     const xai = createXai({
