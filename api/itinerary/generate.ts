@@ -4,7 +4,7 @@ import { createXai } from '@ai-sdk/xai';
 export const config = { runtime: 'edge' };
 
 export default async function handler(request: Request): Promise<Response> {
-  console.log('🚀 [GENERATE] Direct XAI workflow - bypassing corrupted ai-workflow.ts');
+  console.log('🚀 [GENERATE] Streamlined XAI workflow - Single optimized generation');
 
   if (request.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
@@ -15,15 +15,13 @@ export default async function handler(request: Request): Promise<Response> {
     const formData = body.formData || body; // Handle both nested and direct form data
     const workflowId = `wf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    console.log('🚀 [GENERATE] Starting XAI workflow:', {
+    console.log('🚀 [GENERATE] Starting streamlined XAI workflow:', {
       workflowId: workflowId.substring(0, 15) + '...',
-      sessionId: body.sessionId,
-      rawBodyKeys: Object.keys(body),
       location: formData.location,
       plannedDays: formData.plannedDays,
     });
 
-    // Extract and validate form data with improved date calculation
+    // Extract and validate form data with better date calculation
     const location = formData.location || 'Unknown Destination';
     let plannedDays = formData.plannedDays;
     
@@ -43,13 +41,9 @@ export default async function handler(request: Request): Promise<Response> {
     plannedDays = plannedDays || 3;
     const adults = formData.adults || 2;
     const budget = formData.budget?.total || formData.budget || 1000;
+    const interests = formData.interests || [];
 
-    console.log('🔍 [GENERATE] Extracted form data:', {
-      location,
-      plannedDays,
-      adults,
-      budget,
-    });
+    console.log('🔍 [GENERATE] Extracted form data:', { location, plannedDays, adults, budget });
 
     // Initialize XAI client
     const xai = createXai({
@@ -57,26 +51,51 @@ export default async function handler(request: Request): Promise<Response> {
       baseURL: 'https://api.x.ai/v1',
     });
 
-    // Create optimized prompt with formatting instructions
-    const comprehensivePrompt =
-      `Create a ${plannedDays}-day travel itinerary for ${location} for ${adults} adults. ` +
-      `Budget: $${budget}. ` +
-      `FORMAT: Start directly with Day 1 (no overview). Use bullet points for activities with times. ` +
-      `Include restaurant recommendations, transportation tips, estimated costs. ` +
-      `End with "General Tips" section covering weather, money, culture, transportation, safety. ` +
-      `Make it specific to ${location} and exactly ${plannedDays} days. Be practical and structured.`;
+    // Single optimized prompt for clean, parseable output
+    const optimizedPrompt = `
+Create a ${plannedDays}-day travel itinerary for ${location} for ${adults} adults with $${budget} budget.
 
-    console.log('🤖 [GENERATE] Using prompt:', comprehensivePrompt.substring(0, 150) + '...');
+REQUIREMENTS:
+- Start directly with Day 1 (no overview or introduction)
+- Format each day as: "Day X: [Title]" followed by activities
+- Use bullet points for all activities with specific times
+- Include costs, restaurants, and practical details
+- End with "General Tips" section with travel advice
+
+INTERESTS: ${interests.join(', ') || 'general sightseeing'}
+
+FORMAT EXAMPLE:
+Day 1: Arrival and [Theme]
+• **9:00 AM - Activity**: Description with cost
+• **12:00 PM - Lunch**: Restaurant name ($cost)
+• **2:00 PM - Activity**: Description with details
+
+Day 2: [Theme]
+• **Morning activities**
+• **Afternoon activities** 
+• **Evening activities**
+
+General Tips:
+• Weather & Packing: [advice]
+• Money & Budget: [advice]
+• Culture & Etiquette: [advice]
+• Transportation: [advice]
+• Safety: [advice]
+
+Keep it concise, practical, and ${location}-specific.
+    `.trim();
+
+    console.log('🤖 [GENERATE] Using optimized single-phase generation...');
     
     const result = await streamText({
       model: xai('grok-4-fast-non-reasoning-latest'),
-      system: 'You are a travel planner. Create practical, detailed itineraries with schedules, restaurants, and costs.',
-      prompt: comprehensivePrompt,
-      temperature: 0.7,
+      system: 'You are a travel planner. Create clean, structured itineraries with bullet points, specific times, costs, and practical tips. Start directly with Day 1, no introductions.',
+      prompt: optimizedPrompt,
+      temperature: 0.6,
     });
 
     const itinerary = await result.text;
-    console.log('✅ [GENERATE] Complete itinerary generated:', itinerary?.slice(0, 200));
+    console.log('✅ [GENERATE] Itinerary generated, length:', itinerary?.length);
 
     if (!itinerary || itinerary.length < 100) {
       throw new Error('Generated itinerary is too short or empty');
@@ -93,7 +112,7 @@ export default async function handler(request: Request): Promise<Response> {
         duration: plannedDays,
         travelers: adults,
         content: itinerary,
-        generatedBy: 'XAI Grok-4 Fast (Non-Reasoning)',
+        generatedBy: 'XAI Grok-4 Fast (Optimized Single-Phase)',
         completedAt: new Date().toISOString(),
       },
     });
