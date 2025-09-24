@@ -3,8 +3,9 @@ import TripDetails from './components/TripDetails';
 import { FormData } from './components/TripDetails/types';
 import ConditionalTravelStyle from './components/ConditionalTravelStyle';
 import { TravelStyleChoice } from './types/travel-style-choice';
-import ItineraryDisplay from './components/ItineraryDisplay';
+import ItineraryDisplayDirect from './components/ItineraryDisplayDirect';
 import type { TravelFormData } from './types/travel-form';
+import { AIDevtools } from '@ai-sdk-tools/devtools';
 
 function App() {
   const [formData, setFormData] = useState<FormData>({
@@ -166,36 +167,25 @@ function App() {
           }
 
           const result = (await apiResponse.json()) as {
+            success: boolean;
             workflowId: string;
-            estimatedCompletionTime: number;
-            message: string;
+            status: string;
+            completed: boolean;
+            itinerary?: any;
           };
           console.log('✅ [9] App: AI workflow initiated successfully', result);
 
-          // Store the workflow ID for polling
+          // Store the workflow ID
           setWorkflowId(result.workflowId);
 
-          setGeneratedItinerary(`
-# 🎉 AI Itinerary Generation Started!
-
-Your personalized itinerary is being generated using our advanced AI agents:
-
-## 🚀 Workflow Status
-- **Workflow ID**: ${result.workflowId}
-- **Estimated Completion**: ${Math.round(result.estimatedCompletionTime / 1000)} seconds
-- **Status**: ${result.message}
-
-## 🤖 AI Agent Pipeline
-1. **🏗️ Architect Agent** - Designing your trip structure
-2. **🌐 Gatherer Agent** - Collecting destination information  
-3. **👨‍💼 Specialist Agent** - Processing recommendations
-4. **📝 Formatter Agent** - Creating your final itinerary
-
-Check your browser console to see the complete Phase 4 AI workflow logs (numbers 21-99)!
-
----
-*Your itinerary will be displayed here once the AI agents complete processing.*
-          `);
+          // If the workflow completed immediately with an itinerary, store it
+          if (result.success && result.completed && result.itinerary) {
+            console.log('🎉 [9B] App: Itinerary generated immediately!', result.itinerary);
+            setGeneratedItinerary(result.itinerary);
+          } else {
+            // Show processing message if still working
+            setGeneratedItinerary(`Processing... Workflow ID: ${result.workflowId}`);
+          }
         } catch (apiError) {
           console.error('💥 [10] App: Failed to call AI workflow API', apiError);
           throw apiError;
@@ -355,16 +345,26 @@ ${error instanceof Error ? error.message : 'Unknown error occurred'}
           {/* Itinerary Results Section - Directly below the travel style */}
           <div ref={itineraryRef}>
             {(isGenerating || generatedItinerary || generationError) && (
-              <ItineraryDisplay
+              <ItineraryDisplayDirect
                 formData={transformedFormData}
-                workflowId={workflowId}
                 isLoading={isGenerating}
                 error={generationError}
+                aiItinerary={generatedItinerary}
               />
             )}
           </div>
         </div>
       </main>
+      
+      {/* AI SDK Tools for debugging AI workflows */}
+      {process.env.NODE_ENV === 'development' && (
+        <AIDevtools 
+          config={{
+            position: "bottom",
+            height: 400
+          }}
+        />
+      )}
     </div>
   );
 }
