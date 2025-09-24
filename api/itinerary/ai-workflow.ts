@@ -29,32 +29,23 @@ export default async function handler(request: Request): Promise<Response> {
       baseURL: 'https://api.x.ai/v1',
     });
 
-    // Single comprehensive AI call using XAI Grok
+    // Optimized, concise prompt for faster processing
     const comprehensivePrompt =
-      "Create a complete " + formData.plannedDays + "-day travel itinerary for " + formData.location + ". " +
-      "Travelers: " + formData.adults + " adults, " + (formData.children || 0) + " children. " +
+      "Create a " + formData.plannedDays + "-day " + formData.location + " itinerary for " + formData.adults + " adults. " +
       "Budget: $" + (formData.budget?.total || 1000) + ". " +
-      "Interests: " + (formData.interests?.join(', ') || 'general sightseeing') + ". " +
-      "Format as a complete, structured itinerary with: " +
-      "1. Trip title and overview " +
-      "2. Day-by-day detailed schedule with specific times " +
-      "3. Specific restaurant recommendations with cuisine types " +
-      "4. Transportation options and tips " +
-      "5. Estimated daily costs breakdown " +
-      "6. Packing suggestions for the season " +
-      "7. Cultural tips and local customs " +
-      "Make it comprehensive, practical, and ready to use.";
+      "Include: daily schedule with times, restaurant recommendations, transportation tips, estimated costs. " +
+      "Be concise but comprehensive.";
 
     console.log('🤖 [AI-WORKFLOW] Calling XAI Grok for complete itinerary generation...');
     
-    // Add timeout wrapper to prevent long hanging
+    // Add timeout wrapper to prevent long hanging (4 minutes max)
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('AI request timed out after 8 minutes')), 8 * 60 * 1000)
+      setTimeout(() => reject(new Error('AI request timed out after 4 minutes')), 4 * 60 * 1000)
     );
     
     const aiPromise = streamText({
       model: xai('grok-4-fast-non-reasoning-latest'),
-      system: 'You are an expert travel planner. Create comprehensive, detailed itineraries that are practical and actionable.',
+      system: 'You are a travel planner. Create practical, detailed itineraries with schedules, restaurants, and costs.',
       prompt: comprehensivePrompt,
       temperature: 0.7,
     });
