@@ -1,10 +1,10 @@
 /**
- * Direct AI SDK Workflow - No Inngest
- * Simple, reliable AI itinerary generation
+ * Simple AI Workflow - XAI + Groq
+ * XAI for architecture, Groq for refinement and formatting
  */
 
 import { streamText } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { groq } from '@ai-sdk/groq';
 import { createXai } from '@ai-sdk/xai';
 
 export const config = { runtime: 'edge' };
@@ -67,7 +67,7 @@ export default async function handler(request: Request): Promise<Response> {
         "- Practical travel tips " +
         "Focus on " + (formData.interests?.join(', ') || 'popular attractions') + ".";
       gatheringResult = await streamText({
-        model: openai('gpt-oss-120b'),
+        model: groq('llama-3.3-70b-versatile'),
         system: 'You are a travel research specialist. Find specific attractions and activities.',
         prompt: gatheringPrompt,
         temperature: 0.6,
@@ -92,7 +92,7 @@ export default async function handler(request: Request): Promise<Response> {
         "- Interests: " + (formData.interests?.join(', ') || 'general') + " " +
         "Select the most suitable activities, restaurants, and experiences.";
       specialistResult = await streamText({
-        model: openai('gpt-oss-120b'),
+        model: groq('llama-3.3-70b-versatile'),
         system: 'You are a travel specialist. Curate personalized recommendations.',
         prompt: specialistPrompt,
         temperature: 0.5,
