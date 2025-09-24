@@ -21,6 +21,22 @@ export default async function handler(request: Request): Promise<Response> {
     console.log('🚀 [AI-WORKFLOW] Starting single-call AI workflow:', {
       workflowId: workflowId.substring(0, 15) + '...',
       location: formData.location,
+      plannedDays: formData.plannedDays,
+      adults: formData.adults,
+      budget: formData.budget,
+    });
+
+    // Extract and validate form data
+    const location = formData.location || 'Unknown Destination';
+    const plannedDays = formData.plannedDays || formData.duration || 3; // fallback to 3 days
+    const adults = formData.adults || 2;
+    const budget = formData.budget?.total || formData.budget || 1000;
+
+    console.log('🔍 [AI-WORKFLOW] Extracted form data:', {
+      location,
+      plannedDays,
+      adults,
+      budget,
     });
 
     // Initialize XAI client
@@ -29,14 +45,14 @@ export default async function handler(request: Request): Promise<Response> {
       baseURL: 'https://api.x.ai/v1',
     });
 
-    // Optimized, concise prompt for faster processing
+    // Optimized, concise prompt for faster processing with proper data
     const comprehensivePrompt =
-      "Create a " + formData.plannedDays + "-day " + formData.location + " itinerary for " + formData.adults + " adults. " +
-      "Budget: $" + (formData.budget?.total || 1000) + ". " +
+      "Create a " + plannedDays + "-day travel itinerary for " + location + " for " + adults + " adults. " +
+      "Budget: $" + budget + ". " +
       "Include: daily schedule with times, restaurant recommendations, transportation tips, estimated costs. " +
-      "Be concise but comprehensive.";
+      "Make it specific to " + location + " and exactly " + plannedDays + " days. Be concise but comprehensive.";
 
-    console.log('🤖 [AI-WORKFLOW] Calling XAI Grok for complete itinerary generation...');
+    console.log('🤖 [AI-WORKFLOW] Using prompt:', comprehensivePrompt.substring(0, 150) + '...');
     
     // Add timeout wrapper to prevent long hanging (4 minutes max)
     const timeoutPromise = new Promise((_, reject) => 
@@ -65,10 +81,10 @@ export default async function handler(request: Request): Promise<Response> {
       status: 'completed',
       completed: true,
       itinerary: {
-        title: `${formData.location} Travel Itinerary`,
-        destination: formData.location,
-        duration: formData.plannedDays,
-        travelers: formData.adults,
+        title: `${location} Travel Itinerary (${plannedDays} Days)`,
+        destination: location,
+        duration: plannedDays,
+        travelers: adults,
         content: itinerary,
         generatedBy: 'XAI Grok-4 Fast (Non-Reasoning)',
         completedAt: new Date().toISOString(),

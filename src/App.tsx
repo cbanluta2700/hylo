@@ -121,6 +121,14 @@ function App() {
       console.log('🔄 Testing form data transformation...');
       const transformedData = transformExistingFormDataToWorkflow(formData);
       console.log('✅ Transformed TravelFormData:', transformedData);
+      console.log('🔍 CRITICAL: Planned days calculation:', {
+        originalPlannedDays: formData.plannedDays,
+        transformedPlannedDays: transformedData.plannedDays,
+        departDate: formData.departDate,
+        returnDate: formData.returnDate,
+        transformedDepartDate: transformedData.departDate,
+        transformedReturnDate: transformedData.returnDate,
+      });
 
       const validationResult = validateTravelFormData(transformedData);
       console.log('🔍 Validation Result:', validationResult);
