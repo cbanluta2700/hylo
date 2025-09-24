@@ -31,7 +31,7 @@ export default async function handler(request: Request): Promise<Response> {
 
     // Create personalized tips prompt based on form data
     const tipsPrompt = `
-Create personalized travel tips for this trip:
+Create a CONCISE travel tips summary for this trip:
 
 TRIP DETAILS:
 - Destination: ${formData?.location || 'Unknown'}
@@ -40,20 +40,18 @@ TRIP DETAILS:
 - Budget: $${formData?.budget?.total || formData?.budget || '1000'} ${formData?.budget?.currency || 'USD'}
 - Travel Style: ${formData?.travelStyle?.pace || 'moderate'} pace, ${formData?.travelStyle?.accommodationType || 'mid-range'} accommodation
 - Interests: ${formData?.interests?.join(', ') || 'general tourism'}
-- Flexible Budget: ${formData?.budget?.flexibility === 'flexible' || formData?.budget?.flexibility === 'very-flexible' ? 'Yes' : 'No'}
-- Flexible Dates: ${formData?.flexibleDates ? 'Yes' : 'No'}
+- Trip Vibe: ${formData?.tripVibe || 'adventure'}
+- Travel Experience: ${formData?.travelExperience || 'experienced'}
+- Dining Preference: ${formData?.dinnerChoice || 'local-spots'}
 
-GENERATE 5-8 PERSONALIZED TIPS INCLUDING:
-1. Money-saving tips specific to ${formData?.location}
-2. Cultural etiquette and customs
-3. Transportation recommendations
-4. Packing suggestions for the climate/season
-5. Safety and health considerations
-6. Local food recommendations
-7. Hidden gems or local secrets
-8. Communication tips (language/apps)
+CREATE A SIMPLE 5-POINT SUMMARY:
+1. **Weather & Packing**: Brief climate info and essential items
+2. **Money & Budget**: Currency, payment methods, cost-saving tip
+3. **Culture & Etiquette**: 2-3 key cultural dos/don'ts
+4. **Transportation**: Best way to get around locally  
+5. **Safety & Health**: One key safety/health consideration
 
-Format: Use clear headings and bullet points. Keep each tip practical and actionable. Make it specific to their destination, budget, and travel style.
+Keep each point to 1-2 sentences max. Be practical and destination-specific.
     `.trim();
 
     console.log('🤖 [TIPS-API] Generating tips with XAI Grok...');

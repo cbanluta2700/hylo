@@ -68,17 +68,26 @@ const parseItineraryContent = (content: string) => {
   let generalInfo = '';
   let finalTips = '';
   let inFinalTips = false;
+  let inGeneralTips = false;
   
   for (const line of lines) {
-    // Check for Final Tips section
+    // Check for Final Tips or General Tips sections
     if (line.match(/\*\*Final Tips\*\*|Final Tips:|### Final Tips|## Final Tips/i)) {
       inFinalTips = true;
+      inGeneralTips = false;
       finalTips += line + '\n';
       continue;
     }
     
-    // If we're in final tips section, collect all content
-    if (inFinalTips) {
+    if (line.match(/\*\*General Tips\*\*|General Tips:|### General Tips|## General Tips/i)) {
+      inGeneralTips = true;
+      inFinalTips = false;
+      finalTips += line + '\n';
+      continue;
+    }
+    
+    // If we're in any tips section, collect all content
+    if (inFinalTips || inGeneralTips) {
       finalTips += line + '\n';
       continue;
     }

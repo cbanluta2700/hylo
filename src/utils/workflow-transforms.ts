@@ -37,6 +37,56 @@ function mapTripVibeToEnum(value: string | undefined): string {
   return value; // Return original if no mapping found
 }
 
+// Helper functions to map travel style answers to enums
+function mapTravelStyleToPace(answers: any): 'slow' | 'moderate' | 'fast' {
+  if (!answers) return 'moderate';
+  const vibes = answers.vibes || [];
+  const sampleDays = answers.sampleDays || [];
+  
+  // Look for pace indicators in vibes or sample day preferences
+  const allText = [...vibes, ...sampleDays].join(' ').toLowerCase();
+  if (allText.includes('slow') || allText.includes('relaxed') || allText.includes('leisurely')) return 'slow';
+  if (allText.includes('fast') || allText.includes('packed') || allText.includes('intensive')) return 'fast';
+  return 'moderate';
+}
+
+function mapTravelStyleToAccommodation(answers: any): 'budget' | 'mid-range' | 'luxury' | 'mixed' {
+  if (!answers) return 'mid-range';
+  // This would need specific budget/accommodation questions to map properly
+  return 'mid-range';
+}
+
+function mapTravelStyleToDining(answers: any): 'local' | 'international' | 'mixed' {
+  if (!answers) return 'mixed';
+  const dinnerChoices = answers.dinnerChoices || [];
+  const allText = dinnerChoices.join(' ').toLowerCase();
+  if (allText.includes('local') || allText.includes('traditional')) return 'local';
+  if (allText.includes('international') || allText.includes('familiar')) return 'international';
+  return 'mixed';
+}
+
+function mapTravelStyleToActivity(answers: any): 'low' | 'moderate' | 'high' {
+  if (!answers) return 'moderate';
+  const vibes = answers.vibes || [];
+  const sampleDays = answers.sampleDays || [];
+  
+  const allText = [...vibes, ...sampleDays].join(' ').toLowerCase();
+  if (allText.includes('adventure') || allText.includes('active') || allText.includes('hiking')) return 'high';
+  if (allText.includes('relaxed') || allText.includes('chill') || allText.includes('spa')) return 'low';
+  return 'moderate';
+}
+
+function mapTravelStyleToCultural(answers: any): 'minimal' | 'moderate' | 'deep' {
+  if (!answers) return 'moderate';
+  const vibes = answers.vibes || [];
+  const interests = answers.interests || [];
+  
+  const allText = [...vibes, ...interests].join(' ').toLowerCase();
+  if (allText.includes('deep') || allText.includes('immersion') || allText.includes('authentic')) return 'deep';
+  if (allText.includes('minimal') || allText.includes('surface')) return 'minimal';
+  return 'moderate';
+}
+
 /**
  * Converts existing FormData from App.tsx to TravelFormData for AI workflow
  * Maps all form sections to the unified interface
@@ -88,11 +138,11 @@ export function transformExistingFormDataToWorkflow(formData: FormData): TravelF
 
     // Travel Preferences (map from existing travel style data)
     travelStyle: {
-      pace: 'moderate', // default
-      accommodationType: 'mid-range', // default
-      diningPreferences: 'mixed', // default
-      activityLevel: 'moderate', // default
-      culturalImmersion: 'moderate', // default
+      pace: mapTravelStyleToPace(formData.travelStyleAnswers) || 'moderate',
+      accommodationType: mapTravelStyleToAccommodation(formData.travelStyleAnswers) || 'mid-range', 
+      diningPreferences: mapTravelStyleToDining(formData.travelStyleAnswers) || 'mixed',
+      activityLevel: mapTravelStyleToActivity(formData.travelStyleAnswers) || 'moderate',
+      culturalImmersion: mapTravelStyleToCultural(formData.travelStyleAnswers) || 'moderate',
     },
 
     // Travel Interests & Groups
