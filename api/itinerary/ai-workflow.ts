@@ -48,7 +48,7 @@ export default async function handler(request: Request): Promise<Response> {
     console.log('🤖 [AI-WORKFLOW] Calling XAI Grok for complete itinerary generation...');
     
     const result = await streamText({
-      model: xai('grok-2-latest'),
+      model: xai('grok-4-fast-reasoning'),
       system: 'You are an expert travel planner. Create comprehensive, detailed itineraries that are practical and actionable.',
       prompt: comprehensivePrompt,
       temperature: 0.7,
@@ -72,7 +72,7 @@ export default async function handler(request: Request): Promise<Response> {
         duration: formData.plannedDays,
         travelers: formData.adults,
         content: itinerary,
-        generatedBy: 'XAI Grok-2 Latest',
+        generatedBy: 'XAI Grok-4 Fast Reasoning',
         completedAt: new Date().toISOString(),
       },
     });
