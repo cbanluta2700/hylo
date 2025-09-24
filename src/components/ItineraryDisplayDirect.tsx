@@ -66,8 +66,23 @@ const parseItineraryContent = (content: string) => {
   const days: { title: string; content: string }[] = [];
   let currentDay: { title: string; content: string } | null = null;
   let generalInfo = '';
+  let finalTips = '';
+  let inFinalTips = false;
   
   for (const line of lines) {
+    // Check for Final Tips section
+    if (line.match(/\*\*Final Tips\*\*|Final Tips:|### Final Tips|## Final Tips/i)) {
+      inFinalTips = true;
+      finalTips += line + '\n';
+      continue;
+    }
+    
+    // If we're in final tips section, collect all content
+    if (inFinalTips) {
+      finalTips += line + '\n';
+      continue;
+    }
+    
     // Check if line contains day information (various patterns)
     const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
     
@@ -95,15 +110,19 @@ const parseItineraryContent = (content: string) => {
     days.push(currentDay);
   }
   
-  return { generalInfo: generalInfo.trim(), days };
+  return { 
+    generalInfo: generalInfo.trim(), 
+    days, 
+    finalTips: finalTips.trim() 
+  };
 };
 
 const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber: number }> = ({ day, dayNumber }) => (
   <div className="mb-8">
     {/* Day Header */}
-    <div className="bg-gradient-to-r from-primary to-[#f68854] rounded-t-[24px] px-6 py-4">
-      <h3 className="text-xl font-bold text-white font-raleway flex items-center">
-        <span className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
+    <div className="bg-form-box border border-gray-200 rounded-t-[24px] px-6 py-4">
+      <h3 className="text-xl font-bold text-primary font-raleway flex items-center">
+        <span className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
           {dayNumber}
         </span>
         {day.title}
@@ -121,8 +140,15 @@ const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber:
   </div>
 );
 
-const ItineraryContent: React.FC<{ content: string }> = ({ content }) => {
-  const { generalInfo, days } = parseItineraryContent(content);
+const ItineraryContent: React.FC<{ content: string; onFinalTipsExtracted?: (tips: string) => void }> = ({ content, onFinalTipsExtracted }) => {
+  const { generalInfo, days, finalTips } = parseItineraryContent(content);
+  
+  // Notify parent about extracted final tips
+  React.useEffect(() => {
+    if (finalTips && onFinalTipsExtracted) {
+      onFinalTipsExtracted(finalTips);
+    }
+  }, [finalTips, onFinalTipsExtracted]);
   
   return (
     <div>
@@ -168,11 +194,20 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
   const [tips, setTips] = useState<string>('');
   const [tipsLoading, setTipsLoading] = useState(false);
   const [tipsError, setTipsError] = useState('');
+  const [extractedTips, setExtractedTips] = useState<string>('');
+
+  // Handle extracted final tips from itinerary content
+  const handleFinalTipsExtracted = (finalTips: string) => {
+    if (finalTips && !extractedTips) {
+      setExtractedTips(finalTips);
+      console.log('📋 [TIPS] Extracted final tips from itinerary:', finalTips.slice(0, 100));
+    }
+  };
 
   // Generate personalized tips when itinerary is ready
   useEffect(() => {
     const generateTips = async () => {
-      if (!aiItinerary || !formData || tipsLoading || tips) return;
+      if (!aiItinerary || !formData || tipsLoading || tips || extractedTips) return;
       
       setTipsLoading(true);
       setTipsError('');
@@ -207,7 +242,7 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
     };
 
     generateTips();
-  }, [aiItinerary, formData]);
+  }, [aiItinerary, formData, extractedTips]);
 
   // Show error state
   if (error) {
@@ -297,18 +332,21 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
 
         {/* Main Itinerary Content */}
         <SectionHeader icon="📋" title="Your Detailed Itinerary" />
-        <ItineraryContent content={aiItinerary.content || 'No content available'} />
+        <ItineraryContent 
+          content={aiItinerary.content || 'No content available'} 
+          onFinalTipsExtracted={handleFinalTipsExtracted}
+        />
 
         {/* Personalized Tips Section */}
-        {(tips || tipsLoading) && (
+        {(extractedTips || tips || tipsLoading) && (
           <TipsSection 
-            tips={tips || 'Generating personalized tips based on your preferences...'}
-            isLoading={tipsLoading}
+            tips={extractedTips || tips || 'Generating personalized tips based on your preferences...'}
+            isLoading={tipsLoading && !extractedTips}
           />
         )}
 
         {/* Tips Error State */}
-        {tipsError && !tips && !tipsLoading && (
+        {tipsError && !tips && !extractedTips && !tipsLoading && (
           <div className="mb-8">
             <SectionHeader icon="💡" title="TIPS FOR YOUR TRIP" />
             <div className="bg-yellow-50 rounded-[36px] p-6 border border-yellow-200 text-center">
