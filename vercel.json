@@ -7,6 +7,7 @@
   "functions": {
     "api/inngest/index.ts": { "maxDuration": 60 },
     "api/itinerary/generate.ts": { "maxDuration": 300 },
+    "api/itinerary/generate-tips.ts": { "maxDuration": 120 },
     "api/itinerary/progress-simple.ts": { "maxDuration": 300 },
     "api/itinerary/get-itinerary.ts": { "maxDuration": 10 },
     "api/health.ts": { "maxDuration": 10 },

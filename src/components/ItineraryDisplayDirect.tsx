@@ -5,7 +5,7 @@
  * we just display it directly without any polling complexity.
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, Mail, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
 import ResilientLoading from './ResilientLoading';
 import type { TravelFormData } from '../types/travel-form';
@@ -37,15 +37,126 @@ const SectionHeader: React.FC<{ icon?: string; title: string }> = ({ icon, title
   </div>
 );
 
-const ItineraryContent: React.FC<{ content: string }> = ({ content }) => (
-  <div className="bg-form-box rounded-[36px] p-8 shadow-lg border border-gray-200 mb-6">
-    <div className="prose prose-lg max-w-none">
-      <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-        {content}
+const TipsSection: React.FC<{ tips: string; isLoading?: boolean }> = ({ tips, isLoading = false }) => (
+  <div className="mb-8">
+    {/* Tips Header */}
+    <SectionHeader icon="💡" title="TIPS FOR YOUR TRIP" />
+    
+    {/* Tips Content */}
+    <div className="bg-form-box rounded-[36px] p-8 shadow-lg border border-gray-200">
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-3 text-gray-600">Generating personalized tips...</span>
+        </div>
+      ) : (
+        <div className="prose prose-lg max-w-none">
+          <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+            {tips}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+// Parse itinerary content into structured days
+const parseItineraryContent = (content: string) => {
+  const lines = content.split('\n');
+  const days: { title: string; content: string }[] = [];
+  let currentDay: { title: string; content: string } | null = null;
+  let generalInfo = '';
+  
+  for (const line of lines) {
+    // Check if line contains day information (various patterns)
+    const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
+    
+    if (dayMatch) {
+      // Save previous day if exists
+      if (currentDay) {
+        days.push(currentDay);
+      }
+      // Start new day
+      currentDay = {
+        title: line.replace(/^#{1,4}\s*/, '').trim(),
+        content: ''
+      };
+    } else if (currentDay) {
+      // Add content to current day
+      currentDay.content += line + '\n';
+    } else {
+      // General information before days
+      generalInfo += line + '\n';
+    }
+  }
+  
+  // Add last day
+  if (currentDay) {
+    days.push(currentDay);
+  }
+  
+  return { generalInfo: generalInfo.trim(), days };
+};
+
+const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber: number }> = ({ day, dayNumber }) => (
+  <div className="mb-8">
+    {/* Day Header */}
+    <div className="bg-gradient-to-r from-primary to-[#f68854] rounded-t-[24px] px-6 py-4">
+      <h3 className="text-xl font-bold text-white font-raleway flex items-center">
+        <span className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
+          {dayNumber}
+        </span>
+        {day.title}
+      </h3>
+    </div>
+    
+    {/* Day Content */}
+    <div className="bg-form-box rounded-b-[24px] border border-t-0 border-gray-200 p-6">
+      <div className="prose prose-lg max-w-none">
+        <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+          {day.content.trim()}
+        </div>
       </div>
     </div>
   </div>
 );
+
+const ItineraryContent: React.FC<{ content: string }> = ({ content }) => {
+  const { generalInfo, days } = parseItineraryContent(content);
+  
+  return (
+    <div>
+      {/* General Information */}
+      {generalInfo && (
+        <div className="bg-form-box rounded-[36px] p-8 shadow-lg border border-gray-200 mb-6">
+          <div className="prose prose-lg max-w-none">
+            <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+              {generalInfo}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Structured Days */}
+      {days.length > 0 ? (
+        <div className="space-y-2">
+          {days.map((day, index) => (
+            <DaySection key={index} day={day} dayNumber={index + 1} />
+          ))}
+        </div>
+      ) : (
+        /* Fallback to original content if no days found */
+        <div className="bg-form-box rounded-[36px] p-8 shadow-lg border border-gray-200 mb-6">
+          <div className="prose prose-lg max-w-none">
+            <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+              {content}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
   formData,
@@ -54,6 +165,50 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
   aiItinerary,
   className = '',
 }) => {
+  const [tips, setTips] = useState<string>('');
+  const [tipsLoading, setTipsLoading] = useState(false);
+  const [tipsError, setTipsError] = useState('');
+
+  // Generate personalized tips when itinerary is ready
+  useEffect(() => {
+    const generateTips = async () => {
+      if (!aiItinerary || !formData || tipsLoading || tips) return;
+      
+      setTipsLoading(true);
+      setTipsError('');
+      
+      try {
+        console.log('🎯 [TIPS] Generating personalized travel tips...');
+        
+        const response = await fetch('/api/itinerary/generate-tips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            formData,
+            aiItinerary
+          }),
+        });
+
+        const result = await response.json() as any;
+        
+        if (result.success) {
+          setTips(result.tips);
+          console.log('✅ [TIPS] Personalized tips generated');
+        } else {
+          setTipsError('Failed to generate tips');
+          console.error('❌ [TIPS] Generation failed:', result.error);
+        }
+      } catch (error) {
+        setTipsError('Failed to generate tips');
+        console.error('❌ [TIPS] Error:', error);
+      } finally {
+        setTipsLoading(false);
+      }
+    };
+
+    generateTips();
+  }, [aiItinerary, formData]);
+
   // Show error state
   if (error) {
     return (
@@ -143,6 +298,26 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
         {/* Main Itinerary Content */}
         <SectionHeader icon="📋" title="Your Detailed Itinerary" />
         <ItineraryContent content={aiItinerary.content || 'No content available'} />
+
+        {/* Personalized Tips Section */}
+        {(tips || tipsLoading) && (
+          <TipsSection 
+            tips={tips || 'Generating personalized tips based on your preferences...'}
+            isLoading={tipsLoading}
+          />
+        )}
+
+        {/* Tips Error State */}
+        {tipsError && !tips && !tipsLoading && (
+          <div className="mb-8">
+            <SectionHeader icon="💡" title="TIPS FOR YOUR TRIP" />
+            <div className="bg-yellow-50 rounded-[36px] p-6 border border-yellow-200 text-center">
+              <div className="text-yellow-800">
+                Could not generate personalized tips. Please try refreshing the page.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Additional Information */}
         {(aiItinerary.architecture || aiItinerary.research || aiItinerary.recommendations) && (
