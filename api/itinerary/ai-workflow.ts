@@ -1,10 +1,9 @@
 /**
- * Simple AI Workflow - XAI + Groq
- * XAI for architecture, Groq for refinement and formatting
+ * Simple AI Workflow - XAI Grok Only
+ * Uses XAI Grok for fast, high-quality itinerary generation
  */
 
 import { streamText } from 'ai';
-import { groq } from '@ai-sdk/groq';
 import { createXai } from '@ai-sdk/xai';
 
 export const config = { runtime: 'edge' };
@@ -24,7 +23,13 @@ export default async function handler(request: Request): Promise<Response> {
       location: formData.location,
     });
 
-    // Single comprehensive AI call using Groq Llama
+    // Initialize XAI client
+    const xai = createXai({
+      apiKey: process.env.XAI_API_KEY!,
+      baseURL: 'https://api.x.ai/v1',
+    });
+
+    // Single comprehensive AI call using XAI Grok
     const comprehensivePrompt =
       "Create a complete " + formData.plannedDays + "-day travel itinerary for " + formData.location + ". " +
       "Travelers: " + formData.adults + " adults, " + (formData.children || 0) + " children. " +
@@ -40,10 +45,10 @@ export default async function handler(request: Request): Promise<Response> {
       "7. Cultural tips and local customs " +
       "Make it comprehensive, practical, and ready to use.";
 
-    console.log('🤖 [AI-WORKFLOW] Calling Groq Llama for complete itinerary generation...');
+    console.log('🤖 [AI-WORKFLOW] Calling XAI Grok for complete itinerary generation...');
     
     const result = await streamText({
-      model: groq('llama-3.3-70b-versatile'),
+      model: xai('grok-2-latest'),
       system: 'You are an expert travel planner. Create comprehensive, detailed itineraries that are practical and actionable.',
       prompt: comprehensivePrompt,
       temperature: 0.7,
@@ -67,7 +72,7 @@ export default async function handler(request: Request): Promise<Response> {
         duration: formData.plannedDays,
         travelers: formData.adults,
         content: itinerary,
-        generatedBy: 'Groq Llama 3.3 70B Versatile',
+        generatedBy: 'XAI Grok-2 Latest',
         completedAt: new Date().toISOString(),
       },
     });
