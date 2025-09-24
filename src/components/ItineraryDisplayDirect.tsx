@@ -69,24 +69,20 @@ const parseItineraryContent = (content: string) => {
   let finalTips = '';
   let inFinalTips = false;
   let inGeneralTips = false;
-  let inOverview = false;
+  let skipUntilDay = false;
   
   for (const line of lines) {
-    // Skip overview sections
-    if (line.match(/\*\*Overview\*\*/i) || inOverview) {
-      if (line.match(/\*\*Overview\*\*/i)) {
-        inOverview = true;
-      }
-      // End overview when we hit a new section or empty line after content
-      if ((line.trim() === '' && inOverview) || line.match(/^#{1,4}/) || line.match(/\*\*(Day|Final|General)/i)) {
-        inOverview = false;
-        if (!line.match(/\*\*Overview\*\*/i)) {
-          // Process this line normally since it's not part of overview
-        } else {
-          continue;
-        }
+    const trimmedLine = line.trim();
+    
+    // Skip everything until we hit the first Day
+    if (!skipUntilDay) {
+      // Look for first day to start processing
+      const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
+      if (dayMatch) {
+        skipUntilDay = true;
+        // Process this day line
       } else {
-        continue; // Skip overview content
+        continue; // Skip everything before first day (including overview)
       }
     }
     
@@ -117,8 +113,8 @@ const parseItineraryContent = (content: string) => {
     if (dayMatch) {
       // Save previous day if exists
       if (currentDay) {
-        // Format the day content into bullet points
-        currentDay.content = formatDayContentToBullets(currentDay.content);
+        // Format the day content into production-ready format
+        currentDay.content = formatDayContentToProduction(currentDay.content);
         days.push(currentDay);
       }
       // Start new day
@@ -129,17 +125,12 @@ const parseItineraryContent = (content: string) => {
     } else if (currentDay) {
       // Add content to current day
       currentDay.content += line + '\n';
-    } else {
-      // General information before days (skip if it's overview)
-      if (!inOverview) {
-        generalInfo += line + '\n';
-      }
     }
   }
   
   // Add last day with formatting
   if (currentDay) {
-    currentDay.content = formatDayContentToBullets(currentDay.content);
+    currentDay.content = formatDayContentToProduction(currentDay.content);
     days.push(currentDay);
   }
   
@@ -150,62 +141,107 @@ const parseItineraryContent = (content: string) => {
   };
 };
 
-// Format day content into clean bullet points
-const formatDayContentToBullets = (content: string): string => {
+// Format day content into production-ready format
+const formatDayContentToProduction = (content: string): string => {
   const lines = content.split('\n');
-  const formattedLines: string[] = [];
+  const sections: {
+    theme: string;
+    morning: string[];
+    afternoon: string[];
+    evening: string[];
+    costs: string;
+    tips: string[];
+  } = { theme: '', morning: [], afternoon: [], evening: [], costs: '', tips: [] };
+  let currentSection: 'morning' | 'afternoon' | 'evening' | 'tips' = 'morning';
   
   for (const line of lines) {
     const trimmedLine = line.trim();
     
-    // Skip empty lines
-    if (!trimmedLine) {
-      formattedLines.push('');
+    if (!trimmedLine) continue;
+    
+    // Detect theme/description
+    if (trimmedLine.match(/^\*\*Theme\*\*|Theme:/i)) {
+      sections.theme = trimmedLine.replace(/^\*\*Theme\*\*:?\s*/i, '');
       continue;
     }
     
-    // Keep section headers (but make them bold)
-    if (trimmedLine.match(/^\*\*.*\*\*:?$/)) {
-      formattedLines.push(`\n${trimmedLine}\n`);
+    // Detect costs section
+    if (trimmedLine.match(/^\*\*Daily Costs\*\*|Daily Costs:|Costs:/i)) {
+      sections.costs = trimmedLine.replace(/^\*\*Daily Costs\*\*:?\s*/i, '');
       continue;
     }
     
-    // Convert time-based activities to bullet points
-    if (trimmedLine.match(/^-\s*\*\*\d+:\d+\s*(AM|PM)/i)) {
-      // Already formatted as bullet with time - keep as is
-      formattedLines.push(`• ${trimmedLine.substring(2)}`);
-    } else if (trimmedLine.match(/^\*\*\d+:\d+\s*(AM|PM)/i)) {
-      // Time without bullet - add bullet
-      formattedLines.push(`• ${trimmedLine}`);
-    } else if (trimmedLine.match(/^-\s*\d+:\d+\s*(AM|PM)/i)) {
-      // Time with dash - convert to bullet
-      formattedLines.push(`• **${trimmedLine.substring(2)}**`);
-    } else if (trimmedLine.match(/^\d+:\d+\s*(AM|PM)/i)) {
-      // Plain time - add bullet and bold
-      formattedLines.push(`• **${trimmedLine}**`);
-    } else if (trimmedLine.match(/^-\s*/)) {
-      // Already has dash - convert to bullet
-      formattedLines.push(`• ${trimmedLine.substring(2)}`);
-    } else if (trimmedLine.match(/^\*\s*/)) {
-      // Already has asterisk - convert to bullet
-      formattedLines.push(`• ${trimmedLine.substring(2)}`);
-    } else if (trimmedLine.match(/^\d+\./)) {
-      // Numbered list - convert to bullet
-      formattedLines.push(`• ${trimmedLine.replace(/^\d+\.\s*/, '')}`);
-    } else if (!trimmedLine.match(/^•/) && !trimmedLine.match(/^\*\*/)) {
-      // Regular content line - add bullet if it looks like an activity
-      if (trimmedLine.length > 20 && !trimmedLine.includes(':')) {
-        formattedLines.push(`• ${trimmedLine}`);
+    // Detect time-based sections
+    if (trimmedLine.match(/\d{1,2}:\d{2}\s*(AM|PM)/i)) {
+      const hour = parseInt(trimmedLine.match(/(\d{1,2}):\d{2}/)?.[1] || '0');
+      if (hour >= 6 && hour < 12) {
+        currentSection = 'morning';
+      } else if (hour >= 12 && hour < 17) {
+        currentSection = 'afternoon';  
       } else {
-        formattedLines.push(trimmedLine);
+        currentSection = 'evening';
       }
-    } else {
-      // Keep as is
-      formattedLines.push(trimmedLine);
+    }
+    
+    // Clean and format activity lines
+    const cleanLine = cleanActivityLine(trimmedLine);
+    if (cleanLine) {
+      if (sections.costs && trimmedLine.includes('$')) {
+        sections.costs += ' ' + cleanLine;
+      } else {
+        sections[currentSection].push(cleanLine);
+      }
     }
   }
   
-  return formattedLines.join('\n');
+  // Build production format
+  let formatted = '';
+  
+  if (sections.theme) {
+    formatted += `${sections.theme}\n\n`;
+  }
+  
+  if (sections.morning.length > 0) {
+    formatted += `**Morning**\n`;
+    sections.morning.forEach(activity => {
+      formatted += `• ${activity}\n`;
+    });
+    formatted += '\n';
+  }
+  
+  if (sections.afternoon.length > 0) {
+    formatted += `**Afternoon**\n`;
+    sections.afternoon.forEach(activity => {
+      formatted += `• ${activity}\n`;
+    });
+    formatted += '\n';
+  }
+  
+  if (sections.evening.length > 0) {
+    formatted += `**Evening**\n`;
+    sections.evening.forEach(activity => {
+      formatted += `• ${activity}\n`;
+    });
+    formatted += '\n';
+  }
+  
+  return formatted.trim();
+};
+
+// Clean individual activity lines
+const cleanActivityLine = (line: string): string => {
+  // Remove bullet symbols and clean formatting
+  let cleaned = line
+    .replace(/^[•\-\*]\s*/, '')
+    .replace(/^\*\*(.*?)\*\*:?\s*/, '$1: ')
+    .replace(/^\d+\.\s*/, '');
+    
+  // Don't include lines that are just formatting or costs summaries
+  if (cleaned.match(/^(Theme|Daily Costs|Total)/i)) {
+    return '';
+  }
+  
+  return cleaned;
 };
 
 const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber: number }> = ({ day, dayNumber }) => (
