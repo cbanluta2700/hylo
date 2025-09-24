@@ -47,12 +47,19 @@ export default async function handler(request: Request): Promise<Response> {
 
     console.log('🤖 [AI-WORKFLOW] Calling XAI Grok for complete itinerary generation...');
     
-    const result = await streamText({
-      model: xai('grok-4-fast-reasoning'),
+    // Add timeout wrapper to prevent long hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('AI request timed out after 8 minutes')), 8 * 60 * 1000)
+    );
+    
+    const aiPromise = streamText({
+      model: xai('grok-4-fast-non-reasoning-latest'),
       system: 'You are an expert travel planner. Create comprehensive, detailed itineraries that are practical and actionable.',
       prompt: comprehensivePrompt,
       temperature: 0.7,
     });
+
+    const result = await Promise.race([aiPromise, timeoutPromise]) as any;
 
     const itinerary = await result.text;
     console.log('✅ [AI-WORKFLOW] Complete itinerary generated:', itinerary?.slice(0, 200));
@@ -72,7 +79,7 @@ export default async function handler(request: Request): Promise<Response> {
         duration: formData.plannedDays,
         travelers: formData.adults,
         content: itinerary,
-        generatedBy: 'XAI Grok-4 Fast Reasoning',
+        generatedBy: 'XAI Grok-4 Fast (Non-Reasoning)',
         completedAt: new Date().toISOString(),
       },
     });
