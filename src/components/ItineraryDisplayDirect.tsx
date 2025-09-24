@@ -52,7 +52,7 @@ const TipsSection: React.FC<{ tips: string; isLoading?: boolean }> = ({ tips, is
       ) : (
         <div className="prose prose-lg max-w-none">
           <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-            {formatDayContent(tips)}
+            {tips}
           </div>
         </div>
       )}
@@ -70,69 +70,39 @@ const parseItineraryContent = (content: string) => {
   let inFinalTips = false;
   let inGeneralTips = false;
   let inOverview = false;
-  let skipTitleLine = false;
   
   for (const line of lines) {
-    const trimmed = line.trim();
-    
-    // Skip title lines like "5-Day Japan Itinerary for 2 Adults (Tokyo Focus)"
-    if (trimmed.match(/^\d+\-Day.*Itinerary/i) || trimmed.match(/^###.*Itinerary/i)) {
-      skipTitleLine = true;
-      continue;
-    }
-    
-    // Check for Overview section to skip
-    if (trimmed.match(/\*\*Overview\*\*|Overview:|### Overview|## Overview/i)) {
-      inOverview = true;
-      continue; // Skip the overview line entirely
+    // Skip overview sections
+    if (line.match(/\*\*Overview\*\*/i) || inOverview) {
+      if (line.match(/\*\*Overview\*\*/i)) {
+        inOverview = true;
+      }
+      // End overview when we hit a new section or empty line after content
+      if ((line.trim() === '' && inOverview) || line.match(/^#{1,4}/) || line.match(/\*\*(Day|Final|General)/i)) {
+        inOverview = false;
+        if (!line.match(/\*\*Overview\*\*/i)) {
+          // Process this line normally since it's not part of overview
+        } else {
+          continue;
+        }
+      } else {
+        continue; // Skip overview content
+      }
     }
     
     // Check for Final Tips or General Tips sections
-    if (trimmed.match(/\*\*Final Tips\*\*|Final Tips:|### Final Tips|## Final Tips/i)) {
+    if (line.match(/\*\*Final Tips\*\*|Final Tips:|### Final Tips|## Final Tips/i)) {
       inFinalTips = true;
       inGeneralTips = false;
-      inOverview = false;
       finalTips += line + '\n';
       continue;
     }
     
-    if (trimmed.match(/\*\*General Tips\*\*|General Tips:|### General Tips|## General Tips/i)) {
+    if (line.match(/\*\*General Tips\*\*|General Tips:|### General Tips|## General Tips/i)) {
       inGeneralTips = true;
       inFinalTips = false;
-      inOverview = false;
       finalTips += line + '\n';
       continue;
-    }
-    
-    // Check if line contains day information (enhanced patterns)
-    const dayMatch = trimmed.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
-    
-    if (dayMatch) {
-      // End overview mode when we hit a day
-      inOverview = false;
-      
-      // Save previous day if exists
-      if (currentDay) {
-        days.push(currentDay);
-      }
-      // Start new day
-      currentDay = {
-        title: trimmed.replace(/^#{1,4}\s*/, '').replace(/^#### /, '').trim(),
-        content: ''
-      };
-      continue;
-    }
-    
-    // If we're in overview section or skipping title, skip content
-    if (inOverview || skipTitleLine) {
-      // Check if we've hit a day section, which ends the overview/title skip
-      if (dayMatch) {
-        inOverview = false;
-        skipTitleLine = false;
-        // Process this line as a day section (handled above)
-      } else {
-        continue; // Skip overview/title content
-      }
     }
     
     // If we're in any tips section, collect all content
@@ -141,19 +111,35 @@ const parseItineraryContent = (content: string) => {
       continue;
     }
     
-    if (currentDay) {
+    // Check if line contains day information (various patterns)
+    const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
+    
+    if (dayMatch) {
+      // Save previous day if exists
+      if (currentDay) {
+        // Format the day content into bullet points
+        currentDay.content = formatDayContentToBullets(currentDay.content);
+        days.push(currentDay);
+      }
+      // Start new day
+      currentDay = {
+        title: line.replace(/^#{1,4}\s*/, '').trim(),
+        content: ''
+      };
+    } else if (currentDay) {
       // Add content to current day
       currentDay.content += line + '\n';
     } else {
-      // General information before days (but not overview or title)
-      if (!inOverview && !skipTitleLine) {
+      // General information before days (skip if it's overview)
+      if (!inOverview) {
         generalInfo += line + '\n';
       }
     }
   }
   
-  // Add last day
+  // Add last day with formatting
   if (currentDay) {
+    currentDay.content = formatDayContentToBullets(currentDay.content);
     days.push(currentDay);
   }
   
@@ -164,48 +150,72 @@ const parseItineraryContent = (content: string) => {
   };
 };
 
-// Format day content into bullet points
-const formatDayContent = (content: string): string => {
+// Format day content into clean bullet points
+const formatDayContentToBullets = (content: string): string => {
   const lines = content.split('\n');
   const formattedLines: string[] = [];
   
   for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      formattedLines.push(''); // Keep empty lines for spacing
+    const trimmedLine = line.trim();
+    
+    // Skip empty lines
+    if (!trimmedLine) {
+      formattedLines.push('');
       continue;
     }
     
-    // If line already starts with bullet point or dash, keep as is
-    if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
-      formattedLines.push(trimmed);
+    // Keep section headers (but make them bold)
+    if (trimmedLine.match(/^\*\*.*\*\*:?$/)) {
+      formattedLines.push(`\n${trimmedLine}\n`);
+      continue;
     }
-    // If line looks like a time entry (e.g., "8:00 AM", "10:30 AM - 1:00 PM")
-    else if (trimmed.match(/^\d{1,2}:\d{2}\s*(AM|PM|am|pm)/)) {
-      formattedLines.push(`• ${trimmed}`);
-    }
-    // If line starts with ** (bold text), format as bullet point
-    else if (trimmed.match(/^\*\*.*\*\*:/)) {
-      formattedLines.push(`• ${trimmed}`);
-    }
-    // If line contains activity description or cost, format as bullet point
-    else if (trimmed.length > 10 && !trimmed.match(/^#{1,4}/)) {
-      formattedLines.push(`• ${trimmed}`);
-    }
-    // Otherwise keep as is (headers, etc.)
-    else {
-      formattedLines.push(trimmed);
+    
+    // Convert time-based activities to bullet points
+    if (trimmedLine.match(/^-\s*\*\*\d+:\d+\s*(AM|PM)/i)) {
+      // Already formatted as bullet with time - keep as is
+      formattedLines.push(`• ${trimmedLine.substring(2)}`);
+    } else if (trimmedLine.match(/^\*\*\d+:\d+\s*(AM|PM)/i)) {
+      // Time without bullet - add bullet
+      formattedLines.push(`• ${trimmedLine}`);
+    } else if (trimmedLine.match(/^-\s*\d+:\d+\s*(AM|PM)/i)) {
+      // Time with dash - convert to bullet
+      formattedLines.push(`• **${trimmedLine.substring(2)}**`);
+    } else if (trimmedLine.match(/^\d+:\d+\s*(AM|PM)/i)) {
+      // Plain time - add bullet and bold
+      formattedLines.push(`• **${trimmedLine}**`);
+    } else if (trimmedLine.match(/^-\s*/)) {
+      // Already has dash - convert to bullet
+      formattedLines.push(`• ${trimmedLine.substring(2)}`);
+    } else if (trimmedLine.match(/^\*\s*/)) {
+      // Already has asterisk - convert to bullet
+      formattedLines.push(`• ${trimmedLine.substring(2)}`);
+    } else if (trimmedLine.match(/^\d+\./)) {
+      // Numbered list - convert to bullet
+      formattedLines.push(`• ${trimmedLine.replace(/^\d+\.\s*/, '')}`);
+    } else if (!trimmedLine.match(/^•/) && !trimmedLine.match(/^\*\*/)) {
+      // Regular content line - add bullet if it looks like an activity
+      if (trimmedLine.length > 20 && !trimmedLine.includes(':')) {
+        formattedLines.push(`• ${trimmedLine}`);
+      } else {
+        formattedLines.push(trimmedLine);
+      }
+    } else {
+      // Keep as is
+      formattedLines.push(trimmedLine);
     }
   }
   
   return formattedLines.join('\n');
 };
 
-const DaySection: React.FC<{ day: { title: string; content: string } }> = ({ day }) => (
+const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber: number }> = ({ day, dayNumber }) => (
   <div className="mb-8">
     {/* Day Header */}
     <div className="bg-form-box border border-gray-200 rounded-t-[24px] px-6 py-4">
-      <h3 className="text-xl font-bold text-primary font-raleway">
+      <h3 className="text-xl font-bold text-primary font-raleway flex items-center">
+        <span className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
+          {dayNumber}
+        </span>
         {day.title}
       </h3>
     </div>
@@ -214,7 +224,7 @@ const DaySection: React.FC<{ day: { title: string; content: string } }> = ({ day
     <div className="bg-form-box rounded-b-[24px] border border-t-0 border-gray-200 p-6">
       <div className="prose prose-lg max-w-none">
         <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-          {formatDayContent(day.content.trim())}
+          {day.content.trim()}
         </div>
       </div>
     </div>
@@ -248,7 +258,7 @@ const ItineraryContent: React.FC<{ content: string; onFinalTipsExtracted?: (tips
       {days.length > 0 ? (
         <div className="space-y-2">
           {days.map((day, index) => (
-            <DaySection key={index} day={day} />
+            <DaySection key={index} day={day} dayNumber={index + 1} />
           ))}
         </div>
       ) : (
