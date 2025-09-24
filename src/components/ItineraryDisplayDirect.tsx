@@ -52,7 +52,7 @@ const TipsSection: React.FC<{ tips: string; isLoading?: boolean }> = ({ tips, is
       ) : (
         <div className="prose prose-lg max-w-none">
           <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-            {tips}
+            {formatDayContent(tips)}
           </div>
         </div>
       )}
@@ -69,12 +69,20 @@ const parseItineraryContent = (content: string) => {
   let finalTips = '';
   let inFinalTips = false;
   let inGeneralTips = false;
+  let inOverview = false;
   
   for (const line of lines) {
+    // Check for Overview section to skip
+    if (line.match(/\*\*Overview\*\*|Overview:|### Overview|## Overview/i)) {
+      inOverview = true;
+      continue; // Skip the overview line entirely
+    }
+    
     // Check for Final Tips or General Tips sections
     if (line.match(/\*\*Final Tips\*\*|Final Tips:|### Final Tips|## Final Tips/i)) {
       inFinalTips = true;
       inGeneralTips = false;
+      inOverview = false;
       finalTips += line + '\n';
       continue;
     }
@@ -82,8 +90,21 @@ const parseItineraryContent = (content: string) => {
     if (line.match(/\*\*General Tips\*\*|General Tips:|### General Tips|## General Tips/i)) {
       inGeneralTips = true;
       inFinalTips = false;
+      inOverview = false;
       finalTips += line + '\n';
       continue;
+    }
+    
+    // If we're in overview section, skip until we hit a day or other section
+    if (inOverview) {
+      // Check if we've hit a day section, which ends the overview
+      const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
+      if (dayMatch) {
+        inOverview = false;
+        // Process this line as a day section below
+      } else {
+        continue; // Skip overview content
+      }
     }
     
     // If we're in any tips section, collect all content
@@ -109,8 +130,10 @@ const parseItineraryContent = (content: string) => {
       // Add content to current day
       currentDay.content += line + '\n';
     } else {
-      // General information before days
-      generalInfo += line + '\n';
+      // General information before days (but not overview)
+      if (!inOverview) {
+        generalInfo += line + '\n';
+      }
     }
   }
   
@@ -124,6 +147,43 @@ const parseItineraryContent = (content: string) => {
     days, 
     finalTips: finalTips.trim() 
   };
+};
+
+// Format day content into bullet points
+const formatDayContent = (content: string): string => {
+  const lines = content.split('\n');
+  const formattedLines: string[] = [];
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      formattedLines.push(''); // Keep empty lines for spacing
+      continue;
+    }
+    
+    // If line already starts with bullet point or dash, keep as is
+    if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+      formattedLines.push(trimmed);
+    }
+    // If line looks like a time entry (e.g., "8:00 AM", "10:30 AM - 1:00 PM")
+    else if (trimmed.match(/^\d{1,2}:\d{2}\s*(AM|PM|am|pm)/)) {
+      formattedLines.push(`• ${trimmed}`);
+    }
+    // If line starts with ** (bold text), format as bullet point
+    else if (trimmed.match(/^\*\*.*\*\*:/)) {
+      formattedLines.push(`• ${trimmed}`);
+    }
+    // If line contains activity description or cost, format as bullet point
+    else if (trimmed.length > 10 && !trimmed.match(/^#{1,4}/)) {
+      formattedLines.push(`• ${trimmed}`);
+    }
+    // Otherwise keep as is (headers, etc.)
+    else {
+      formattedLines.push(trimmed);
+    }
+  }
+  
+  return formattedLines.join('\n');
 };
 
 const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber: number }> = ({ day, dayNumber }) => (
@@ -142,7 +202,7 @@ const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber:
     <div className="bg-form-box rounded-b-[24px] border border-t-0 border-gray-200 p-6">
       <div className="prose prose-lg max-w-none">
         <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-          {day.content.trim()}
+          {formatDayContent(day.content.trim())}
         </div>
       </div>
     </div>
