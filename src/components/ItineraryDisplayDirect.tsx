@@ -70,16 +70,25 @@ const parseItineraryContent = (content: string) => {
   let inFinalTips = false;
   let inGeneralTips = false;
   let inOverview = false;
+  let skipTitleLine = false;
   
   for (const line of lines) {
+    const trimmed = line.trim();
+    
+    // Skip title lines like "5-Day Japan Itinerary for 2 Adults (Tokyo Focus)"
+    if (trimmed.match(/^\d+\-Day.*Itinerary/i) || trimmed.match(/^###.*Itinerary/i)) {
+      skipTitleLine = true;
+      continue;
+    }
+    
     // Check for Overview section to skip
-    if (line.match(/\*\*Overview\*\*|Overview:|### Overview|## Overview/i)) {
+    if (trimmed.match(/\*\*Overview\*\*|Overview:|### Overview|## Overview/i)) {
       inOverview = true;
       continue; // Skip the overview line entirely
     }
     
     // Check for Final Tips or General Tips sections
-    if (line.match(/\*\*Final Tips\*\*|Final Tips:|### Final Tips|## Final Tips/i)) {
+    if (trimmed.match(/\*\*Final Tips\*\*|Final Tips:|### Final Tips|## Final Tips/i)) {
       inFinalTips = true;
       inGeneralTips = false;
       inOverview = false;
@@ -87,7 +96,7 @@ const parseItineraryContent = (content: string) => {
       continue;
     }
     
-    if (line.match(/\*\*General Tips\*\*|General Tips:|### General Tips|## General Tips/i)) {
+    if (trimmed.match(/\*\*General Tips\*\*|General Tips:|### General Tips|## General Tips/i)) {
       inGeneralTips = true;
       inFinalTips = false;
       inOverview = false;
@@ -95,15 +104,34 @@ const parseItineraryContent = (content: string) => {
       continue;
     }
     
-    // If we're in overview section, skip until we hit a day or other section
-    if (inOverview) {
-      // Check if we've hit a day section, which ends the overview
-      const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
+    // Check if line contains day information (enhanced patterns)
+    const dayMatch = trimmed.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
+    
+    if (dayMatch) {
+      // End overview mode when we hit a day
+      inOverview = false;
+      
+      // Save previous day if exists
+      if (currentDay) {
+        days.push(currentDay);
+      }
+      // Start new day
+      currentDay = {
+        title: trimmed.replace(/^#{1,4}\s*/, '').replace(/^#### /, '').trim(),
+        content: ''
+      };
+      continue;
+    }
+    
+    // If we're in overview section or skipping title, skip content
+    if (inOverview || skipTitleLine) {
+      // Check if we've hit a day section, which ends the overview/title skip
       if (dayMatch) {
         inOverview = false;
-        // Process this line as a day section below
+        skipTitleLine = false;
+        // Process this line as a day section (handled above)
       } else {
-        continue; // Skip overview content
+        continue; // Skip overview/title content
       }
     }
     
@@ -113,25 +141,12 @@ const parseItineraryContent = (content: string) => {
       continue;
     }
     
-    // Check if line contains day information (various patterns)
-    const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
-    
-    if (dayMatch) {
-      // Save previous day if exists
-      if (currentDay) {
-        days.push(currentDay);
-      }
-      // Start new day
-      currentDay = {
-        title: line.replace(/^#{1,4}\s*/, '').trim(),
-        content: ''
-      };
-    } else if (currentDay) {
+    if (currentDay) {
       // Add content to current day
       currentDay.content += line + '\n';
     } else {
-      // General information before days (but not overview)
-      if (!inOverview) {
+      // General information before days (but not overview or title)
+      if (!inOverview && !skipTitleLine) {
         generalInfo += line + '\n';
       }
     }
@@ -186,14 +201,11 @@ const formatDayContent = (content: string): string => {
   return formattedLines.join('\n');
 };
 
-const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber: number }> = ({ day, dayNumber }) => (
+const DaySection: React.FC<{ day: { title: string; content: string } }> = ({ day }) => (
   <div className="mb-8">
     {/* Day Header */}
     <div className="bg-form-box border border-gray-200 rounded-t-[24px] px-6 py-4">
-      <h3 className="text-xl font-bold text-primary font-raleway flex items-center">
-        <span className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
-          {dayNumber}
-        </span>
+      <h3 className="text-xl font-bold text-primary font-raleway">
         {day.title}
       </h3>
     </div>
@@ -236,7 +248,7 @@ const ItineraryContent: React.FC<{ content: string; onFinalTipsExtracted?: (tips
       {days.length > 0 ? (
         <div className="space-y-2">
           {days.map((day, index) => (
-            <DaySection key={index} day={day} dayNumber={index + 1} />
+            <DaySection key={index} day={day} />
           ))}
         </div>
       ) : (
