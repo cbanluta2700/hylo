@@ -102,10 +102,10 @@ function App() {
     console.log('📊 Raw FormData from state:', formData);
     console.log('🎯 Travel Style Choice:', travelStyleChoice);
     console.log('🎪 Additional State:', {
-      selectedExperience,
-      selectedVibes,
-      selectedSampleDays,
-      dinnerChoices,
+      selectedExperience: formData.travelStyleAnswers?.experience || [],
+      selectedVibes: formData.travelStyleAnswers?.vibes || [],
+      selectedSampleDays: formData.travelStyleAnswers?.sampleDays || [],
+      dinnerChoices: formData.travelStyleAnswers?.dinnerChoices || [],
       tripNickname,
       contactInfo,
       customVibesText,
@@ -129,10 +129,11 @@ function App() {
           ...formData.travelStyleAnswers,
           tripNickname: [tripNickname],
           contactInfo: [contactInfo],
-          experience: selectedExperience,
-          vibes: selectedVibes,
-          sampleDays: selectedSampleDays,
-          dinnerChoices: dinnerChoices,
+          // Use actual formData instead of separate state variables
+          experience: formData.travelStyleAnswers?.experience || [],
+          vibes: formData.travelStyleAnswers?.vibes || [],
+          sampleDays: formData.travelStyleAnswers?.sampleDays || [],
+          dinnerChoices: formData.travelStyleAnswers?.dinnerChoices || [],
         }
       };
       
