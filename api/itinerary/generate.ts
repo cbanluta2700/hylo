@@ -57,51 +57,41 @@ export default async function handler(request: Request): Promise<Response> {
       baseURL: 'https://api.x.ai/v1',
     });
 
-    // Balanced prompt with explicit recommendations request
-    const balancedPrompt = `
+    // Simplified prompt to avoid timeouts while ensuring 3 days
+    const simplifiedPrompt = `
 Create a ${plannedDays}-day travel itinerary for ${location} for ${adults} adults with $${budget} budget.
 
-Trip: ${adults} adults, ${plannedDays} days, $${budget} USD, interests: ${interests.join(', ') || 'sightseeing'}
+IMPORTANT: Generate exactly ${plannedDays} days (Day 1, Day 2, Day 3, etc.)
 
-FORMAT (start with Day 1, no intro):
+FORMAT:
+Day 1: [Title]
+• **9:00 AM - Activity**: Description with cost
+• **12:00 PM - Lunch**: Restaurant, dish, price
+• **2:00 PM - Activity**: Details with pricing
+• **7:00 PM - Dinner**: Restaurant, cost
 
-Day 1: [Clean descriptive theme title - no "Day 1:" prefix]
-**Theme**: Brief description of the day's focus and activities
-• **9:00 AM - Activity**: Description with cost and tips
-• **12:00 PM - Lunch**: Restaurant name, dish, price ($X)
-• **2:00 PM - Activity**: Location, cost, what to expect  
-• **5:00 PM - Activity**: Details with pricing
-• **7:00 PM - Dinner**: Restaurant, specialties, cost
-• **9:00 PM - Evening**: Activity or relaxation
-**Recommendations**: 2-3 insider tips, local secrets, or must-know advice for this day
+Day 2: [Title]
+• **Morning/afternoon/evening activities** with times and costs
 
-Day 2: [Theme]  
-**Theme**: Day focus description
-• **Morning/Afternoon/Evening activities** with times, costs, details
-**Recommendations**: Local tips and insider advice
-
-Day 3: [Theme] (if applicable)
-**Theme**: Day description
+Day 3: [Title] (if ${plannedDays} >= 3)
 • **Activities with times and costs**
-**Recommendations**: Essential tips for this day
 
 General Tips:
-• Weather & Packing: Essential items for ${location}
-• Money: Currency, payment methods, costs
-• Culture: Key etiquette rules and customs
-• Transport: Best options and costs
-• Safety: Important precautions
+• Weather & Packing: Essential items
+• Money: Currency and payments
+• Culture: Key etiquette
+• Transport: Best options
 
-Include specific costs in USD, restaurant names, practical details, and local recommendations for each day.
+Include specific costs in USD and restaurant names. Be concise but helpful.
     `.trim();
 
-    console.log('🤖 [GENERATE] Using balanced detailed generation...');
+    console.log('🤖 [GENERATE] Using simplified generation to avoid timeouts...');
     
     const result = await streamText({
       model: xai('grok-4-fast-non-reasoning-latest'),
-      system: 'You are a practical travel planner. Create detailed itineraries with specific costs, restaurant names, and useful tips. Be thorough but efficient.',
-      prompt: balancedPrompt,
-      temperature: 0.65,
+      system: 'You are a practical travel planner. Create concise itineraries with specific costs and restaurant names. Generate exactly the requested number of days.',
+      prompt: simplifiedPrompt,
+      temperature: 0.6,
     });
 
     // Add timeout protection
@@ -130,7 +120,7 @@ Include specific costs in USD, restaurant names, practical details, and local re
         duration: plannedDays,
         travelers: adults,
         content: itinerary,
-        generatedBy: 'XAI Grok-4 Fast (Balanced Detailed)',
+        generatedBy: 'XAI Grok-4 Fast (Simplified for Reliability)',
         completedAt: new Date().toISOString(),
       },
     });
