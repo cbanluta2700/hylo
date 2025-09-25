@@ -57,40 +57,47 @@ export default async function handler(request: Request): Promise<Response> {
       baseURL: 'https://api.x.ai/v1',
     });
 
-    // Simplified prompt to avoid timeouts while ensuring 3 days
-    const simplifiedPrompt = `
+    // Balanced prompt with essential features but optimized for performance
+    const optimizedPrompt = `
 Create a ${plannedDays}-day travel itinerary for ${location} for ${adults} adults with $${budget} budget.
 
-IMPORTANT: Generate exactly ${plannedDays} days (Day 1, Day 2, Day 3, etc.)
+Generate exactly ${plannedDays} days. Format each day as:
 
-FORMAT:
-Day 1: [Title]
+Day 1: [Descriptive Title]
+Theme: Brief description of the day's focus
+Morning
 • **9:00 AM - Activity**: Description with cost
-• **12:00 PM - Lunch**: Restaurant, dish, price
-• **2:00 PM - Activity**: Details with pricing
-• **7:00 PM - Dinner**: Restaurant, cost
+• **11:00 AM - Activity**: Details and pricing
+Afternoon  
+• **1:00 PM - Lunch**: Restaurant name and cost
+• **3:00 PM - Activity**: Location and pricing
+Evening
+• **7:00 PM - Dinner**: Restaurant and cost
+• **9:00 PM - Activity**: Evening entertainment
 
 Day 2: [Title]
-• **Morning/afternoon/evening activities** with times and costs
+Theme: Day focus
+Morning/Afternoon/Evening sections with activities and times
 
-Day 3: [Title] (if ${plannedDays} >= 3)
-• **Activities with times and costs**
+Day 3: [Title] (if ${plannedDays} >= 3)  
+Theme: Final day focus
+Morning/Afternoon/Evening activities
 
 General Tips:
 • Weather & Packing: Essential items
-• Money: Currency and payments
-• Culture: Key etiquette
+• Money: Currency and costs  
+• Culture: Key customs
 • Transport: Best options
 
-Include specific costs in USD and restaurant names. Be concise but helpful.
+Include specific costs in USD and restaurant names.
     `.trim();
 
-    console.log('🤖 [GENERATE] Using simplified generation to avoid timeouts...');
+    console.log('🤖 [GENERATE] Using optimized generation with themes and time sections...');
     
     const result = await streamText({
       model: xai('grok-4-fast-non-reasoning-latest'),
-      system: 'You are a practical travel planner. Create concise itineraries with specific costs and restaurant names. Generate exactly the requested number of days.',
-      prompt: simplifiedPrompt,
+      system: 'You are a travel planner. Create structured itineraries with themes, Morning/Afternoon/Evening sections, specific costs, and restaurant names. Be organized and practical.',
+      prompt: optimizedPrompt,
       temperature: 0.6,
     });
 
@@ -120,7 +127,7 @@ Include specific costs in USD and restaurant names. Be concise but helpful.
         duration: plannedDays,
         travelers: adults,
         content: itinerary,
-        generatedBy: 'XAI Grok-4 Fast (Simplified for Reliability)',
+        generatedBy: 'XAI Grok-4 Fast (Optimized with Themes)',
         completedAt: new Date().toISOString(),
       },
     });
