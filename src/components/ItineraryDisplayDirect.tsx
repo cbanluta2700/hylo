@@ -450,9 +450,7 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
             <div className="text-2xl mb-2">👤</div>
             <div className="font-bold text-primary">Prepared for</div>
             <div className="text-gray-700">
-              {originalFormData?.contactName || 
-               (aiItinerary as any)?.name ||
-               'Traveler'}
+              {originalFormData?.contactName || 'Traveler'}
             </div>
           </div>
         </div>
