@@ -21,21 +21,27 @@ export default async function handler(request: Request): Promise<Response> {
       plannedDays: formData.plannedDays,
     });
 
-    // Extract and validate form data with better date calculation
+    // Extract and validate form data with corrected date calculation
     const location = formData.location || 'Unknown Destination';
     let plannedDays = formData.plannedDays;
     
-    // Calculate days from dates if not provided
-    if (!plannedDays && formData.departDate && formData.returnDate) {
+    // Always calculate from dates if available, override plannedDays
+    if (formData.departDate && formData.returnDate) {
       const startDate = new Date(formData.departDate);
       const endDate = new Date(formData.returnDate);
       const timeDiff = endDate.getTime() - startDate.getTime();
-      plannedDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // Include both start and end days
-      console.log('📅 [GENERATE] Calculated days from dates:', {
-        departDate: formData.departDate,
-        returnDate: formData.returnDate,
-        calculatedDays: plannedDays
-      });
+      const calculatedDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // Include both start and end days
+      
+      // Use calculated days if it makes sense, otherwise use provided plannedDays
+      if (calculatedDays > 0 && calculatedDays <= 30) {
+        plannedDays = calculatedDays;
+        console.log('📅 [GENERATE] Using calculated days from dates:', {
+          departDate: formData.departDate,
+          returnDate: formData.returnDate,
+          calculatedDays: plannedDays,
+          overridingPlannedDays: formData.plannedDays
+        });
+      }
     }
     
     plannedDays = plannedDays || 3;

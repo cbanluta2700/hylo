@@ -160,9 +160,11 @@ const formatDayContentToProduction = (content: string): string => {
       continue;
     }
     
-    // Clean up Theme line - remove ** and make proper formatting
-    if (trimmedLine.match(/^\*\*Theme:/i)) {
-      const cleanTheme = trimmedLine.replace(/^\*\*Theme:\s*/, '').replace(/\*\*$/, '');
+    // Clean up Theme line - handle various markdown patterns
+    if (trimmedLine.match(/^\*+Theme\**/i)) {
+      const cleanTheme = trimmedLine
+        .replace(/^\*+Theme\*+:?\s*/i, '') // Remove *Theme**: or **Theme**: or *Theme**:
+        .replace(/\*+$/, ''); // Remove trailing asterisks
       formatted += `**Theme**: ${cleanTheme}\n\n`;
       continue;
     }
@@ -174,14 +176,18 @@ const formatDayContentToProduction = (content: string): string => {
       continue;
     }
     
-    // Detect recommendations sections
-    if (trimmedLine.match(/recommendations|suggested|tips for|where to/i) && trimmedLine.includes('•')) {
+    // Detect recommendations sections - handle malformed asterisks
+    if (trimmedLine.match(/\*+Recommendations\**/i) || 
+        (trimmedLine.match(/recommendations|suggested|tips for|where to/i) && trimmedLine.includes('•'))) {
       inRecommendations = true;
       formatted += `**Recommendations:**\n`;
-      // Process the recommendation line
-      const cleanRec = cleanActivityLine(trimmedLine);
-      if (cleanRec) {
-        formatted += `• ${cleanRec}\n`;
+      // Process the recommendation line if it has content after the header
+      const afterHeader = trimmedLine.replace(/^\*+Recommendations\*+:?\s*/i, '');
+      if (afterHeader && afterHeader.includes('•')) {
+        const cleanRec = cleanActivityLine(afterHeader);
+        if (cleanRec) {
+          formatted += `• ${cleanRec}\n`;
+        }
       }
       continue;
     }
