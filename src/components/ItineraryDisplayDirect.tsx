@@ -117,9 +117,14 @@ const parseItineraryContent = (content: string) => {
         currentDay.content = formatDayContentToProduction(currentDay.content);
         days.push(currentDay);
       }
-      // Start new day - keep the full title as is
+      // Start new day - clean title by removing ### and Day numbering
+      const cleanTitle = line
+        .replace(/^#{1,6}\s*/, '') // Remove markdown headers ###
+        .replace(/^Day\s*\d+:\s*/i, '') // Remove "Day X:" prefix
+        .trim();
+      
       currentDay = {
-        title: line.trim(),
+        title: cleanTitle,
         content: ''
       };
     } else if (currentDay) {
@@ -144,85 +149,55 @@ const parseItineraryContent = (content: string) => {
 // Format day content into production-ready format
 const formatDayContentToProduction = (content: string): string => {
   const lines = content.split('\n');
-  const sections: {
-    theme: string;
-    morning: string[];
-    afternoon: string[];
-    evening: string[];
-    costs: string;
-    tips: string[];
-  } = { theme: '', morning: [], afternoon: [], evening: [], costs: '', tips: [] };
-  let currentSection: 'morning' | 'afternoon' | 'evening' | 'tips' = 'morning';
+  let formatted = '';
+  let inRecommendations = false;
   
   for (const line of lines) {
     const trimmedLine = line.trim();
     
-    if (!trimmedLine) continue;
-    
-    // Detect theme/description
-    if (trimmedLine.match(/^\*\*Theme\*\*|Theme:/i)) {
-      sections.theme = trimmedLine.replace(/^\*\*Theme\*\*:?\s*/i, '');
+    if (!trimmedLine) {
+      formatted += '\n';
       continue;
     }
     
-    // Detect costs section
-    if (trimmedLine.match(/^\*\*Daily Costs\*\*|Daily Costs:|Costs:/i)) {
-      sections.costs = trimmedLine.replace(/^\*\*Daily Costs\*\*:?\s*/i, '');
+    // Clean up Theme line - remove ** and make proper formatting
+    if (trimmedLine.match(/^\*\*Theme:/i)) {
+      const cleanTheme = trimmedLine.replace(/^\*\*Theme:\s*/, '').replace(/\*\*$/, '');
+      formatted += `**Theme**: ${cleanTheme}\n\n`;
       continue;
     }
     
-    // Detect time-based sections
-    if (trimmedLine.match(/\d{1,2}:\d{2}\s*(AM|PM)/i)) {
-      const hour = parseInt(trimmedLine.match(/(\d{1,2}):\d{2}/)?.[1] || '0');
-      if (hour >= 6 && hour < 12) {
-        currentSection = 'morning';
-      } else if (hour >= 12 && hour < 17) {
-        currentSection = 'afternoon';  
-      } else {
-        currentSection = 'evening';
+    // Clean up time section headers - remove ** and keep bold formatting
+    if (trimmedLine.match(/^\*\*(Morning|Afternoon|Evening)\*\*$/i)) {
+      const sectionName = trimmedLine.replace(/\*\*/g, '');
+      formatted += `**${sectionName}**\n`;
+      continue;
+    }
+    
+    // Detect recommendations sections
+    if (trimmedLine.match(/recommendations|suggested|tips for|where to/i) && trimmedLine.includes('•')) {
+      inRecommendations = true;
+      formatted += `**Recommendations:**\n`;
+      // Process the recommendation line
+      const cleanRec = cleanActivityLine(trimmedLine);
+      if (cleanRec) {
+        formatted += `• ${cleanRec}\n`;
       }
+      continue;
     }
     
-    // Clean and format activity lines
+    // Clean regular activity lines
     const cleanLine = cleanActivityLine(trimmedLine);
     if (cleanLine) {
-      if (sections.costs && trimmedLine.includes('$')) {
-        sections.costs += ' ' + cleanLine;
+      // Add bullet if not present
+      if (!cleanLine.startsWith('•')) {
+        formatted += `• ${cleanLine}\n`;
       } else {
-        sections[currentSection].push(cleanLine);
+        formatted += `${cleanLine}\n`;
       }
+    } else {
+      formatted += `${trimmedLine}\n`;
     }
-  }
-  
-  // Build production format
-  let formatted = '';
-  
-  if (sections.theme) {
-    formatted += `${sections.theme}\n\n`;
-  }
-  
-  if (sections.morning.length > 0) {
-    formatted += `**Morning**\n`;
-    sections.morning.forEach(activity => {
-      formatted += `• ${activity}\n`;
-    });
-    formatted += '\n';
-  }
-  
-  if (sections.afternoon.length > 0) {
-    formatted += `**Afternoon**\n`;
-    sections.afternoon.forEach(activity => {
-      formatted += `• ${activity}\n`;
-    });
-    formatted += '\n';
-  }
-  
-  if (sections.evening.length > 0) {
-    formatted += `**Evening**\n`;
-    sections.evening.forEach(activity => {
-      formatted += `• ${activity}\n`;
-    });
-    formatted += '\n';
   }
   
   return formatted.trim();
@@ -232,12 +207,20 @@ const formatDayContentToProduction = (content: string): string => {
 const cleanActivityLine = (line: string): string => {
   // Remove bullet symbols and clean formatting
   let cleaned = line
-    .replace(/^[•\-\*]\s*/, '')
-    .replace(/^\*\*(.*?)\*\*:?\s*/, '$1: ')
-    .replace(/^\d+\.\s*/, '');
+    .replace(/^[•\-\*]\s*/, '') // Remove leading bullets
+    .replace(/^\d+\.\s*/, '') // Remove numbered list markers
+    .replace(/^#{1,6}\s*/, ''); // Remove markdown headers
     
-  // Don't include lines that are just formatting or costs summaries
-  if (cleaned.match(/^(Theme|Daily Costs|Total)/i)) {
+  // Clean up bold markdown but preserve content structure
+  cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '**$1**'); // Keep intentional bold
+  
+  // Don't include lines that are just formatting, costs summaries, or section headers
+  if (cleaned.match(/^(Theme|Daily Costs|Total|Morning|Afternoon|Evening)(\s*:|\s*$)/i)) {
+    return '';
+  }
+  
+  // Don't include empty or very short lines
+  if (cleaned.length < 10) {
     return '';
   }
   

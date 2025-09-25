@@ -51,7 +51,7 @@ export default async function handler(request: Request): Promise<Response> {
       baseURL: 'https://api.x.ai/v1',
     });
 
-    // Balanced prompt - detailed but efficient for edge runtime
+    // Balanced prompt with explicit recommendations request
     const balancedPrompt = `
 Create a ${plannedDays}-day travel itinerary for ${location} for ${adults} adults with $${budget} budget.
 
@@ -59,19 +59,25 @@ Trip: ${adults} adults, ${plannedDays} days, $${budget} USD, interests: ${intere
 
 FORMAT (start with Day 1, no intro):
 
-Day 1: [Theme]
+Day 1: [Clean descriptive theme title - no "Day 1:" prefix]
+**Theme**: Brief description of the day's focus and activities
 • **9:00 AM - Activity**: Description with cost and tips
 • **12:00 PM - Lunch**: Restaurant name, dish, price ($X)
 • **2:00 PM - Activity**: Location, cost, what to expect  
 • **5:00 PM - Activity**: Details with pricing
 • **7:00 PM - Dinner**: Restaurant, specialties, cost
 • **9:00 PM - Evening**: Activity or relaxation
+**Recommendations**: 2-3 insider tips, local secrets, or must-know advice for this day
 
 Day 2: [Theme]  
+**Theme**: Day focus description
 • **Morning/Afternoon/Evening activities** with times, costs, details
+**Recommendations**: Local tips and insider advice
 
 Day 3: [Theme] (if applicable)
+**Theme**: Day description
 • **Activities with times and costs**
+**Recommendations**: Essential tips for this day
 
 General Tips:
 • Weather & Packing: Essential items for ${location}
@@ -80,7 +86,7 @@ General Tips:
 • Transport: Best options and costs
 • Safety: Important precautions
 
-Include specific costs in USD, restaurant names, and practical details. Keep it comprehensive but concise.
+Include specific costs in USD, restaurant names, practical details, and local recommendations for each day.
     `.trim();
 
     console.log('🤖 [GENERATE] Using balanced detailed generation...');
