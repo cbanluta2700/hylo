@@ -30,6 +30,10 @@ function App() {
     customInterestsText: '',
     customInclusionsText: '',
     inclusionPreferences: {},
+    // Trip nickname and contact info
+    tripNickname: '',
+    contactName: '',
+    contactEmail: '',
   });
   const [selectedExperience, setSelectedExperience] = useState<string[]>([]);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
