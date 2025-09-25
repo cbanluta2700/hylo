@@ -51,60 +51,56 @@ export default async function handler(request: Request): Promise<Response> {
       baseURL: 'https://api.x.ai/v1',
     });
 
-    // Enhanced single-phase prompt for comprehensive content
-    const comprehensivePrompt = `
-Create a detailed ${plannedDays}-day travel itinerary for ${location} for ${adults} adults with $${budget} budget.
+    // Balanced prompt - detailed but efficient for edge runtime
+    const balancedPrompt = `
+Create a ${plannedDays}-day travel itinerary for ${location} for ${adults} adults with $${budget} budget.
 
-TRAVELER PROFILE:
-- Group: ${adults} adults
-- Budget: $${budget} USD total
-- Interests: ${interests.join(', ') || 'history, culture, food, sightseeing'}
-- Duration: ${plannedDays} days
+Trip: ${adults} adults, ${plannedDays} days, $${budget} USD, interests: ${interests.join(', ') || 'sightseeing'}
 
-CONTENT REQUIREMENTS:
-1. START directly with Day 1 (no overview paragraphs)
-2. Each day should have 6-8 detailed activities with specific times
-3. Include multiple restaurant recommendations per day
-4. Provide specific costs in USD and local currency  
-5. Add cultural context and historical background for major sites
-6. Include shopping recommendations and local experiences
-7. Suggest both day and evening activities
-8. End with comprehensive "General Tips" section
+FORMAT (start with Day 1, no intro):
 
-DETAILED FORMAT for each day:
-Day X: [Engaging Theme Title]
-• **8:00 AM - Morning Activity**: Detailed description with specific location, entry cost ($X USD / ¥X), what to expect, and practical tips (2-3 sentences)
-• **10:30 AM - Cultural Site**: Historical context, significance, visit duration, costs, and insider tips
-• **12:30 PM - Lunch**: Specific restaurant name, signature dish, price range, ordering tips
-• **2:00 PM - Afternoon Experience**: Detailed activity with costs, duration, and what makes it special
-• **4:00 PM - Shopping/Local Culture**: Specific areas, what to buy, price ranges
-• **6:30 PM - Dinner**: Restaurant recommendation with atmosphere, specialties, costs
-• **8:30 PM - Evening Entertainment**: Nightlife, shows, or relaxing activities with costs
-• **Daily Budget Summary**: Transport $X, Food $X, Activities $X, Shopping $X = Total $X
+Day 1: [Theme]
+• **9:00 AM - Activity**: Description with cost and tips
+• **12:00 PM - Lunch**: Restaurant name, dish, price ($X)
+• **2:00 PM - Activity**: Location, cost, what to expect  
+• **5:00 PM - Activity**: Details with pricing
+• **7:00 PM - Dinner**: Restaurant, specialties, cost
+• **9:00 PM - Evening**: Activity or relaxation
 
-GENERAL TIPS (comprehensive):
-• **Weather & Packing**: Seasonal advice, essential items, clothing recommendations
-• **Money & Budget**: Currency, cards vs cash, tipping culture, cost-saving tips
-• **Culture & Etiquette**: Important customs, dos and don'ts, social norms
-• **Transportation**: Best apps, cards/passes, navigation tips, cost breakdowns
-• **Safety & Health**: Emergency contacts, common concerns, health tips
-• **Communication**: Language basics, useful apps, getting help
-• **Food Culture**: Dining etiquette, must-try dishes, dietary restrictions help
-• **Hidden Gems**: Local secrets, off-beaten-path recommendations
+Day 2: [Theme]  
+• **Morning/Afternoon/Evening activities** with times, costs, details
 
-Make it comprehensive, engaging, and practical for ${location} specifically.
+Day 3: [Theme] (if applicable)
+• **Activities with times and costs**
+
+General Tips:
+• Weather & Packing: Essential items for ${location}
+• Money: Currency, payment methods, costs
+• Culture: Key etiquette rules and customs
+• Transport: Best options and costs
+• Safety: Important precautions
+
+Include specific costs in USD, restaurant names, and practical details. Keep it comprehensive but concise.
     `.trim();
 
-    console.log('🤖 [GENERATE] Using enhanced comprehensive single-phase generation...');
+    console.log('🤖 [GENERATE] Using balanced detailed generation...');
     
     const result = await streamText({
       model: xai('grok-4-fast-non-reasoning-latest'),
-      system: 'You are an expert travel planner who creates detailed, engaging itineraries. Provide comprehensive information with specific costs, cultural insights, and practical tips. Be thorough but well-organized.',
-      prompt: comprehensivePrompt,
-      temperature: 0.7,
+      system: 'You are a practical travel planner. Create detailed itineraries with specific costs, restaurant names, and useful tips. Be thorough but efficient.',
+      prompt: balancedPrompt,
+      temperature: 0.65,
     });
 
-    const itinerary = await result.text;
+    // Add timeout protection
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Generation timeout after 45 seconds')), 45000)
+    );
+
+    const itinerary = await Promise.race([
+      result.text,
+      timeoutPromise
+    ]) as string;
     console.log('✅ [GENERATE] Itinerary generated, length:', itinerary?.length);
 
     if (!itinerary || itinerary.length < 100) {
@@ -122,7 +118,7 @@ Make it comprehensive, engaging, and practical for ${location} specifically.
         duration: plannedDays,
         travelers: adults,
         content: itinerary,
-        generatedBy: 'XAI Grok-4 Fast (Enhanced Comprehensive)',
+        generatedBy: 'XAI Grok-4 Fast (Balanced Detailed)',
         completedAt: new Date().toISOString(),
       },
     });
