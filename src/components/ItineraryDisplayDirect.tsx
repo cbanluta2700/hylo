@@ -76,8 +76,8 @@ const parseItineraryContent = (content: string) => {
     
     // Skip everything until we hit the first Day
     if (!skipUntilDay) {
-      // Look for first day to start processing
-      const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
+      // Look for first day to start processing - updated pattern for "Day X:" format
+      const dayMatch = line.match(/^(Day\s*\d+:|DAY\s*\d+:|\d+\.\s*Day|\d+\s*-\s*Day|#{1,4}\s*Day\s*\d+)/i);
       if (dayMatch) {
         skipUntilDay = true;
         // Process this day line
@@ -107,8 +107,8 @@ const parseItineraryContent = (content: string) => {
       continue;
     }
     
-    // Check if line contains day information (various patterns)
-    const dayMatch = line.match(/^#{1,4}\s*(Day\s*\d+|DAY\s*\d+|\d+\.\s*Day|\d+\s*-\s*Day|#### Day \d+)/i);
+    // Check if line contains day information - updated pattern for "Day X:" format
+    const dayMatch = line.match(/^(Day\s*\d+:|DAY\s*\d+:|\d+\.\s*Day|\d+\s*-\s*Day|#{1,4}\s*Day\s*\d+)/i);
     
     if (dayMatch) {
       // Save previous day if exists
@@ -117,9 +117,9 @@ const parseItineraryContent = (content: string) => {
         currentDay.content = formatDayContentToProduction(currentDay.content);
         days.push(currentDay);
       }
-      // Start new day
+      // Start new day - keep the full title as is
       currentDay = {
-        title: line.replace(/^#{1,4}\s*/, '').trim(),
+        title: line.trim(),
         content: ''
       };
     } else if (currentDay) {
