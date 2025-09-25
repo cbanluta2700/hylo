@@ -450,8 +450,9 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
             <div className="text-2xl mb-2">👤</div>
             <div className="font-bold text-primary">Prepared for</div>
             <div className="text-gray-700">
-              {originalFormData?.contactName?.trim() || 
-               (originalFormData?.contactInfo && typeof originalFormData.contactInfo === 'object' ? originalFormData.contactInfo.name : originalFormData?.contactInfo)?.trim() ||
+              {originalFormData?.contactInfo?.name?.trim() ||
+               originalFormData?.contactInfo?.trim() ||
+               originalFormData?.contactName?.trim() ||
                (formData?.location ? `${formData.location} Traveler` : 'Traveler')}
             </div>
           </div>
