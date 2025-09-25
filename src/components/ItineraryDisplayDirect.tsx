@@ -14,6 +14,7 @@ import type { FormData } from './TripDetails/types';
 interface ItineraryDisplayProps {
   formData?: TravelFormData | null;
   originalFormData?: FormData;
+  contactInfo?: any;
   isLoading: boolean;
   error?: string;
   aiItinerary?: any;
@@ -305,6 +306,7 @@ const ItineraryContent: React.FC<{ content: string; onFinalTipsExtracted?: (tips
 const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
   formData,
   originalFormData,
+  contactInfo,
   isLoading,
   error,
   aiItinerary,
@@ -450,7 +452,7 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
             <div className="text-2xl mb-2">👤</div>
             <div className="font-bold text-primary">Prepared for</div>
             <div className="text-gray-700">
-              {originalFormData?.contactName || 'Traveler'}
+              {contactInfo?.name || originalFormData?.contactName || 'Traveler'}
             </div>
           </div>
         </div>

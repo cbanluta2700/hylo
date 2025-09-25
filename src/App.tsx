@@ -378,6 +378,7 @@ ${error instanceof Error ? error.message : 'Unknown error occurred'}
               <ItineraryDisplayDirect
                 formData={transformedFormData}
                 originalFormData={formData}
+                contactInfo={contactInfo}
                 isLoading={isGenerating}
                 error={generationError}
                 aiItinerary={generatedItinerary}
