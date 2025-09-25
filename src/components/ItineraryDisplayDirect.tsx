@@ -236,30 +236,71 @@ const cleanActivityLine = (line: string): string => {
   return cleaned;
 };
 
-const DaySection: React.FC<{ day: { title: string; content: string }; dayNumber: number }> = ({ day, dayNumber }) => (
-  <div className="mb-8">
-    {/* Day Header */}
-    <div className="bg-form-box border border-gray-200 rounded-t-[24px] px-6 py-4">
-      <h3 className="text-xl font-bold text-primary font-raleway flex items-center">
-        <span className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
-          {dayNumber}
-        </span>
-        {day.title}
-      </h3>
-    </div>
+const DaySection: React.FC<{ 
+  day: { title: string; content: string }; 
+  dayNumber: number; 
+  formData?: TravelFormData | null;
+}> = ({ day, dayNumber, formData }) => {
+  
+  // Calculate the actual date for this day
+  const getDayDate = (): string => {
+    if (!formData?.departDate) return '';
     
-    {/* Day Content */}
-    <div className="bg-form-box rounded-b-[24px] border border-t-0 border-gray-200 p-6">
-      <div className="prose prose-lg max-w-none">
-        <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-          {day.content.trim()}
+    try {
+      const startDate = new Date(formData.departDate);
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + (dayNumber - 1));
+      
+      return currentDate.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch (error) {
+      return '';
+    }
+  };
+
+  const dayDate = getDayDate();
+
+  return (
+    <div className="mb-8">
+      {/* Day Header */}
+      <div className="bg-form-box border border-gray-200 rounded-t-[24px] px-6 py-4">
+        <h3 className="text-xl font-bold text-primary font-raleway flex items-center">
+          <div className="flex flex-col items-center mr-3">
+            <span className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
+              {dayNumber}
+            </span>
+            {dayDate && (
+              <span className="text-xs text-gray-600 mt-1 font-normal">
+                {dayDate}
+              </span>
+            )}
+          </div>
+          <div>
+            {day.title}
+          </div>
+        </h3>
+      </div>
+      
+      {/* Day Content */}
+      <div className="bg-form-box rounded-b-[24px] border border-t-0 border-gray-200 p-6">
+        <div className="prose prose-lg max-w-none">
+          <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+            {day.content.trim()}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
-const ItineraryContent: React.FC<{ content: string; onFinalTipsExtracted?: (tips: string) => void }> = ({ content, onFinalTipsExtracted }) => {
+const ItineraryContent: React.FC<{ 
+  content: string; 
+  onFinalTipsExtracted?: (tips: string) => void;
+  formData?: TravelFormData | null;
+}> = ({ content, onFinalTipsExtracted, formData }) => {
   const { generalInfo, days, finalTips } = parseItineraryContent(content);
   
   // Notify parent about extracted final tips
@@ -286,7 +327,12 @@ const ItineraryContent: React.FC<{ content: string; onFinalTipsExtracted?: (tips
       {days.length > 0 ? (
         <div className="space-y-2">
           {days.map((day, index) => (
-            <DaySection key={index} day={day} dayNumber={index + 1} />
+            <DaySection 
+              key={index} 
+              day={day} 
+              dayNumber={index + 1} 
+              formData={formData}
+            />
           ))}
         </div>
       ) : (
@@ -462,6 +508,7 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
         <ItineraryContent 
           content={aiItinerary.content || 'No content available'} 
           onFinalTipsExtracted={handleFinalTipsExtracted}
+          formData={formData}
         />
 
         {/* Personalized Tips Section */}
