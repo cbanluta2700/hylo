@@ -93,30 +93,42 @@ function mapTravelStyleToCultural(answers: any): 'minimal' | 'moderate' | 'deep'
  */
 export function transformExistingFormDataToWorkflow(formData: FormData): TravelFormData {
   const result = {
-    // Trip Details
-    location: formData.location,
-    departDate: formData.departDate,
+    // Trip Details with proper string handling
+    location: (formData.location || '').trim() || undefined,
+    departDate: formData.departDate || '',
     returnDate: formData.returnDate || '',
-    flexibleDates: formData.flexibleDates,
+    flexibleDates: Boolean(formData.flexibleDates),
     plannedDays: formData.plannedDays || undefined,
-    // Use UI default values when state is empty
-    adults:
-      typeof formData.adults === 'string'
-        ? parseInt(formData.adults) || (formData.adults === '' ? 2 : 0)
-        : formData.adults || 2,
-    children:
-      typeof formData.children === 'string'
-        ? parseInt(formData.children) || (formData.children === '' ? 0 : 0)
-        : formData.children || 0,
+    // Simplified traveler count conversion with proper defaults
+    adults: (() => {
+      if (typeof formData.adults === 'number') return Math.max(1, formData.adults);
+      if (typeof formData.adults === 'string') {
+        const parsed = parseInt(formData.adults);
+        return isNaN(parsed) ? 2 : Math.max(1, parsed);
+      }
+      return 2; // Default fallback
+    })(),
+    children: (() => {
+      if (typeof formData.children === 'number') return Math.max(0, formData.children);
+      if (typeof formData.children === 'string') {
+        const parsed = parseInt(formData.children);
+        return isNaN(parsed) ? 0 : Math.max(0, parsed);
+      }
+      return 0; // Default fallback
+    })(),
     childrenAges: formData.childrenAges || undefined,
 
-    // Budget Information
+    // Budget Information with robust parsing
     budget: {
-      total: formData.flexibleBudget
-        ? 5000 // Use average budget when flexible
-        : typeof formData.budget === 'string'
-        ? parseFloat(formData.budget) || (formData.budget === '' ? 5000 : 0)
-        : formData.budget || 5000,
+      total: (() => {
+        if (formData.flexibleBudget) return 5000; // Default when flexible
+        if (typeof formData.budget === 'number') return Math.max(100, formData.budget);
+        if (typeof formData.budget === 'string') {
+          const parsed = parseFloat(formData.budget);
+          return isNaN(parsed) ? 5000 : Math.max(100, parsed);
+        }
+        return 5000; // Default fallback
+      })(),
       currency: formData.currency || 'USD',
       breakdown: (() => {
         const budgetAmount = formData.flexibleBudget
