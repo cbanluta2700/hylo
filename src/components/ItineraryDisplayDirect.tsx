@@ -9,9 +9,11 @@ import React, { useState, useEffect } from 'react';
 import { Download, Mail, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
 import ResilientLoading from './ResilientLoading';
 import type { TravelFormData } from '../types/travel-form';
+import type { FormData } from './TripDetails/types';
 
 interface ItineraryDisplayProps {
   formData?: TravelFormData | null;
+  originalFormData?: FormData;
   isLoading: boolean;
   error?: string;
   aiItinerary?: any;
@@ -302,6 +304,7 @@ const ItineraryContent: React.FC<{ content: string; onFinalTipsExtracted?: (tips
 
 const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
   formData,
+  originalFormData,
   isLoading,
   error,
   aiItinerary,
@@ -446,7 +449,7 @@ const ItineraryDisplayDirect: React.FC<ItineraryDisplayProps> = ({
           <div className="bg-form-box rounded-[24px] p-4 text-center border border-gray-200">
             <div className="text-2xl mb-2">👤</div>
             <div className="font-bold text-primary">Prepared for</div>
-            <div className="text-gray-700">{formData?.name || formData?.nickname || 'Traveler'}</div>
+            <div className="text-gray-700">{originalFormData?.contactName || 'Traveler'}</div>
           </div>
         </div>
 
