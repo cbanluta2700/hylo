@@ -170,7 +170,7 @@ export function transformExistingFormDataToWorkflow(formData: FormData): TravelF
     dinnerChoice:
       mapDinnerChoiceToEnum(formData.travelStyleAnswers?.['dinnerChoices']?.[0]) || 'local-spots',
     nickname: formData.travelStyleAnswers?.['tripNickname']?.[0] || formData.tripNickname || undefined,
-    name: (formData as any).contactInfo?.name || undefined,
+    name: formData.contactName || undefined,
 
     // Additional Services (defaults)
     additionalServices: {
